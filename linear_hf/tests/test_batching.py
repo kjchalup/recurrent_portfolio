@@ -35,24 +35,29 @@ all_data = np.hstack([dataDict['OPEN'],dataDict['CLOSE'],dataDict['HIGH'],dataDi
 def test_training_validation_separation(all_data = all_data, market_data = market_data, valid_period = valid_period, horizon = horizon, n_for_sharpe = n_for_sharpe, batch_id = batch_id, batch_size = batch_size, randseed=randseed):
     count = 0
     all_val, market_val, all_batch, market_batch = split_validation_training(all_data = all_data, market_data = market_data, valid_period = valid_period, horizon = horizon, n_for_sharpe = n_for_sharpe, batch_id = batch_id, batch_size = batch_size, randseed= randseed)
-    for val_0 in range(market_val.shape[0]):
-        for val_t in range(market_val.shape[1]):
-            for batch_0 in range(market_batch.shape[0]):
-                for batch_t in range(market_batch.shape[1]):
-                    agree=(market_val[val_0,val_t,:]==market_batch[batch_0,batch_t,:]).sum()
-                    if agree==market_val.shape[2]:
-                        count += 1
+    
+    if market_val is not None:
+        for val_0 in range(market_val.shape[0]):
+            for val_t in range(market_val.shape[1]):
+                for batch_0 in range(market_batch.shape[0]):
+                    for batch_t in range(market_batch.shape[1]):
+                        agree=(market_val[val_0,val_t,:]==market_batch[batch_0,batch_t,:]).sum()
+                        if agree==market_val.shape[2]:
+                            count += 1
     assert(count == 0,'If this number is larger than 0, training data is bleeding into validation data')
     
 def test_zero_nan_in_any_batch(all_data = all_data, market_data = market_data, valid_period = valid_period, horizon = horizon, n_for_sharpe = n_for_sharpe, batch_id = batch_id, batch_size = batch_size, randseed = randseed):
     all_val, market_val, all_batch, market_batch = split_validation_training(all_data = all_data, market_data = market_data, valid_period = valid_period, horizon = horizon, n_for_sharpe = n_for_sharpe, batch_id = batch_id, batch_size = batch_size, randseed = randseed)
-    assert((all_val==0).sum()==0)
-    assert((market_val==0).sum()==0)
+    
+    if all_val is not None:
+        assert((all_val==0).sum()==0)
+        assert((market_val==0).sum()==0)
+        assert((np.isnan(all_val)).sum()==0)
+        assert((np.isnan(market_val)).sum()==0)
+    
+    
     assert((all_batch==0).sum()==0)
     assert((market_batch==0).sum()==0)
-
-    assert((np.isnan(all_val)).sum()==0)
-    assert((np.isnan(market_val)).sum()==0)
     assert((np.isnan(all_batch)).sum()==0)
     assert((np.isnan(market_batch)).sum()==0)
     

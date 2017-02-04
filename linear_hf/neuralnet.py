@@ -45,7 +45,8 @@ class Linear(object):
     positions whose absolute values sum to one.
     """
     
-    def __init__(self, n_ftrs, n_markets, n_time, n_sharpe, W_init=None):
+    def __init__(self, n_ftrs, n_markets, n_time, 
+                 n_sharpe, W_init=None, lbd=0.001, seed=None):
         """ Initialize the regressor.
         
         Args:
@@ -56,12 +57,15 @@ class Linear(object):
             position vector.
           W_init (n_markets, n_markets*(n_time-n_sharpe+1)): Weight 
             initalization.
+          lbd (float): l1 penalty coefficient.
+          seed (int): Graph-level random seed, for testing purposes.
         """
         self.n_ftrs = n_ftrs
         self.n_markets = n_markets
         self.n_time = n_time
         self.n_sharpe = n_sharpe
         self.horizon = n_time - n_sharpe + 1
+        self.lbd = lbd
         
         # Doefine symbolic placeholders for data batches.
         self.batch_in_tf = tf.placeholder(
@@ -87,11 +91,6 @@ class Linear(object):
         self.b = tf.Variable(tf.zeros(n_markets), 
                              name='nn_biases')
 
-        # Create a Tf session and initialize the variables.
-        self.sess = tf.Session()
-        self.init_op = tf.global_variables_initializer()
-        self.sess.run(self.init_op)
-
         # Define the position outputs on a batch of timeseries.
         self.positions_tf = define_nn(self.batch_in_tf, 
                                       n_sharpe=n_sharpe, 
@@ -107,22 +106,35 @@ class Linear(object):
             tf.abs(prediction_tf), axis=1, keep_dims=True)
 
         # Define the L1 penalty.
-        self.l1_penalty_tf = (lambda lbd: 
-                              lbd * tf.reduce_sum(tf.abs(self.W)))
+        self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(self.W))
 
         # Define the unnormalized loss function.
         self.loss_tf = -sharpe_tf(self.positions_tf, self.batch_out_tf, 
                                  n_sharpe, n_markets)
+        # Define the optimizer.
+        self.train_op_tf = tf.train.AdamOptimizer(
+            learning_rate=self.lr_tf).minimize(
+            self.loss_tf + self.l1_penalty_tf)
 
-        # self.rs_tf = sharpe_rs(self.positions_tf, self.batch_out_tf, 
-        #                        n_sharpe, n_markets)
+        # Create a Tf session and initialize the variables.
+        self.sess = tf.Session()
+        self.init_op = tf.global_variables_initializer()
+        self.sess.run(self.init_op)
 
     def _positions_np(self, batch_in):
+        """ Predict a portfolio for a training batch.
+
+        Args:
+          batch_in (n_batch, n_time, n_ftrs): Input data.
+        
+        Returns:
+          positions (n_batch, n_markets): Positions.
+        """
         return self.sess.run(self.positions_tf, {self.batch_in_tf:
                                             batch_in})
 
     def predict(self, batch_in):
-        """ Predict a portfolio for a batch.
+        """ Predict a portfolio for a test batch.
         
         Args:
           batch_in (n_batch, horizon, n_ftrs): Input data, where
@@ -135,14 +147,9 @@ class Linear(object):
         return self.sess.run(self.prediction_tf, 
                              {self.test_in_tf: batch_in})
 
-    def l1_penalty_np(self, lbd):
+    def l1_penalty_np(self):
         """ Compute the L1 penalty on the weights. """
-        return self.sess.run(self.l1_penalty_tf(lbd))
-
-    # def rs_np(self, batch_in, batch_out):
-    #     return self.sess.run(self.rs_tf,
-    #                          {self.batch_in_tf: batch_in,
-    #                           self.batch_out_tf: batch_out})
+        return self.sess.run(self.l1_penalty_tf)
 
     def loss_np(self, batch_in, batch_out):
         """ Compute the current Sharpe loss.
@@ -160,12 +167,11 @@ class Linear(object):
                              {self.batch_in_tf: batch_in, 
                               self.batch_out_tf: batch_out})
         
-    def train_step(**kwargs):
-        pass
-        # # Define training!
-        # self.optimizer = tf.train.AdamOptimizer(
-        #     learning_rate=self.lr_tf).minimize(
-        #     self.loss_tf + self.l1_penalty_tf)
-
+    def train_step(self, batch_in, batch_out, lr):
+        self.sess.run(self.train_op_tf, 
+                      {self.batch_in_tf: batch_in,
+                       self.batch_out_tf: batch_out,
+                       self.lr_tf: lr})
+    
 
 

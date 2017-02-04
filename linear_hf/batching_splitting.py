@@ -70,7 +70,7 @@ def split_validation_training(all_data, market_data, valid_period, horizon, n_fo
         market_val = np.tile(market_val, [batch_size/valid_period, 1, 1])
 
     all_batch, market_batch = draw_timeseries_batch(all_data=all_data[:-valid_period-n_for_sharpe-1] if valid_period > 0 else all_data[:-1], 
-        market_data=market_data[1:-valid_period-n_for_sharpe] if valid_period > 0 else ochl_out[1:], 
+        market_data=market_data[1:-valid_period-n_for_sharpe] if valid_period > 0 else market_data[1:], 
         horizon=horizon+n_for_sharpe-1, 
         batch_size=batch_size, 
         batch_id=batch_id, randseed=randseed)
