@@ -39,7 +39,7 @@ def fillnans(inArr):
     return myArr
 
 beginInSample='20100101'
-endInSample='20151231'
+endInSample='20141231'
 
 @pytest.fixture
 def names_with_no_nans():

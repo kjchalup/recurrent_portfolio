@@ -9,7 +9,6 @@ sys.path.insert(0,parentdir)
 
 import numpy as np
 
-from preprocessing import load_stocks
 import neuralnet
 import costs
 
