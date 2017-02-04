@@ -20,8 +20,8 @@ def fillnans(inArr):
         fills in value gaps with the most recent non-nan value.
             Leading nan's remain in place. The gaps are filled in only after the first non-nan entry.
 
-                Args:
-                        inArr (list, numpy array)
+        Args:
+          inArr (list, numpy array)
                             Returns:
                                     returns an array of the same size as inArr with the nan-values replaced by the most recent non-nan entry.
 
@@ -81,9 +81,9 @@ def test_no_crazy_returns(dataDict):
 
     # Check that daily returns are less than 0.5 for session, gap, return. gap+session-slippage should be approximate returns for any given stock
     assert((abs(SLIPPAGE)>0.7).sum()==0)
-    assert((abs(gaps)>0.99).sum()==0)
-    assert((abs(sessionReturn)>0.99).sum()==0)
-    assert((abs(gaps)+abs(sessionReturn)>0.99).sum())==0
+    assert((abs(gaps)>2).sum()==0)
+    assert((abs(sessionReturn)>2).sum()==0)
+    assert((abs(gaps)+abs(sessionReturn)>2).sum())==0
     assert((abs(gaps)==np.inf).sum())==0
     assert((abs(sessionReturn)==np.inf).sum()==0)
     assert((abs(SLIPPAGE)==np.inf).sum()==0)
