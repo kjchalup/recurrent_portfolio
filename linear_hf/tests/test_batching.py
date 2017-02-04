@@ -22,7 +22,7 @@ batch_id = 0
 batch_size = 128
 randseed = 0
 beginInSample='20090101'
-endInSample='20151231'
+endInSample='20141231'
 
 names_with_no_nans = non_nan_markets(start_date = beginInSample, end_date = endInSample, postipo = 100, lookback = 0)
     
