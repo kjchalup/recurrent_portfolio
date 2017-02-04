@@ -51,7 +51,7 @@ def names_with_no_nans():
 @pytest.fixture
 def dataDict(names_with_no_nans):
     # Return dataDict, change dataToLoad to include more fields of data if necessary
-    dataDict = loadData(marketList = names_with_no_nans, beginInSample = beginInSample, endInSample = endInSample, dataDir = 'tickerData', refresh = False, dataToLoad = set(['DATE','OPEN','CLOSE','HIGH','LOW','VOL','RINFO']))
+    dataDict = loadData(marketList = names_with_no_nans, beginInSample = beginInSample, endInSample = endInSample, dataDir = '~/project/causehf/tickerData', refresh = False, dataToLoad = set(['DATE','OPEN','CLOSE','HIGH','LOW','VOL','RINFO']))
     return dataDict
 
 @pytest.fixture
