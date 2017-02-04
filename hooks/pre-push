@@ -32,7 +32,7 @@ fi
 current=$(git symbolic-ref HEAD | sed -e 's,.*/\(.*\),\1,')
 
 # Run the tests.
-if [[ $current = $protected ]]; then
+if [ $current = $protected ]; then
     python -m pytest
     RESULT=$?
     if [ $RESULT -ne 0 ]; then
