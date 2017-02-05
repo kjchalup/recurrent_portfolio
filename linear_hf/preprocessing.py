@@ -76,4 +76,3 @@ def non_nan_markets(start_date, end_date, postipo=100, lookback=0):
     print ('Found '+str(len(alives))+' stocks with no nans starting after '+start_date_minuspostipo)
     return [symbol.split('/')[1][:-4] for symbol in alives] 
 
-
