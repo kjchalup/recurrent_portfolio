@@ -8,7 +8,7 @@ import tensorflow as tf
 from costs import sharpe_tf
 
 def define_nn(batch_in_tf, n_sharpe, 
-              n_time, n_ftrs, W, b):
+              n_time, n_ftrs, W, b, allow_shorting):
     """ Define a neural net for the Linear regressor.
     
     Args:
@@ -26,9 +26,11 @@ def define_nn(batch_in_tf, n_sharpe,
     
     def apply_net(x):
         out = tf.add(tf.matmul(x, W), b)
-        out = tf.pow(out, 2)
-        out = out / tf.reduce_sum(out, axis=1, keep_dims=True)
-        #out = out / tf.reduce_sum(tf.abs(out), axis=1, keep_dims=True)
+        if allow_shorting:
+            out = out / tf.reduce_sum(tf.abs(out), axis=1, keep_dims=True)
+        else:
+            out = tf.pow(out, 2)
+            out = out / tf.reduce_sum(out, axis=1, keep_dims=True)
         return out
 
     positions = []
@@ -48,7 +50,8 @@ class Linear(object):
     """
     
     def __init__(self, n_ftrs, n_markets, n_time, 
-                 n_sharpe, W_init=None, lbd=0.001, seed=None):
+                 n_sharpe, W_init=None, lbd=0.001, seed=None,
+                 allow_shorting=True):
         """ Initialize the regressor.
         
         Args:
@@ -61,6 +64,7 @@ class Linear(object):
             initalization.
           lbd (float): l1 penalty coefficient.
           seed (int): Graph-level random seed, for testing purposes.
+          allow_shorting (bool): If True, allow negative positions.
         """
         self.n_ftrs = n_ftrs
         self.n_markets = n_markets
@@ -98,17 +102,20 @@ class Linear(object):
                                       n_sharpe=n_sharpe, 
                                       n_time=n_time,
                                       n_ftrs=n_ftrs, 
-                                      W=self.W, b=self.b)
+                                      W=self.W, b=self.b,
+                                      allow_shorting=allow_shorting)
 
         # Define the position output on one stock timeseries.
         prediction_tf = tf.add(tf.matmul(tf.reshape(
             self.test_in_tf, (1, n_ftrs * self.horizon)), 
                                          self.W), self.b)[0]
-        prediction_tf = tf.pow(prediction_tf, 2)
-        self.prediction_tf = prediction_tf / tf.reduce_sum(
-            prediction_tf)
-        # self.prediction_tf = prediction_tf / tf.reduce_sum(
-        #     tf.abs(prediction_tf))
+        if allow_shorting:
+            self.prediction_tf = prediction_tf / tf.reduce_sum(
+                tf.abs(prediction_tf))
+        else:
+            prediction_tf = tf.pow(prediction_tf, 2)
+            self.prediction_tf = prediction_tf / tf.reduce_sum(
+                prediction_tf)
 
         # Define the L1 penalty.
         self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(self.W))

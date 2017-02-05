@@ -23,7 +23,8 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
                                           n_markets=OPEN.shape[1],
                                           n_time=settings['n_time'],
                                           n_sharpe=settings['n_sharpe'],
-                                          lbd=settings['lbd'])
+                                          lbd=settings['lbd'],
+                                          allow_shorting=False)
 
     # Train the neural net on current data.
     if settings['iter'] % settings['n_sharpe'] == 0:
@@ -74,13 +75,13 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
 def mySettings():
     settings={}
     # Futures Contracts
-    settings['n_time'] = 100 # Use this many timesteps in one datapoint.
-    settings['n_sharpe'] = 50 # This many timesteps to compute Sharpes.
+    settings['n_time'] = 60 # Use this many timesteps in one datapoint.
+    settings['n_sharpe'] = 30 # This many timesteps to compute Sharpes.
     settings['horizon'] = settings['n_time'] - settings['n_sharpe'] + 1
     settings['lbd'] = .001 # L1 regularizer strength.
     settings['num_epochs'] = 10 # Number of epochs each day.
     settings['batch_size'] = 128
-    settings['val_period'] = 0
+    settings['val_period'] = 32
     settings['lr'] = 1e-5 # Learning rate.
     settings['iter'] = 0
     settings['lookback'] = 1000
