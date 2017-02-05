@@ -28,17 +28,20 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
     # Train the neural net on current data.
     if settings['iter'] % settings['n_sharpe'] == 0:
         settings['nn'].restart_variables()
-        lr_mult = .01 ** (1. / settings['num_epochs'])
+        lr_mult = 1 #.01 ** (1. / settings['num_epochs'])
         batches_per_epoch = int(np.floor((all_data.shape[0] -
                                           settings['horizon'] -
+                                          settings['val_period'] -
                                           2 * settings['n_sharpe'] + 2)
                                          /float(settings['batch_size'])))
         for epoch_id in range(settings['num_epochs']):
             seed = np.random.randint(10000)
-            sharpe = 0
+            tr_sharpe = 0.
+            val_sharpe = 0.
             for batch_id in range(batches_per_epoch):
-                _, _, all_batch, market_batch = split_validation_training(
-                    all_data, market_data, valid_period=0, 
+                all_val, market_val, all_batch, market_batch = split_validation_training(
+                    all_data, market_data, 
+                    valid_period=settings['val_period'], 
                     horizon=settings['horizon'], 
                     n_for_sharpe=settings['n_sharpe'],
                     batch_id=batch_id, 
@@ -51,9 +54,14 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
                     lr=settings['lr'] * lr_mult ** epoch_id)
                 loss = settings['nn'].loss_np(all_batch, market_batch)
                 l1_loss = settings['nn'].l1_penalty_np()
-                sharpe += -(loss-l1_loss)
-            sharpe /= batches_per_epoch
-            sys.stdout.write('\nEpoch {}, train Sharpe {:.4}.'.format(epoch_id, sharpe))
+                tr_sharpe += -(loss - l1_loss)
+            if settings['val_period'] > 0:
+                val_loss = settings['nn'].loss_np(all_val, market_val)
+                val_l1_loss = settings['nn'].l1_penalty_np()
+                val_sharpe = -(val_loss - val_l1_loss)
+            tr_sharpe /= batches_per_epoch
+            sys.stdout.write('\nEpoch {}, val/tr Sharpe {:.4}/{:.4g}.'.format(
+                epoch_id, val_sharpe, tr_sharpe))
             sys.stdout.flush()
             
     
@@ -69,17 +77,17 @@ def mySettings():
     settings['n_time'] = 100 # Use this many timesteps in one datapoint.
     settings['n_sharpe'] = 50 # This many timesteps to compute Sharpes.
     settings['horizon'] = settings['n_time'] - settings['n_sharpe'] + 1
-    settings['lbd'] = .01 # L1 regularizer strength.
-    settings['num_epochs'] = 30 # Number of epochs each day.
+    settings['lbd'] = .001 # L1 regularizer strength.
+    settings['num_epochs'] = 10 # Number of epochs each day.
     settings['batch_size'] = 128
+    settings['val_period'] = 0
     settings['lr'] = 1e-5 # Learning rate.
     settings['iter'] = 0
-    settings['lookback']=1000
-    settings['budget']=10**6
-    settings['slippage']=0.05
+    settings['lookback'] = 1000
+    settings['budget'] = 10**6
+    settings['slippage'] = 0.05
     settings['beginInSample'] = '20090102'
     settings['endInSample'] = '20151201'
-    settings['learn_causality'] = True
 
     # Only keep markets that have not died out by beginInSample.
     np.random.seed(1)
@@ -87,8 +95,7 @@ def mySettings():
     settings['markets']  = non_nan_markets(settings['beginInSample'], 
                                            settings['endInSample'], 
                                            lookback=settings['lookback'])
-    settings['markets'] += ['CASH']
-    settings['markets'] = settings['markets'][:20]
+    settings['markets'] = settings['markets'][:10]
     print(settings['markets'])
     return settings
 

@@ -26,7 +26,9 @@ def define_nn(batch_in_tf, n_sharpe,
     
     def apply_net(x):
         out = tf.add(tf.matmul(x, W), b)
-        out = out / tf.reduce_sum(tf.abs(out), axis=1, keep_dims=True)
+        out = tf.pow(out, 2)
+        out = out / tf.reduce_sum(out, axis=1, keep_dims=True)
+        #out = out / tf.reduce_sum(tf.abs(out), axis=1, keep_dims=True)
         return out
 
     positions = []
@@ -102,8 +104,11 @@ class Linear(object):
         prediction_tf = tf.add(tf.matmul(tf.reshape(
             self.test_in_tf, (1, n_ftrs * self.horizon)), 
                                          self.W), self.b)[0]
+        prediction_tf = tf.pow(prediction_tf, 2)
         self.prediction_tf = prediction_tf / tf.reduce_sum(
-            tf.abs(prediction_tf))
+            prediction_tf)
+        # self.prediction_tf = prediction_tf / tf.reduce_sum(
+        #     tf.abs(prediction_tf))
 
         # Define the L1 penalty.
         self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(self.W))
