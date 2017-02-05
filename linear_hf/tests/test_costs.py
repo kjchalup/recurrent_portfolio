@@ -19,7 +19,7 @@ from costs import compute_sharpe_tf
 beginInSample='20090101'
 endInSample='20141231'
 names_with_no_nans = non_nan_markets(start_date=beginInSample, end_date=endInSample, postipo=100, lookback=0)
-names_with_no_nans = names_with_no_nans[0:50]
+names_with_no_nans = names_with_no_nans[200:250]
 dataDict = loadData(marketList=names_with_no_nans, beginInSample=beginInSample, endInSample=endInSample, dataDir='tickerData', refresh=False, dataToLoad=set(['DATE', 'OPEN', 'CLOSE', 'HIGH', 'LOW']))
 market_data = np.hstack([dataDict['OPEN'], dataDict['CLOSE'], dataDict['HIGH'], dataDict['LOW']])
 all_data = np.hstack([dataDict['OPEN'], dataDict['CLOSE'], dataDict['HIGH'], dataDict['LOW']])
@@ -53,8 +53,13 @@ def evaluate_systems(dataDict, positions, settings, market_data):
     rs_np = rs_numpy[0,:]
 
     # Calculate daily returns ratio between numpy and backtester, should not deviate more than 3%!
-    daily_returns_ratio = np.divide(rs_np[2:],rs_qc[3:])
+    
+    
+
+    daily_returns_ratio = np.divide(rs_np[6:],rs_qc[7:])
     for num in daily_returns_ratio:
+        if num>1.05 or num<0.95:
+            import pdb;pdb.set_trace()
         assert num <= 1.05 and num>=0.95
     # Calculate sharpe ratio for numpy, quantiacs, and neural net!
     sharpe_np = compute_numpy_sharpe(positions=pos, prices=prices, slippage=0.05)
@@ -70,7 +75,7 @@ def test_costfn_backtester_randpos(dataDict = dataDict, positions=positions_rand
     evaluate_systems(dataDict=dataDict, positions=positions_rand, settings=settings, market_data=market_data)
 
 def test_tf_sharpe_using_premade_positions(position=positions_rand, batch_out=market_data, dataDict=dataDict, settings=settings):
-    num_days_to_calc = 200
+    num_days_to_calc = 50
     pos_short = positions_rand[-num_days_to_calc:,:]
     poss = positions_rand[None,-num_days_to_calc:-1,:]
 
