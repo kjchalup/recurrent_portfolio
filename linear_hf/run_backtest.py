@@ -1,3 +1,4 @@
+import sys
 import random
 
 import numpy as np
@@ -30,6 +31,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
                                       2 * settings['n_sharpe'] + 2)
                                      /float(settings['batch_size'])))
     for epoch_id in range(settings['num_epochs']):
+        seed = np.random.randint(10000)
         for batch_id in range(batches_per_epoch):
             _, _, all_batch, market_batch = split_validation_training(
                 all_data, market_data, valid_period=0, 
@@ -37,12 +39,18 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
                 n_for_sharpe=settings['n_sharpe'],
                 batch_id=batch_id, 
                 batch_size=settings['batch_size'],
-                randseed=epoch_id)
+                randseed=seed)
 
             settings['nn'].train_step(
                 batch_in=all_batch, 
                 batch_out=market_batch, 
                 lr=settings['lr'])
+            loss = settings['nn'].loss_np(all_batch, market_batch)
+            l1_loss = settings['nn'].l1_penalty_np()
+            sharpe = -(loss-l1_loss)
+            sys.stdout.write('\nTrain Sharpe {:.4}.'.format(sharpe))
+            sys.stdout.flush()
+            
     
     # Predict a portfolio.
     positions = settings['nn'].predict(all_data[-settings['horizon']:])
@@ -58,10 +66,10 @@ def mySettings():
     settings['horizon'] = settings['n_time'] - settings['n_sharpe'] + 1
     settings['lbd'] = .001 # L1 regularizer strength.
     settings['num_epochs'] = 1 # Number of epochs each day.
-    settings['batch_size'] = 32
-    settings['lr'] = 1e-4 # Learning rate.
+    settings['batch_size'] = 128
+    settings['lr'] = 1e-5 # Learning rate.
     settings['iter'] = 0
-    settings['lookback']=500
+    settings['lookback']=1000
     settings['budget']=10**6
     settings['slippage']=0.05
     settings['beginInSample'] = '20090102'
