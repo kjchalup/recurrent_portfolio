@@ -121,6 +121,9 @@ class Linear(object):
         self.init_op = tf.global_variables_initializer()
         self.sess.run(self.init_op)
 
+    def restart_variables(self):
+        self.sess.run(self.init_op)
+
     def _positions_np(self, batch_in):
         """ Predict a portfolio for a training batch.
 
