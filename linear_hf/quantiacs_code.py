@@ -1,4 +1,21 @@
-def quantiacs_calculation(dataDict, positions)
+import numpy as np
+import pandas as pd
+from test_preprocessing import fillnans
+from quantiacsToolbox import stats
+
+def quantiacs_calculation(dataDict, positions, settings):
+    """ Evaluates trading returns using quantiacsToolbox code
+
+    Args:
+        dataDict: dict from quantiacs' loadData function, needs open, close, high, low
+        positions: positions vector (n_timesteps, n_markets), doesn't need to be normalized
+        settings: dict with lookback, slippage set. minimum for lookback = 2
+
+    Returns:
+        returns: dict with 'fundEquity'(n_timesteps, 1), 'returns' (n_timesteps, n_markets)
+    """
+
+
     print 'Evaluating Trading System'
 
     nMarkets=len(settings['markets'])
@@ -10,8 +27,9 @@ def quantiacs_calculation(dataDict, positions)
         dataDict['RINFO'] = np.zeros(np.shape(dataDict['CLOSE']))
         Rix = np.zeros(np.shape(dataDict['CLOSE']))
 
-    %dataDict['exposure']=np.zeros((endLoop,nMarkets))
+    #%dataDict['exposure']=np.zeros((endLoop,nMarkets))
     dataDict['exposure']=positions
+    position = positions
     dataDict['equity']=np.ones((endLoop,nMarkets))
     dataDict['fundEquity'] = np.ones((endLoop,1))
     realizedP = np.zeros((endLoop, nMarkets))
@@ -24,7 +42,8 @@ def quantiacs_calculation(dataDict, positions)
 
     slippageTemp = np.append(np.empty((1,nMarkets))*np.nan, ((dataDict['HIGH'][1:,:] - dataDict['LOW'][1:,:]) / dataDict['CLOSE'][:-1,:] ), axis=0) * settings['slippage']
     SLIPPAGE = np.nan_to_num(fillnans(slippageTemp))
-
+    
+    startLoop = settings['lookback'] - 1
     # Loop through trading days
     for t in range(startLoop,endLoop):
         todaysP= dataDict['exposure'][t-1,:]
@@ -48,7 +67,7 @@ def quantiacs_calculation(dataDict, positions)
         position = position/np.sum(abs(position))
         position[np.isnan(position)] = 0  # extra nan check in case the positions sum to zero
 
-        dataDict['exposure'][t,:] = position.copy()
+        #dataDict['exposure'][t,:] = position.copy()
 
     marketRets = np.float64(dataDict['CLOSE'][1:,:] - dataDict['CLOSE'][:-1,:] - dataDict['RINFO'][1:,:])/dataDict['CLOSE'][:-1,:]
     marketRets = fillnans(marketRets)
@@ -58,14 +77,15 @@ def quantiacs_calculation(dataDict, positions)
     a = a.tolist()
     marketRets = a + marketRets
 
-    ret['returns'] = np.nan_to_num(returns).tolist()
+    ret={}
+    ret['returns'] = np.nan_to_num(returns)
 
-    ret['tsName']=tsName
-    ret['fundDate']=dataDict['DATE'].tolist()
-    ret['fundEquity']=dataDict['fundEquity'].tolist()
-    ret['marketEquity']= dataDict['equity'].tolist()
-    ret['marketExposure'] = dataDict['exposure'].tolist()
+    #ret['tsName']=tsName
+    ret['fundDate']=dataDict['DATE']
+    ret['fundEquity']=dataDict['fundEquity']
+    ret['marketEquity']= dataDict['equity']
+    ret['marketExposure'] = dataDict['exposure']
     ret['settings']=settings
     ret['evalDate']=dataDict['DATE'][t]
-
+    ret['stats']=stats(dataDict['fundEquity'])
     return ret

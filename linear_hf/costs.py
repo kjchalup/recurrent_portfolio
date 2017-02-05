@@ -5,7 +5,7 @@ import joblib
 import numpy as np
 import tensorflow as tf
 
-def compute_numpy_sharpe(positions, prices, slippage=0.05):
+def compute_numpy_sharpe(positions, prices, slippage=0.05, return_returns = False):
     """ Compute average Sharpe ratio of a strategy using Numpy.
 
     Args:
@@ -38,6 +38,10 @@ def compute_numpy_sharpe(positions, prices, slippage=0.05):
                  (cs[:, i-2, :] * (1 + rs[:, i-1:i])))
         rs[:, i] = (elem1 + elem2 - 
                     slippage*np.abs(elem3 * elem4)).sum(axis=1)
+    
+    if return_returns:
+        return rs
+
     return ((np.prod(rs+1, axis=1)**(252./n_sharpe)-1) / 
             (np.sqrt(252 * ((rs**2).sum(axis=1) / n_sharpe - 
             np.sum(rs, axis=1)**2 / n_sharpe**2)))).mean()

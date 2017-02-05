@@ -22,8 +22,8 @@ def fillnans(inArr):
 
         Args:
           inArr (list, numpy array)
-                            Returns:
-                                    returns an array of the same size as inArr with the nan-values replaced by the most recent non-nan entry.
+        Returns:
+          returns an array of the same size as inArr with the nan-values replaced by the most recent non-nan entry.
 
                                         '''
     inArr=inArr.astype(float)
