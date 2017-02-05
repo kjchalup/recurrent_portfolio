@@ -33,12 +33,11 @@ if [ -z "$commits" ]; then
 fi
 
 # Find whether the current branch is up to date.
-branch_status=$(git fetch -v --dry-run 2>&1 |\
-		    awk -v cur=$current '$5==cur {print $2 $3 $4}')
+branch_status=$(git fetch -v --dry-run 2>&1 | grep $current | awk '{print $1}')
 
 # Exit if we need to pull.
-if [ $branch_status != "[uptodate]" ]; then
-    echo 'Please pull and merge new commits from remote.'
+if [ $branch_status != "=" ]; then
+    echo 'Please pull and merge before pushing.'
     exit 1
 fi
 
