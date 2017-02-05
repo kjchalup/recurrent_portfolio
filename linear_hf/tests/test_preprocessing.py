@@ -17,15 +17,16 @@ from preprocessing import non_nan_markets
 def fillnans(inArr):
     ''' fills in (column-wise)value gaps with the most recent non-nan value.
 
-        fills in value gaps with the most recent non-nan value.
-            Leading nan's remain in place. The gaps are filled in only after the first non-nan entry.
+    fills in value gaps with the most recent non-nan value.
+    Leading nan's remain in place. The gaps are filled in only after the first non-nan entry.
 
-        Args:
-          inArr (list, numpy array)
-        Returns:
-          returns an array of the same size as inArr with the nan-values replaced by the most recent non-nan entry.
+    Args:
+      inArr (list, numpy array)
 
-                                        '''
+    Returns:
+      returns an array of the same size as inArr with the nan-values replaced by the most recent non-nan entry.
+    '''
+
     inArr=inArr.astype(float)
     nanPos= np.where(np.isnan(inArr))
     nanRow=nanPos[0]

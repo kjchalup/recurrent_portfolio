@@ -17,7 +17,6 @@ def draw_timeseries_batch(all_data, market_data, horizon, batch_size, batch_id, 
         all_batch (n_batchsize, n_timesteps, data): batches for input data to neural net.
         market_batch (n_batchsize, n_timesteps, market_data): batches for scoring for neural net.
     """
-
     next_seed=  np.random.randint(0, 100000)
     np.random.seed(randseed)
     #import pdb;pdb.set_trace()
@@ -52,7 +51,7 @@ def split_validation_training(all_data, market_data, valid_period, horizon, n_fo
         For validation data, the batch_id is set to 0, and the randseed is set to 1, so it will always return the same validation data.
         For time indexing, all_data is indexed -1 from market_data so that the positions are predicted from all_data, and scored against market_data.
     """
-
+    
     all_val = None
     market_val = None
     if valid_period > 0:

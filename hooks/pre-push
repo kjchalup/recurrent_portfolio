@@ -21,7 +21,10 @@ remote="$1"
 url="$2"
 
 # Test python code with pytest before push.
+
+# Define protected branch and find current branch.
 protected='master'
+current=$(git symbolic-ref HEAD | awk -F'/' '{print $3}')
 
 # Check if there are actually commits to push.
 commits=`git log @{u}..`
@@ -29,7 +32,14 @@ if [ -z "$commits" ]; then
     exit 0
 fi
 
-current=$(git symbolic-ref HEAD | sed -e 's,.*/\(.*\),\1,')
+# Find whether the current branch is up to date.
+branch_status=$(git fetch -v --dry-run 2>&1 | grep $current | awk '{print $1}')
+
+# Exit if we need to pull.
+if [ $branch_status != "=" ]; then
+    echo 'Please pull and merge before pushing.'
+    exit 1
+fi
 
 # Run the tests.
 if [ $current = $protected ]; then

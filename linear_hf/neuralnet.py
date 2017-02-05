@@ -75,7 +75,7 @@ class Linear(object):
             tf.float32, shape=[None, n_sharpe, n_markets * 4],
             name='output_batch')
         self.test_in_tf = tf.placeholder(
-            tf.float32, shape=[None, n_time-n_sharpe+1, n_ftrs], 
+            tf.float32, shape=[n_time-n_sharpe+1, n_ftrs], 
             name='single_datapoint')
 
         # Neural net training-related placeholders.
@@ -100,10 +100,10 @@ class Linear(object):
 
         # Define the position output on one stock timeseries.
         prediction_tf = tf.add(tf.matmul(tf.reshape(
-            self.test_in_tf, (-1, n_ftrs * self.horizon)), 
-                                         self.W), self.b)
+            self.test_in_tf, (1, n_ftrs * self.horizon)), 
+                                         self.W), self.b)[0]
         self.prediction_tf = prediction_tf / tf.reduce_sum(
-            tf.abs(prediction_tf), axis=1, keep_dims=True)
+            tf.abs(prediction_tf))
 
         # Define the L1 penalty.
         self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(self.W))
@@ -121,6 +121,9 @@ class Linear(object):
         self.init_op = tf.global_variables_initializer()
         self.sess.run(self.init_op)
 
+    def restart_variables(self):
+        self.sess.run(self.init_op)
+
     def _positions_np(self, batch_in):
         """ Predict a portfolio for a training batch.
 
@@ -133,19 +136,19 @@ class Linear(object):
         return self.sess.run(self.positions_tf, {self.batch_in_tf:
                                             batch_in})
 
-    def predict(self, batch_in):
+    def predict(self, data_in):
         """ Predict a portfolio for a test batch.
         
         Args:
-          batch_in (n_batch, horizon, n_ftrs): Input data, where
+          data_in (horizon, n_ftrs): Input data, where
             horizon = n_time - n_sharpe + 1. This corresponds
-            to data needed to predict just one portfolio per batch.
+            to data needed to predict just one portfolio.
         
         Returns:
-          positions (n_batch, n_markets): Positions.
+          positions (n_markets): Positions.
         """
         return self.sess.run(self.prediction_tf, 
-                             {self.test_in_tf: batch_in})
+                             {self.test_in_tf: data_in})
 
     def l1_penalty_np(self):
         """ Compute the L1 penalty on the weights. """

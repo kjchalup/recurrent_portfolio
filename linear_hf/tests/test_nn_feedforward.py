@@ -28,8 +28,8 @@ def test_nn_all_inputs_ones(make_data):
     horizon = n_time - n_sharpe + 1
     W_init = np.ones((n_ftrs * horizon, n_markets), dtype=np.float32)
     nn = neuralnet.Linear(n_ftrs, n_markets, n_time, n_sharpe, W_init)
-    assert_array_almost_equal(nn.predict(batch_in[:, -horizon:]), 
-                              np.ones((n_batch, n_markets)) / 
+    assert_array_almost_equal(nn.predict(batch_in[0, -horizon:]), 
+                              np.ones(n_markets) / 
                               float(n_markets))
 
 def test_nn_only_one_nonzero_data(make_data):
@@ -41,8 +41,8 @@ def test_nn_only_one_nonzero_data(make_data):
     n_batch, n_time, n_markets = batch_in.shape
     W_init = np.ones((n_ftrs * horizon, n_markets), dtype=np.float32)
     nn = neuralnet.Linear(n_ftrs, n_markets, n_time, n_sharpe, W_init)
-    assert_array_almost_equal(nn.predict(batch_in[:, -horizon:]), 
-                              np.ones((n_batch, n_markets)) / 
+    assert_array_almost_equal(nn.predict(batch_in[0, -horizon:]), 
+                              np.ones(n_markets) / 
                               float(n_markets))
 
 def test_nn_all_inputs_minus_ones(make_data):
@@ -52,8 +52,8 @@ def test_nn_all_inputs_minus_ones(make_data):
     n_markets = n_ftrs / 4
     W_init = -np.ones((n_ftrs * horizon, n_markets), dtype=np.float32)
     nn = neuralnet.Linear(n_ftrs, n_markets, n_time, n_sharpe, W_init)
-    assert_array_almost_equal(nn.predict(batch_in[:, -horizon:]), 
-                              -np.ones((n_batch, n_markets)) / 
+    assert_array_almost_equal(nn.predict(batch_in[0, -horizon:]), 
+                              -np.ones(n_markets) / 
                               float(n_markets))
 
 def test_nn_batch_order(make_data):
@@ -64,8 +64,8 @@ def test_nn_batch_order(make_data):
     n_markets = n_ftrs / 4
     W_init = np.ones((n_ftrs * horizon, n_markets), dtype=np.float32)
     nn = neuralnet.Linear(n_ftrs, n_markets, n_time, n_sharpe, W_init)
-    out_first = nn.predict(batch_in[:, -horizon:])[0]
-    out_last = nn.predict(batch_in[:, -horizon:])[-1]
+    out_first = nn.predict(batch_in[0, -horizon:])
+    out_last = nn.predict(batch_in[-1, -horizon:])
     assert_array_almost_equal(
         out_first, -np.ones(n_markets) / float(n_markets))
     assert_array_almost_equal(
