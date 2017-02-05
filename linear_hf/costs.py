@@ -92,6 +92,10 @@ def sharpe_tf(positions, prices, n_sharpe, n_markets, slippage=.05):
         (tf.sqrt(252 * (tf.reduce_sum(tf.pow(rs, 2), axis=1) / n_sharpe -         tf.pow(tf.reduce_sum(rs, axis=1), 2) / n_sharpe**2))))
 
 def compute_sharpe_tf(batch_in, batch_out):
+    n, n_time, n_ftrs = batch_in.shape
+    n, n_sharpe, n_markets4 = batch_out.shape
+    n_markets = n_markets4/4
+    
     sess = tf.Session()
     batch_in_tf = tf.placeholder(
         tf.float32, shape=[None, n_time, n_ftrs], 
@@ -100,6 +104,7 @@ def compute_sharpe_tf(batch_in, batch_out):
         tf.float32, shape=[None, n_sharpe, n_markets * 4],
         name='output_batch')
 
-    sess.run(sharpe_tf(batch_in_tf, batch_out_tf, n_sharpe, n_markets), 
+    return sess.run(sharpe_tf(batch_in_tf, batch_out_tf, n_sharpe, n_markets), 
              {batch_in_tf: batch_in,
               batch_out_tf: batch_out})
+
