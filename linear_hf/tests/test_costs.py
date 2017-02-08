@@ -32,7 +32,7 @@ settings={'markets':names_with_no_nans,
 n_timesteps, n_markets = market_data.shape
 n_markets = n_markets/4
 positions_all1 = np.ones([n_timesteps, n_markets])/float(n_markets)
-np.random.randseed(0)
+np.random.seed(0)
 positions_rand = np.random.rand(n_timesteps, n_markets)-0.5
 
     
