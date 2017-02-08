@@ -107,7 +107,7 @@ def test_tf_sharpe_using_premade_positions(position=positions_rand, batch_out=ma
     rs_qc = return_qc['returns'].sum(axis=1)
 '''
 
-
+'''
 def temp_test_nn_random_init():
     np.random.rand(1)
     n_timesteps, n_ftrs = market_data.shape
@@ -120,4 +120,4 @@ def temp_test_nn_random_init():
     
     nn = neuralnet.Linear(n_ftrs, n_markets, n_time, n_sharpe, lbd=0)
     nn_loss_before = nn.los_np(batch_in=batch_in, batch_out = batch_out)
-
+'''
