@@ -32,6 +32,7 @@ settings={'markets':names_with_no_nans,
 n_timesteps, n_markets = market_data.shape
 n_markets = n_markets/4
 positions_all1 = np.ones([n_timesteps, n_markets])/float(n_markets)
+np.random.randseed(0)
 positions_rand = np.random.rand(n_timesteps, n_markets)-0.5
 
     
@@ -58,7 +59,7 @@ def evaluate_systems(dataDict, positions, settings, market_data):
 
     daily_returns_ratio = np.divide(rs_np[6:],rs_qc[7:])
     for num in daily_returns_ratio:
-        if num>1.05 or num<0.95:
+        if num>1.10 or num<0.90:
             import pdb;pdb.set_trace()
         assert num <= 1.05 and num>=0.95
     # Calculate sharpe ratio for numpy, quantiacs, and neural net!
