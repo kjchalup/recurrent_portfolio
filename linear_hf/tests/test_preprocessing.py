@@ -81,10 +81,10 @@ def test_no_crazy_returns(dataDict):
     
 
     # Check that daily returns are less than 0.5 for session, gap, return. gap+session-slippage should be approximate returns for any given stock
-    assert((abs(SLIPPAGE)>0.7).sum()==0)
-    assert((abs(gaps)>2).sum()==0)
-    assert((abs(sessionReturn)>2).sum()==0)
-    assert((abs(gaps)+abs(sessionReturn)>2).sum())==0
-    assert((abs(gaps)==np.inf).sum())==0
-    assert((abs(sessionReturn)==np.inf).sum()==0)
-    assert((abs(SLIPPAGE)==np.inf).sum()==0)
+    assert (abs(SLIPPAGE)>0.7).sum()==0
+    assert (abs(gaps)>2).sum()==0
+    assert (abs(sessionReturn)>2).sum()==0
+    assert (abs(gaps)+abs(sessionReturn)>2).sum()==0
+    assert (abs(gaps)==np.inf).sum()==0
+    assert (abs(sessionReturn)==np.inf).sum()==0
+    assert (abs(SLIPPAGE)==np.inf).sum()==0

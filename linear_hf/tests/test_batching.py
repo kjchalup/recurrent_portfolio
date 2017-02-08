@@ -37,7 +37,7 @@ dataDict = loadData(marketList=names_with_no_nans,
 market_data = np.hstack([dataDict['OPEN'],dataDict['CLOSE'],dataDict['HIGH'],dataDict['LOW']])
 all_data = np.hstack([dataDict['OPEN'],dataDict['CLOSE'],dataDict['HIGH'],dataDict['LOW']])
 
-def turnoff_test_training_validation_separation(all_data=all_data, 
+def test_training_validation_separation(all_data=all_data, 
                                         market_data=market_data,
                                         valid_period=valid_period, 
                                         horizon=horizon, 
