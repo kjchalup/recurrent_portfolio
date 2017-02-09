@@ -33,7 +33,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
         batches_per_epoch = int(np.floor((all_data.shape[0] -
                                           settings['horizon'] -
                                           settings['val_period'] -
-                                          2 * settings['n_sharpe'] + 2)
+                                          2 * settings['n_sharpe'] + 1)
                                          /float(settings['batch_size'])))
         for epoch_id in range(settings['num_epochs']):
             seed = np.random.randint(10000)
