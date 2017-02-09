@@ -5,7 +5,7 @@ import joblib
 import numpy as np
 import tensorflow as tf
 
-def compute_numpy_sharpe(positions, prices, slippage=0.05, return_returns = False):
+def compute_numpy_sharpe(positions, prices, slippage=0.05, return_returns = False, n_ignore=2):
     """ Compute average Sharpe ratio of a strategy using Numpy.
 
     Args:
@@ -15,6 +15,8 @@ def compute_numpy_sharpe(positions, prices, slippage=0.05, return_returns = Fals
         corresponding to portfolio positions over the same time.
         Should contain (in order) open, close, high and low prices.
       slippage (float): slippage coefficient.
+      n_ignore (int): ignore this many of the first returns 
+        (to avoid boundary effects breaking training).
     
     Returns:
       sharpe (float): Sharpe ratio that positions achieve, averaged
@@ -38,7 +40,8 @@ def compute_numpy_sharpe(positions, prices, slippage=0.05, return_returns = Fals
                  (cs[:, i-2, :] * (1 + rs[:, i-1:i])))
         rs[:, i] = (elem1 + elem2 - 
                     slippage*np.abs(elem3 * elem4)).sum(axis=1)
-    
+    rs = rs[:, n_ignore:]
+    n_sharpe -= n_ignore 
     if return_returns:
         return rs
 
@@ -46,7 +49,7 @@ def compute_numpy_sharpe(positions, prices, slippage=0.05, return_returns = Fals
             (np.sqrt(252 * ((rs**2).sum(axis=1) / n_sharpe - 
             np.sum(rs, axis=1)**2 / n_sharpe**2)))).mean()
 
-def sharpe_tf(positions, prices, n_sharpe, n_markets, slippage=.05):
+def sharpe_tf(positions, prices, n_sharpe, n_markets, slippage=.05, n_ignore=2):
     """ Compute average Sharpe ratio of a strategy using Tensorflow.
 
     Args:
@@ -60,6 +63,8 @@ def sharpe_tf(positions, prices, n_sharpe, n_markets, slippage=.05):
       n_markets (float): number of markets. Must match 
         tf.shape(positions)[2].
       slippage (float): slippage coefficient.
+      n_ignore (int): ignore this many of the first returns 
+        (to avoid boundary effects breaking training).
     
     Returns:
       sharpe (tf.float): Tensor, representation of the Sharpe 
@@ -86,10 +91,13 @@ def sharpe_tf(positions, prices, n_sharpe, n_markets, slippage=.05):
             elem1 + elem2 - slippage*np.abs(elem3 * elem4), 
             axis=1, keep_dims=True))
     rs = tf.stack(rs_list, axis=1)[:, :, 0]
-    
+    rs = rs[:, n_ignore:]
+    n_sharpe -= n_ignore
+
     return tf.reduce_mean((tf.pow(
         tf.reduce_prod(rs+1, axis=1), (252./n_sharpe))-1) / 
-        (tf.sqrt(252 * (tf.reduce_sum(tf.pow(rs, 2), axis=1) / n_sharpe -         tf.pow(tf.reduce_sum(rs, axis=1), 2) / n_sharpe**2))))
+        (tf.sqrt(252 * (tf.reduce_sum(tf.pow(rs, 2), axis=1) / n_sharpe -
+                        tf.pow(tf.reduce_sum(rs, axis=1), 2) / n_sharpe**2))))
 
 def compute_sharpe_tf(batch_in, batch_out):
     n, n_time, n_ftrs = batch_in.shape
