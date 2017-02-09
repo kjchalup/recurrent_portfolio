@@ -13,11 +13,11 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
     CLOSE_ASK, CLOSE_BID, RETURN, SHARE, DIVIDEND, TOTALCAP, exposure, equity, settings, fundEquity):
     all_data = np.array(OPEN)
     market_data = np.hstack([OPEN, CLOSE, HIGH, LOW])
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
     print('Iter {} [{}], equity {}.'.format(settings['iter'], 
                                             DATE[-1],
                                             fundEquity[-2]))
-    import pdb;pdb.set_trace()
+    #import pdb;pdb.set_trace()
     if settings['iter'] == 0:
         # Define a new neural net.
         settings['nn'] = neuralnet.Linear(n_ftrs=all_data.shape[1], 
@@ -97,7 +97,7 @@ def mySettings():
     settings['markets']  = non_nan_markets(settings['beginInSample'], 
                                            settings['endInSample'], 
                                            lookback=settings['lookback'])
-    settings['markets'] = settings['markets'][300:350]
+    settings['markets'] = settings['markets'][0:1035]
     print(settings['markets'])
     return settings
 
