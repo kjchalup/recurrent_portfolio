@@ -88,7 +88,7 @@ def mySettings():
     settings['budget'] = 10**6
     settings['slippage'] = 0.05
     settings['beginInSample'] = '20090102'
-    settings['endInSample'] = '20151201'
+    settings['endInSample'] = '20131231'
 
     # Only keep markets that have not died out by beginInSample.
     np.random.seed(1)
