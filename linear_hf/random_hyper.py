@@ -1,15 +1,21 @@
 """Supply hyperparameters for the neural net to test."""
-import sys
-import random
+from random import randint
 
-import numpy as np
-import joblib
+def supply(setrange):
+    """Take a dictionary of settings and ranges of parameters and return a
+random selection from those ranges.
 
-import linear_hf.neuralnet as neuralnet
-from linear_hf.preprocessing import non_nan_markets
-from linear_hf.batching_splitting import split_validation_training
+    Args:
+        setrange (dict): Dictionary with setting names as keys and integer
+            ranges for the (inclusive) range of parameters to choose from.
 
-def supply(keys):
-    """Take a dictionary of keys and ranges of parameters and return a
-random selection from those ranges."""
-    pass
+    Returns:
+        settings (dict): Dictionary with settings and randomly chosen
+            parameters.
+    """
+
+    settings = {}
+    for setting, prange in setrange.items():
+        settings[setting] = randint(prange[0], prange[1])
+
+    return settings
