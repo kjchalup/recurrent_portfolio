@@ -8,7 +8,8 @@ import numpy as np
 import inspect
 
 #Include scripts from parent directory
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+currentdir = os.path.dirname(
+    os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0,parentdir)
 from preprocessing import non_nan_markets
@@ -18,11 +19,18 @@ from costs import compute_sharpe_tf
 
 beginInSample='20090101'
 endInSample='20141231'
-names_with_no_nans = non_nan_markets(start_date=beginInSample, end_date=endInSample, postipo=100, lookback=0)
+names_with_no_nans = non_nan_markets(start_date=beginInSample, 
+                                     end_date=endInSample, postipo=100, lookback=0)
 names_with_no_nans = names_with_no_nans[200:250]
-dataDict = loadData(marketList=names_with_no_nans, beginInSample=beginInSample, endInSample=endInSample, dataDir='tickerData', refresh=False, dataToLoad=set(['DATE', 'OPEN', 'CLOSE', 'HIGH', 'LOW']))
-market_data = np.hstack([dataDict['OPEN'], dataDict['CLOSE'], dataDict['HIGH'], dataDict['LOW']])
-all_data = np.hstack([dataDict['OPEN'], dataDict['CLOSE'], dataDict['HIGH'], dataDict['LOW']])
+dataDict = loadData(marketList=names_with_no_nans, 
+                    beginInSample=beginInSample, 
+                    endInSample=endInSample, 
+                    dataDir='tickerData', refresh=False, 
+                    dataToLoad=set(['DATE', 'OPEN', 'CLOSE', 'HIGH', 'LOW']))
+market_data = np.hstack([dataDict['OPEN'], dataDict['CLOSE'], 
+                         dataDict['HIGH'], dataDict['LOW']])
+all_data = np.hstack([dataDict['OPEN'], dataDict['CLOSE'], 
+                      dataDict['HIGH'], dataDict['LOW']])
  
 settings={'markets':names_with_no_nans,
               'lookback': 2,
@@ -48,32 +56,42 @@ def evaluate_systems(dataDict, positions, settings, market_data):
     prices = market_data[None,1:,:]
 
     # Calculate daily numpy sharpe returns
-    rs_numpy = compute_numpy_sharpe(positions=pos, prices=prices, slippage=0.05, return_returns = True)
-    
+    rs_numpy = compute_numpy_sharpe(positions=pos, prices=prices, slippage=0.05, return_returns = True, n_ignore = 0)
+    #import pdb;pdb.set_trace()    
     # Remove singleton dimension to directly compare two values.
     rs_np = rs_numpy[0,:]
-
-    # Calculate daily returns ratio between numpy and backtester, should not deviate more than 3%!
-    
-    
-
+    #import pdb;pdb.set_trace()
+    # Calculate daily returns ratio between numpy and backtester, 
+    # should not deviate more than 3%!
     daily_returns_ratio = np.divide(rs_np[6:],rs_qc[7:])
     for num in daily_returns_ratio:
         if num>1.10 or num<0.90:
             import pdb;pdb.set_trace()
         assert num <= 1.05 and num>=0.95
     # Calculate sharpe ratio for numpy, quantiacs, and neural net!
-    sharpe_np = compute_numpy_sharpe(positions=pos, prices=prices, slippage=0.05)
+    sharpe_np = compute_numpy_sharpe(positions=pos, prices=prices, slippage=0.05, n_ignore=0)
     sharpe_qc = return_qc['stats']['sharpe']
     
     ratio_sharpe = sharpe_np/float(sharpe_qc)
     assert ratio_sharpe > 0.85 and ratio_sharpe < 1.15, "Sharpe ratio of numpy and qc off by more than 5%"
 
-def test_costfn_backtester_all1s(dataDict = dataDict, positions=positions_all1, settings=settings, market_data = market_data):
-    evaluate_systems(dataDict = dataDict, positions=positions_all1, settings=settings, market_data=market_data)
+def test_costfn_backtester_all1s(dataDict = dataDict, 
+                                 positions=positions_all1, 
+                                 settings=settings, 
+                                 market_data = market_data):
+    evaluate_systems(dataDict = dataDict, 
+                     positions=positions_all1, 
+                     settings=settings, 
+                     market_data=market_data)
 
-def test_costfn_backtester_randpos(dataDict = dataDict, positions=positions_rand, settings=settings, market_data=market_data):
-    evaluate_systems(dataDict=dataDict, positions=positions_rand, settings=settings, market_data=market_data)
+def test_costfn_backtester_randpos(dataDict = dataDict, 
+                                   positions=positions_rand, 
+                                   settings=settings, 
+                                   market_data=market_data):
+    evaluate_systems(dataDict=dataDict, 
+                     positions=positions_rand, 
+                     settings=settings, 
+                     market_data=market_data)
 
 def test_tf_sharpe_using_premade_positions(position=positions_rand, batch_out=market_data, dataDict=dataDict, settings=settings):
     num_days_to_calc = 50
