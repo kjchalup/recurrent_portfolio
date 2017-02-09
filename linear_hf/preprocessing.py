@@ -39,7 +39,7 @@ def load_nyse_markets(start_date, end_date, postipo=100, lookback=0):
     return [symbol.split('/')[1][:-4] for symbol in alives] 
 
 
-def non_nan_markets(start_date, end_date, postipo=100, lookback=0):
+def non_nan_markets(start_date, end_date, postipo=0, lookback=0):
     """ Stock names with no nans
 
     Args:
@@ -56,7 +56,7 @@ def non_nan_markets(start_date, end_date, postipo=100, lookback=0):
     all_nyse = glob.glob('tickerData/*.txt')
     alives = []
     # Get end_date minus some a number!
-    start_date = (datetime.strptime(start_date, '%Y%m%d') +
+    start_date = (datetime.strptime(start_date, '%Y%m%d') -
         timedelta(days=lookback)).strftime('%Y%m%d')
 
     end_date_minuspostipo = (datetime.strptime(end_date, '%Y%m%d') -
