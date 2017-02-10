@@ -1,24 +1,17 @@
 """Test randomly supplied hyper parameters."""
-from linear_hf.random_hyper import supply
+from linear_hf.hyperparameters import supply_hypers
+from linear_hf.hyperparameters import LBDS, CHOICES, N_SHARPE_MIN, N_SHARPE_GAP
 
-def test_supply():
-    """Supply should take a dictionary of keys for the settings and
-inclusive ranges of numbers and return a random parameter from inside the range.
-"""
+def test_hypers():
+    """Test the supply_hypers function."""
 
-    # Make fake ranges.
-    setrange = {'this': [2, 9], 'that': [0, 42], 'when': [-30, 12]}
-
-    # Get settings.
-    settings = supply(setrange)
+    settings = supply_hypers()
+    CHOICES['n_sharpe'] = range(N_SHARPE_MIN, settings['n_time'] - N_SHARPE_GAP)
 
     # Test that keys match.
-    assert settings.keys() == setrange.keys()
+    assert settings.keys() == CHOICES.keys()
 
     # Test that values are in range.
     for setting in settings:
-        low = setrange[setting][0]
-        high = setrange[setting][1]
-        print(setting)
-        print(settings[setting])
-        assert settings[setting] in range(low, high+1)
+        print(settings)
+        assert settings[setting] in CHOICES[setting]
