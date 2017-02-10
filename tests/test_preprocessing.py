@@ -1,17 +1,13 @@
 import pytest
 import quantiacsToolbox
 from quantiacsToolbox import loadData
-#from quantiacsToolbox import fillnans
 import sys
 import os
 import pandas as pd
 import numpy as np
-import inspect 
-#Include scripts from parent directory
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(currentdir)
-sys.path.insert(0,parentdir)
-from preprocessing import non_nan_markets
+
+from context import linear_hf
+from linear_hf.preprocessing import non_nan_markets
 
 
 def fillnans(inArr):
