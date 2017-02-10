@@ -4,6 +4,7 @@ import numpy as np
 
 from context import linear_hf
 from linear_hf.causality import compute_independence
+from linear_hf.causality import iscause_anm
 
 def test_independent_uniform_variables_are_independent():
     x = np.random.rand(1000, 1)
@@ -34,4 +35,7 @@ def test_dependent_vars_are_dependent_multiplicative_noise():
 
 def test_additive_noise_model():
     x = np.random.rand(1000, 1)
-    y = 3 * x + np.random.rand(1000, 1) * 1e-4
+    y = np.sin(10*x) + np.random.rand(1000, 1)
+    xy_pval, yx_pval = iscause_anm(x, y)
+    assert xy_pval > 1e-2
+    assert yx_pval < 1e-2
