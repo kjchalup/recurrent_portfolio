@@ -115,7 +115,7 @@ def supply_hypers():
 
 if __name__ == '__main__':
     HYPER_RESULTS = []
-    for run in range(10):
+    for run in range(20):
         # Get hyperparameters.
         SETTINGS = supply_hypers()
 
@@ -134,14 +134,20 @@ if __name__ == '__main__':
 
         # Run the strategy.
         import quantiacsToolbox
-        RESULTS = quantiacsToolbox.runts(__file__)
+        RESULTS = quantiacsToolbox.runts(__file__, plotEquity=False)
 
         # Show the results.
         RESULTS['settings']['nn'] = None
-        CHOICES['n_time'] = None
         print([str(hyper) +': ' + str(SETTINGS[hyper])
                for hyper in SETTINGS and CHOICES])
+        print(['n_time: ' + str(SETTINGS['n_time'])])
         print(RESULTS['stats'])
+
+        # Reduce the size of the results files.
+        RESULTS['fundDate'] = None
+        RESULTS['marketEquity'] = None
+        RESULTS['returns'] = None
+        RESULTS['marketExposure'] = None
         HYPER_RESULTS.append(RESULTS)
 
     # Save the resutls
