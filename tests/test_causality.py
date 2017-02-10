@@ -10,7 +10,6 @@ def test_independent_uniform_variables_are_independent():
     x = np.random.rand(1000, 1)
     y = np.random.rand(1000, 1)
     pval = compute_independence(x, y)
-    print(pval)
     assert compute_independence(x, y) > 1e-2
 
 def test_independent_normal_and_uniform_are_independent():
