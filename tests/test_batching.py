@@ -6,14 +6,10 @@ import sys
 import os
 import pandas as pd
 import numpy as np
-import inspect 
-#Include scripts from parent directory
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(currentdir)
-sys.path.insert(0,parentdir)
-from preprocessing import non_nan_markets
-import batching_splitting
-from batching_splitting import split_validation_training
+
+from context import linear_hf
+from linear_hf.preprocessing import non_nan_markets
+from linear_hf import batching_splitting
 
 valid_period = 2
 horizon = 165
@@ -27,7 +23,6 @@ endInSample='20141231'
 names_with_no_nans = non_nan_markets(start_date = beginInSample, end_date = endInSample, postipo = 100, lookback = 0)
     
 names_with_no_nans=names_with_no_nans[0:7]
-
 dataDict = loadData(marketList=names_with_no_nans, 
                 beginInSample=beginInSample,    
                 endInSample=endInSample, 
@@ -46,7 +41,7 @@ def test_training_validation_separation(all_data=all_data,
                                         batch_size=batch_size, 
                                         randseed=randseed):
     count = 0
-    all_val, market_val, all_batch, market_batch = split_validation_training(
+    all_val, market_val, all_batch, market_batch = batching_splitting.split_validation_training(
                                                 all_data=all_data,
                                                 market_data=market_data, 
                                                 valid_period=valid_period, 
@@ -74,7 +69,7 @@ def test_market_data_indexing(all_data=all_data,
                     batch_id=batch_id, 
                     batch_size=batch_size, 
                     randseed=randseed):
-    all_val, market_val, all_batch, market_batch = split_validation_training(all_data=all_data,
+    all_val, market_val, all_batch, market_batch = batching_splitting.split_validation_training(all_data=all_data,
                                         market_data=market_data, 
                                         valid_period=valid_period, 
                                         horizon=horizon,
@@ -97,7 +92,7 @@ def test_zero_nan_in_any_batch(all_data=all_data,
                     batch_id=batch_id, 
                     batch_size=batch_size, 
                     randseed=randseed):
-    all_val, market_val, all_batch, market_batch = split_validation_training(all_data=all_data,
+    all_val, market_val, all_batch, market_batch = batching_splitting.split_validation_training(all_data=all_data,
                                         market_data=market_data, 
                                         valid_period=valid_period, 
                                         horizon=horizon,
@@ -127,7 +122,7 @@ def test_batch_coverage(all_data=all_data,
                     batch_id=batch_id, 
                     batch_size=batch_size, 
                     randseed=randseed):
-    all_val, market_val, all_batch, market_batch = split_validation_training(all_data=all_data,
+    all_val, market_val, all_batch, market_batch = batching_splitting.split_validation_training(all_data=all_data,
                                         market_data=market_data, 
                                         valid_period=valid_period, 
                                         horizon=horizon,
@@ -144,7 +139,7 @@ def test_batch_coverage(all_data=all_data,
     flag3 = False
     flag4 = False
     for z in range(int(np.floor((all_data.shape[0]-horizon-2*n_for_sharpe-valid_period+1)/float(batch_size)))):
-        all_val, market_val, all_batch, market_batch = split_validation_training(all_data=all_data,
+        all_val, market_val, all_batch, market_batch = batching_splitting.split_validation_training(all_data=all_data,
                                         market_data=market_data, 
                                         valid_period=valid_period, 
                                         horizon=horizon,

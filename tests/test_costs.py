@@ -8,14 +8,11 @@ import numpy as np
 import inspect
 
 #Include scripts from parent directory
-currentdir = os.path.dirname(
-    os.path.abspath(inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(currentdir)
-sys.path.insert(0,parentdir)
-from preprocessing import non_nan_markets
-from quantiacs_code import quantiacs_calculation
-from costs import compute_numpy_sharpe
-from costs import compute_sharpe_tf
+from context import linear_hf
+from linear_hf.preprocessing import non_nan_markets
+from linear_hf.quantiacs_code import quantiacs_calculation
+from linear_hf.costs import compute_numpy_sharpe
+from linear_hf.costs import compute_sharpe_tf
 
 beginInSample='20090101'
 endInSample='20141231'

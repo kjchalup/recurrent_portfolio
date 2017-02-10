@@ -6,7 +6,6 @@ import numpy as np
 
 from  datetime import datetime, timedelta
 
-
 def load_nyse_markets(start_date, end_date, postipo=100, lookback=0):
     """ Loads nyse markets which start before start_date-postipo, and end after start_date.
 

@@ -1,19 +1,16 @@
 import pytest
 import quantiacsToolbox
 from quantiacsToolbox import loadData
-#from quantiacsToolbox import fillnans
 import sys
 import os
 import pandas as pd
 import numpy as np
-import inspect 
-#Include scripts from parent directory
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(currentdir)
-sys.path.insert(0,parentdir)
-from preprocessing import non_nan_markets
-from preprocessing import preprocess
-from preprocessing import nan_markets
+
+from context import linear_hf
+from linear_hf.preprocessing import non_nan_markets
+from linear_hf.preprocessing import preprocess
+from linear_hf.preprocessing import nan_markets
+
 def fillnans(inArr):
     ''' fills in (column-wise)value gaps with the most recent non-nan value.
 
@@ -55,7 +52,7 @@ def names_with_nans():
                                 end_date=endInSample,
                                 postipo=100,
                                 lookback=1000)
-    names_with_nans = names_with_nans[200:400]
+    names_with_nans = names_with_nans[2001:2200]
     return names_with_nans
 
 
@@ -164,10 +161,9 @@ def test_preprocessing_nonans_nozeros(dataDict_withCASH):
 
     # Check before
     assert (abs(SLIPPAGE)>0.7).sum()==0
-    assert (abs(gaps)>4).sum()==0
-    import pdb;pdb.set_trace()
-    assert (abs(sessionReturn)>4).sum()==0
-    assert (abs(gaps)+abs(sessionReturn)>4).sum()==0
+    assert (abs(gaps)>6).sum()==0
+    assert (abs(sessionReturn)>6).sum()==0
+    assert (abs(gaps)+abs(sessionReturn)>10).sum()==0
     assert (abs(gaps)==np.inf).sum()==0
     assert (abs(sessionReturn)==np.inf).sum()==0
     assert (abs(SLIPPAGE)==np.inf).sum()==0
@@ -190,7 +186,6 @@ def test_preprocessing_nonans_nozeros(dataDict_withCASH):
     dataDict['HIGH'] = filled_prices[:,n_markets*2:n_markets*3]
     dataDict['LOW'] = filled_prices[:,n_markets*3:n_markets*4]
     
-    #import pdb;pdb.set_trace()
     sessionReturnTemp = np.append( np.empty((1,nMarkets))*np.nan,(( dataDict['CLOSE'][1:,:]- dataDict['OPEN'][1:,:]) / dataDict['CLOSE'][0:-1,:] ), axis =0 ).copy()
     sessionReturn=np.nan_to_num( fillnans(sessionReturnTemp) )
     gapsTemp=np.append(np.empty((1,nMarkets))*np.nan, (dataDict['OPEN'][1:,:]- dataDict['CLOSE'][:-1,:].astype(float)) / dataDict['CLOSE'][:-1:],axis=0)
@@ -204,10 +199,9 @@ def test_preprocessing_nonans_nozeros(dataDict_withCASH):
 
     # Check after
     assert (abs(SLIPPAGE)>0.7).sum()==0
-    assert (abs(gaps)>4).sum()==0
-    import pdb;pdb.set_trace()
-    assert (abs(sessionReturn)>4).sum()==0
-    assert (abs(gaps)+abs(sessionReturn)>4).sum()==0
+    assert (abs(gaps)>6).sum()==0
+    assert (abs(sessionReturn)>6).sum()==0
+    assert (abs(gaps)+abs(sessionReturn)>6).sum()==0
     assert (abs(gaps)==np.inf).sum()==0
     assert (abs(sessionReturn)==np.inf).sum()==0
     assert (abs(SLIPPAGE)==np.inf).sum()==0

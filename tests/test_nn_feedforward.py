@@ -2,14 +2,12 @@ import pytest
 import os
 import sys
 import inspect 
-#Include scripts from parent directory
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(currentdir)
-sys.path.insert(0,parentdir)
 
 import numpy as np
 from numpy.testing import assert_array_almost_equal
-import neuralnet
+
+from context import linear_hf
+from linear_hf import neuralnet
 
 @pytest.fixture
 def make_data():
