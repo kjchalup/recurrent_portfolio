@@ -7,6 +7,7 @@ import joblib
 
 import neuralnet
 from preprocessing import non_nan_markets
+from preprocessing import nan_markets
 from batching_splitting import split_validation_training
 
 def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE, 
@@ -107,7 +108,10 @@ def mySettings():
     settings['markets']  = non_nan_markets(settings['beginInSample'], 
                                            settings['endInSample'], 
                                            lookback=settings['lookback'])
-    settings['markets'] = settings['markets'][:20]
+    #settings['markets'] = nan_markets(settings['beginInSample'],
+    #                                  settings['endInSample'],
+    #                                  lookback=settings['lookback'])
+    settings['markets'] = settings['markets'][:200]
     print(settings['markets'])
     return settings
 

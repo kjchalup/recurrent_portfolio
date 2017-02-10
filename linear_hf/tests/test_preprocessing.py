@@ -55,7 +55,7 @@ def names_with_nans():
                                 end_date=endInSample,
                                 postipo=100,
                                 lookback=1000)
-    names_with_nans = names_with_nans[0:100]
+    names_with_nans = names_with_nans[200:400]
     return names_with_nans
 
 
@@ -147,6 +147,32 @@ def test_preprocessing_nonans_nozeros(dataDict_withCASH):
     shares = dataDict['SHARE']
     dividends = dataDict['DIVIDEND']
     totalcaps = dataDict['TOTALCAP']
+    
+    n_markets4 = len(dataDict['markets'])*4
+    n_markets = n_markets4/4
+    nMarkets = n_markets
+    sessionReturnTemp = np.append( np.empty((1,nMarkets))*np.nan,(( dataDict['CLOSE'][1:,:]- dataDict['OPEN'][1:,:]) / dataDict['CLOSE'][0:-1,:] ), axis =0 ).copy()
+    sessionReturn=np.nan_to_num( fillnans(sessionReturnTemp) )
+    gapsTemp=np.append(np.empty((1,nMarkets))*np.nan, (dataDict['OPEN'][1:,:]- dataDict['CLOSE'][:-1,:].astype(float)) / dataDict['CLOSE'][:-1:],axis=0)
+    gaps=np.nan_to_num(fillnans(gapsTemp))
+
+    # check if a default slippage is specified
+    slippage_setting = 0.05
+    slippageTemp = np.append(np.empty((1,nMarkets))*np.nan, ((dataDict['HIGH'][1:,:] - dataDict['LOW'][1:,:]) / dataDict['CLOSE'][:-1,:] ), axis=0) * slippage_setting
+    SLIPPAGE = np.nan_to_num(fillnans(slippageTemp))
+    
+
+    # Check before
+    assert (abs(SLIPPAGE)>0.7).sum()==0
+    assert (abs(gaps)>4).sum()==0
+    import pdb;pdb.set_trace()
+    assert (abs(sessionReturn)>4).sum()==0
+    assert (abs(gaps)+abs(sessionReturn)>4).sum()==0
+    assert (abs(gaps)==np.inf).sum()==0
+    assert (abs(sessionReturn)==np.inf).sum()==0
+    assert (abs(SLIPPAGE)==np.inf).sum()==0
+
+
     filled_prices, all_data, should_retrain = preprocess(markets, opens, closes, 
                                                         highs, lows, vols, dates, 
                                                         close_lasttrade, close_ask, 
@@ -158,4 +184,32 @@ def test_preprocessing_nonans_nozeros(dataDict_withCASH):
     assert (filled_prices==0).sum()==0, "Zeros put into preprocessor!"
     assert (np.isnan(filled_prices)).sum()==0, "NaNs put into preprocess!"
     assert np.mod((filled_prices==filler).sum(),n_markets4)==0, "Filler is only applied to dead stocks!"   
-    # Need to test edge cases now!
+    
+    dataDict['OPEN'] = filled_prices[:,:n_markets]
+    dataDict['CLOSE'] = filled_prices[:,n_markets:2*n_markets]
+    dataDict['HIGH'] = filled_prices[:,n_markets*2:n_markets*3]
+    dataDict['LOW'] = filled_prices[:,n_markets*3:n_markets*4]
+    
+    #import pdb;pdb.set_trace()
+    sessionReturnTemp = np.append( np.empty((1,nMarkets))*np.nan,(( dataDict['CLOSE'][1:,:]- dataDict['OPEN'][1:,:]) / dataDict['CLOSE'][0:-1,:] ), axis =0 ).copy()
+    sessionReturn=np.nan_to_num( fillnans(sessionReturnTemp) )
+    gapsTemp=np.append(np.empty((1,nMarkets))*np.nan, (dataDict['OPEN'][1:,:]- dataDict['CLOSE'][:-1,:].astype(float)) / dataDict['CLOSE'][:-1:],axis=0)
+    gaps=np.nan_to_num(fillnans(gapsTemp))
+
+    # check if a default slippage is specified
+    slippage_setting = 0.05
+    slippageTemp = np.append(np.empty((1,nMarkets))*np.nan, ((dataDict['HIGH'][1:,:] - dataDict['LOW'][1:,:]) / dataDict['CLOSE'][:-1,:] ), axis=0) * slippage_setting
+    SLIPPAGE = np.nan_to_num(fillnans(slippageTemp))
+    
+
+    # Check after
+    assert (abs(SLIPPAGE)>0.7).sum()==0
+    assert (abs(gaps)>4).sum()==0
+    import pdb;pdb.set_trace()
+    assert (abs(sessionReturn)>4).sum()==0
+    assert (abs(gaps)+abs(sessionReturn)>4).sum()==0
+    assert (abs(gaps)==np.inf).sum()==0
+    assert (abs(sessionReturn)==np.inf).sum()==0
+    assert (abs(SLIPPAGE)==np.inf).sum()==0
+
+
