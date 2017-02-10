@@ -8,7 +8,8 @@ import numpy as np
 
 from context import linear_hf
 from linear_hf.preprocessing import non_nan_markets
-
+from linear_hf.preprocessing import preprocess
+from linear_hf.preprocessing import nan_markets
 
 def fillnans(inArr):
     ''' fills in (column-wise)value gaps with the most recent non-nan value.
@@ -46,10 +47,47 @@ def names_with_no_nans():
     return names_with_no_nans
 
 @pytest.fixture
+def names_with_nans():
+    names_with_nans = nan_markets(start_date=beginInSample,
+                                end_date=endInSample,
+                                postipo=100,
+                                lookback=1000)
+    names_with_nans = names_with_nans[0:100]
+    return names_with_nans
+
+
+@pytest.fixture
 def dataDict(names_with_no_nans):
     # Return dataDict, change dataToLoad to include more fields of data if necessary
-    dataDict = loadData(marketList = names_with_no_nans, beginInSample = beginInSample, endInSample = endInSample, dataDir = 'tickerData', refresh = False, dataToLoad = set(['DATE','OPEN','CLOSE','HIGH','LOW','VOL','RINFO']))
+    dataDict = loadData(marketList=names_with_no_nans, 
+                        beginInSample=beginInSample, 
+                        endInSample=endInSample, 
+                        dataDir='tickerData', 
+                        refresh=False, 
+                        dataToLoad=set(['DATE','OPEN','CLOSE','HIGH','LOW'
+                                    ,'VOL','RINFO', 'CLOSE_LASTTRADE',
+                                    'CLOSE_ASK', 'CLOSE_BID', 'RETURN',
+                                    'SHARE', 'DIVIDEND', 'TOTALCAP']))
+    #import pdb;pdb.set_trace()
     return dataDict
+
+
+@pytest.fixture
+def dataDict_withCASH(names_with_nans):
+    names_with_nans = names_with_nans + ['CASH']
+    # Return dataDict, change dataToLoad to include more fields of data if necessary
+    dataDict_withCASH = loadData(marketList=names_with_nans, 
+                        beginInSample=beginInSample, 
+                        endInSample=endInSample, 
+                        dataDir='tickerData', 
+                        refresh=False, 
+                        dataToLoad=set(['DATE','OPEN','CLOSE','HIGH','LOW'
+                                    ,'VOL','RINFO', 'CLOSE_LASTTRADE',
+                                    'CLOSE_ASK', 'CLOSE_BID', 'RETURN',
+                                    'SHARE', 'DIVIDEND', 'TOTALCAP']))
+    dataDict_withCASH['markets']=names_with_nans
+    #import pdb;pdb.set_trace()
+    return dataDict_withCASH
 
 @pytest.fixture
 def loaded_data(dataDict): 
@@ -84,3 +122,37 @@ def test_no_crazy_returns(dataDict):
     assert (abs(gaps)==np.inf).sum()==0
     assert (abs(sessionReturn)==np.inf).sum()==0
     assert (abs(SLIPPAGE)==np.inf).sum()==0
+
+
+def test_preprocessing_nonans_nozeros(dataDict_withCASH):
+    dataDict = dataDict_withCASH
+    # Pass the data to preprocessing
+    filler = 0.123456789
+    postipo = 100
+    #import pdb;pdb.set_trace()
+    markets = dataDict['markets']
+    opens = dataDict['OPEN']
+    closes = dataDict['CLOSE']
+    highs = dataDict['HIGH']
+    lows = dataDict['LOW']
+    vols = dataDict['VOL']
+    dates = dataDict['DATE']
+    close_lasttrade = dataDict['CLOSE_LASTTRADE']
+    close_ask = dataDict['CLOSE_ASK']
+    close_bid = dataDict['CLOSE_BID']
+    returns = dataDict['RETURN']
+    shares = dataDict['SHARE']
+    dividends = dataDict['DIVIDEND']
+    totalcaps = dataDict['TOTALCAP']
+    filled_prices, all_data, should_retrain = preprocess(markets, opens, closes, 
+                                                        highs, lows, vols, dates, 
+                                                        close_lasttrade, close_ask, 
+                                                        close_bid, returns, 
+                                                        shares, dividends, totalcaps, 
+                                                        postipo=postipo, filler=filler)
+    
+    n_markets4 = filled_prices.shape[1]
+    assert (filled_prices==0).sum()==0, "Zeros put into preprocessor!"
+    assert (np.isnan(filled_prices)).sum()==0, "NaNs put into preprocess!"
+    assert np.mod((filled_prices==filler).sum(),n_markets4)==0, "Filler is only applied to dead stocks!"   
+    # Need to test edge cases now!

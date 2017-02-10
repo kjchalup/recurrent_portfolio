@@ -15,8 +15,8 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
     all_data = StandardScaler().fit_transform(OPEN)#np.hstack([OPEN, VOL, DIVIDEND, TOTALCAP]))
     print('Iter {} [{}], equity {}.'.format(settings['iter'], 
                                             DATE[-1],
-                                            fundEquity[-1]))
-
+                                            fundEquity[-2]))
+    #import pdb;pdb.set_trace()
     if settings['iter'] == 0:
         # Define a new neural net.
         settings['nn'] = neuralnet.Linear(n_ftrs=all_data.shape[1], 
@@ -93,10 +93,12 @@ def mySettings():
     settings['lr'] = 1e-3 # Learning rate.
     settings['dont_trade'] = False # If on, don't trade.
     settings['iter'] = 0
-    settings['lookback'] = 2000
+    settings['lookback'] = 1000
     settings['budget'] = 10**6
     settings['slippage'] = 0.05
-    settings['beginInSample'] = '20050102'
+    #settings['beginInSample'] = '20090102'
+    #settings['endInSample'] = '20131231'
+    settings['beginInSample'] = '20090102'
     settings['endInSample'] = '20140101'
 
     # Only keep markets that have not died out by beginInSample.

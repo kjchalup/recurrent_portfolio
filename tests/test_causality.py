@@ -31,3 +31,7 @@ def test_dependent_vars_are_dependent_multiplicative_noise():
     x = np.random.randn(10000, 1)
     y = x * np.random.rand(10000, 1) * 1e-4
     assert compute_independence(x, y) < 1e-2
+
+def test_additive_noise_model():
+    x = np.random.rand(1000, 1)
+    y = 3 * x + np.random.rand(1000, 1) * 1e-4
