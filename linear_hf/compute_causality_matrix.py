@@ -9,10 +9,8 @@ from causality import causal_matrix
 from preprocessing import non_nan_markets
 from preprocessing import nan_markets
 
-
 def myTradingSystem(OPEN, exposure, equity, settings, fundEquity):
-    cm = causal_matrix(OPEN, verbose=True, method='nearest', n_neighbors=30)
-    import pdb; pdb.set_trace()
+    cm = causal_matrix(OPEN, verbose=False, method='nearest', n_neighbors=30, nruns=30)
     joblib.dump([settings, cm], 'saved_data/causality_matrix.pkl')
     return None
 
