@@ -19,6 +19,7 @@ CHOICES = {'n_time': range(20, 253), # Timesteps in one datapoint.
            'allow_shorting': [True, False],}
 N_SHARPE_MIN = 10               # Minimum value for n_sharpe.
 N_SHARPE_GAP = 10               # n_sharpe's max is this much less than n_time.
+N_RUNS = 2
 
 def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE, 
                     CLOSE_ASK, CLOSE_BID, RETURN, SHARE, DIVIDEND, TOTALCAP,
@@ -102,6 +103,9 @@ def mySettings():
 def supply_hypers():
     """Supply hyperparameters to optimize the neural net."""
 
+    np.random.seed()
+    random.seed()
+
     # Get random choices from the ranges (inclusive).
     settings = {}
     for setting in CHOICES:
@@ -115,7 +119,7 @@ def supply_hypers():
 
 if __name__ == '__main__':
     HYPER_RESULTS = []
-    for run in range(20):
+    for run in range(N_RUNS):
         # Get hyperparameters.
         SETTINGS = supply_hypers()
 
@@ -144,10 +148,10 @@ if __name__ == '__main__':
         print(RESULTS['stats'])
 
         # Reduce the size of the results files.
-        RESULTS['fundDate'] = None
-        RESULTS['marketEquity'] = None
-        RESULTS['returns'] = None
-        RESULTS['marketExposure'] = None
+        # RESULTS['fundDate'] = None
+        # RESULTS['marketEquity'] = None
+        # RESULTS['returns'] = None
+        # RESULTS['marketExposure'] = None
         HYPER_RESULTS.append(RESULTS)
 
     # Save the resutls
