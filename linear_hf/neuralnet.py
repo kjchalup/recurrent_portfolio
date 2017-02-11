@@ -23,7 +23,6 @@ def define_nn(batch_in_tf, n_sharpe,
       positions (n_batch, n_sharpe, n_markets): Positions for each market
     """
     horizon = n_time - n_sharpe + 1
-    
     def apply_net(x):
         out = tf.add(tf.matmul(x, W), b)
         if allow_shorting:
@@ -50,7 +49,8 @@ class Linear(object):
     """
     
     def __init__(self, n_ftrs, n_markets, n_time, 
-                 n_sharpe, W_init=None, lbd=0.001, seed=None,
+                 n_sharpe, W_init=None, lbd=0.001, 
+                 causality_matrix=None, n_csl_ftrs=None, seed=None,
                  allow_shorting=True):
         """ Initialize the regressor.
         
@@ -60,9 +60,13 @@ class Linear(object):
           n_time (float): Timesteps in batches.
           n_sharpe (float): Use this many timesteps to predict each
             position vector.
-          W_init (n_markets, n_markets*(n_time-n_sharpe+1)): Weight 
+          W_init (n_ftrs * (n_time-n_sharpe+1), n_markets): Weight 
             initalization.
           lbd (float): l1 penalty coefficient.
+          causality_matrix (n_ftrs, n_markets): A matrix where the [ij]
+            entry is positive if market corresponding to feature i seems 
+            to cause changes in market j. Used to decrease the L1 penalty 
+            on causally meaningful weights.
           seed (int): Graph-level random seed, for testing purposes.
           allow_shorting (bool): If True, allow negative positions.
         """
@@ -92,10 +96,12 @@ class Linear(object):
         if W_init is None:
             W_init = tf.truncated_normal(
                 [n_ftrs * self.horizon, n_markets], 
-                stddev=1./(n_markets * 4 * self.horizon))
+                stddev=1. / (n_ftrs * self.horizon))
         self.W = tf.Variable(W_init, name='nn_weights')
         self.b = tf.Variable(tf.zeros(n_markets), 
                              name='nn_biases')
+        # Causality matrix: small for the causal entries. Clone it across 
+        # the timesteps (so each market is either causal or not, at all timesteps).
 
         # Define the position outputs on a batch of timeseries.
         self.positions_tf = define_nn(self.batch_in_tf, 
@@ -117,16 +123,20 @@ class Linear(object):
             self.prediction_tf = prediction_tf / tf.reduce_sum(
                 prediction_tf)
 
-        # Define the L1 penalty.
-        self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(self.W))
+        # Define the L1 penalty, taking causality into account.
+        if causality_matrix is None:
+            self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(self.W))
+        else:
+            self.causality_matrix = 1 - np.tile(causality_matrix, [self.horizon, 1])
+            self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(
+                self.W * self.causality_matrix))
 
         # Define the unnormalized loss function.
         self.loss_tf = -sharpe_tf(self.positions_tf, self.batch_out_tf, 
-                                 n_sharpe, n_markets)
+                                 n_sharpe, n_markets) + self.l1_penalty_tf
         # Define the optimizer.
         self.train_op_tf = tf.train.AdamOptimizer(
-            learning_rate=self.lr_tf).minimize(
-            self.loss_tf + self.l1_penalty_tf)
+            learning_rate=self.lr_tf).minimize(self.loss_tf)
 
         # Create a Tf session and initialize the variables.
         self.sess = tf.Session()
@@ -135,6 +145,9 @@ class Linear(object):
 
     def restart_variables(self):
         self.sess.run(self.init_op)
+        
+    def get_weights(self):
+        return self.sess.run(self.W)
 
     def _positions_np(self, batch_in):
         """ Predict a portfolio for a training batch.
