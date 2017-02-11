@@ -58,10 +58,9 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
     
     # Calculate Sharpe between training intervals
     n_days_back = np.mod(settings['iter'],settings['n_sharpe'])
-    if n_days_back > 2:
-        import pdb;pdb.set_trace()
-        recent_sharpe=compute_numpy_sharpe(positions=exposure[-n_days_back:,:],
-                             prices=market_data[-n_days_back+1:,:],
+    if n_days_back > 3:
+        recent_sharpe=compute_numpy_sharpe(positions=exposure[None,-n_days_back:-1,:],
+                             prices=market_data[None,-n_days_back+1:,:],
                              slippage=0.05,
                              n_ignore=0)
     else:
@@ -70,7 +69,11 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
     print('Iter {} [{}], equity {}.'.format(settings['iter'], 
                                             DATE[-1],
                                             fundEquity[-1]))
-    #import pdb;pdb.set_trace()
+    if settings['iter']>2:
+        print('[Recent validation sharpe] Recent sharpe: [{}] {}'.format(
+                                            settings['val_sharpe'],
+                                            recent_sharpe))
+    
     if settings['iter'] == 0:
         print 'Initializing net...\n'
         # Define a new neural net.
@@ -116,6 +119,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
                 val_loss = settings['nn'].loss_np(all_val, market_val)
                 val_l1_loss = settings['nn'].l1_penalty_np()
                 val_sharpe = -(val_loss - val_l1_loss)
+                settings['val_sharpe'] = val_sharpe
                 #import pdb;pdb.set_trace()
                 if val_sharpe > 1:
                     settings['dont_trade'] = False
