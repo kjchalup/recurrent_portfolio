@@ -52,7 +52,8 @@ def names_with_nans():
                                 end_date=endInSample,
                                 postipo=100,
                                 lookback=1000)
-    names_with_nans = names_with_nans[2000:2200]
+
+    names_with_nans = names_with_nans[800:900]
     return names_with_nans
 
 
