@@ -132,7 +132,7 @@ def mySettings():
     settings['slippage'] = 0.05
     #settings['beginInSample'] = '20090102'
     #settings['endInSample'] = '20131231'
-    settings['beginInSample'] = '20090102'
+    settings['beginInSample'] = '20040101'
     settings['endInSample'] = '20140101'
 
     ''' Pick data types to feed into neural net. If empty, only CLOSE will be used. 

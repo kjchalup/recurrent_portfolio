@@ -79,7 +79,7 @@ def test_gradient_decreases_loss_100steps(make_nn_data):
 
     l1s = []
     for step_id in range(1000):
-        nn.train_step(lr=1e-5, batch_in=batch_in, batch_out=batch_out)
+        nn.train_step(lr=1e-4, batch_in=batch_in, batch_out=batch_out)
         l1s.append(nn.l1_penalty_np())
     nn_l1_after = nn.l1_penalty_np()
 
@@ -88,5 +88,6 @@ def test_gradient_decreases_loss_100steps(make_nn_data):
     W = W.reshape((horizon, n_ftrs, n_markets))
     w_csl = np.abs(W[:, 0, 1]).mean()
     w_noncsl = np.abs(W[:, 1, 0]).mean()
+    import pdb; pdb.set_trace()
     assert nn_l1_before > nn_l1_after
     assert w_csl > w_noncsl
