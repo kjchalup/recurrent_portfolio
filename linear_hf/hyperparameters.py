@@ -21,7 +21,7 @@ N_SHARPE_MIN = 10               # Minimum value for n_sharpe.
 N_SHARPE_GAP = 10               # n_sharpe's max is this much less than n_time.
 N_RUNS = 2
 
-
+import pdb; pdb.set_trace()
 def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, settings, fundEquity): # pylint: disable=invalid-name,too-many-arguments
     """Neural net trading system."""
     all_data = np.array(OPEN)

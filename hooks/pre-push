@@ -41,13 +41,31 @@ if [ $branch_status != "=" ]; then
     exit 1
 fi
 
-# Run the tests.
-if [ $current = $protected ]; then
-    python -m pytest
-    RESULT=$?
-    if [ $RESULT -ne 0 ]; then
-	echo "Failed tests."
-	exit 1
-    fi
+# Check for pdbs.
+has_import=false
+git diff --cached --no-renames --name-status --diff-filter=AM |
+  while read st file; do
+    case "$file" in
+    *.py)
+        if git show ":$file" |
+          grep -E "^[^#]*\bimport[[:space:]]+pdb\b"; then
+            echo "$file: has import pdb"
+            exit 1
+        fi;;
+    esac
+done || has_import=true
+
+if $has_import; then
+    exit 1
 fi
-exit 0
+
+# # Run the tests.
+# if [ $current = $protected ]; then
+#     python -m pytest
+#     RESULT=$?
+#     if [ $RESULT -ne 0 ]; then
+# 	echo "Failed tests."
+# 	exit 1
+#     fi
+# fi
+# exit 0
