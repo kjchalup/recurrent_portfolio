@@ -7,13 +7,14 @@ import numpy as np
 from  datetime import datetime, timedelta
 
 def load_nyse_markets(start_date, end_date, postipo=100, lookback=0):
-    """ Loads nyse markets which start before start_date-postipo, and end after start_date.
+    """ Loads nyse markets which start before start_date-postipo-lookback, and 
+        end after start_date-lookback.
 
     Args:
         start_date: date of starting to consider data
         end_date: not used
         postipo: number of days stock befor start_date the stock must start to be considered.
-        lookback: not used
+        lookback: start_date - lookback is the actual date used for start_date
 
     """
 
@@ -39,7 +40,8 @@ def load_nyse_markets(start_date, end_date, postipo=100, lookback=0):
 
 
 def non_nan_markets(start_date, end_date, postipo=0, lookback=0):
-    """ Stock names with no nans
+    """ Loads all stocks with zero nans anywhere which begin before
+        start_date-lookback-postipo and end after end_date.
 
     Args:
         start_date: start date for which stocks must begin by, adjusted by postipo
@@ -76,13 +78,16 @@ def non_nan_markets(start_date, end_date, postipo=0, lookback=0):
     return [symbol.split('/')[1][:-4] for symbol in alives] 
 
 def nan_markets(start_date, end_date, postipo=0, lookback=0):
-    """ Stock names with NaNs somewhere in them!
+    """ Loads all stocks with nans anywhere which begin before
+        start_date-lookback-postipo and end after start_date-lookback.
+
+""
 
     Args:
         start_date: start date for which stocks must begin by, adjusted by postipo
-        end_date: stocks must live until this date
+        end_date: not used
         postipo: number of days before start_date a stock must start by.
-        lookback: not used.
+        lookback: number of days before start_date a stock must start by.
 
     Returns:
         Names of stocks which fit the above criteria
@@ -105,7 +110,7 @@ def nan_markets(start_date, end_date, postipo=0, lookback=0):
         # and that are still alive on that day.
         #import pdb;pdb.set_trace()
         if (int(f[1].split(',')[0]) < int(start_date_minuspostipo) and 
-            int(f[-1].split(',')[0]) >= int(end_date)):
+            int(f[-1].split(',')[0]) >= int(start_date)):
            
             # Some data files have 99.0 as NaN in close price!
             if len([s for s in f if 'NaN' in s]) > 0 and len([s for s in f if 'NaN,99' in s]) == 0:

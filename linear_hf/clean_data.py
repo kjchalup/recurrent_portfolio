@@ -6,6 +6,14 @@ import numpy as np
 from datetime import datetime, timedelta
 import fileinput
 
+""" Clean data of 'NaN,NaN,NaN,99' for open, high, low, close data.
+
+    Replaces strings of 'NaN,NaN,NaN,99' to 'NaN,NaN,NaN,NaN'.
+"""
+    
+
+
+
 all_txt = glob.glob('tickerData/*.txt')
 questionable_files = []
 for fname in all_txt:
