@@ -41,7 +41,9 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
         data = []
         for j in settings['data_types']:
             data.append(all_data[:,n_markets*(j):n_markets*(j+1)])
-    
+    # Append x_date, y_date
+    data.append(all_data[:,-2],all_data[:,-1])
+
     # Stacks chosen data back into correct shape!
     all_data = np.hstack(data)
     
