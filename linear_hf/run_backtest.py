@@ -12,11 +12,6 @@ from batching_splitting import split_validation_training
 
 def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE, 
     CLOSE_ASK, CLOSE_BID, RETURN, SHARE, DIVIDEND, TOTALCAP, exposure, equity, settings, fundEquity):
-    import matplotlib.pyplot as plt
-    for delay_id, delay in enumerate([1, 2, 3, 10, 20, 50]):
-        plt.subplot(2,3,delay_id+1)
-        plt.plot(OPEN[delay:, 0], OPEN[:-delay, 10], 'k.')
-    plt.show()
     market_data = np.hstack([OPEN, CLOSE, HIGH, LOW])
     all_data = StandardScaler().fit_transform(OPEN)#np.hstack([OPEN, VOL, DIVIDEND, TOTALCAP]))
     print('Iter {} [{}], equity {}.'.format(settings['iter'], 

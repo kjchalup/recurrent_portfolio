@@ -79,5 +79,3 @@ def test_nn_positions(make_data):
     nn = neuralnet.Linear(n_ftrs, n_markets, n_time, n_sharpe, W_init)
     pos = nn._positions_np(batch_in)
     assert pos.shape == (n_batch, n_sharpe, n_markets)
-    
-    
