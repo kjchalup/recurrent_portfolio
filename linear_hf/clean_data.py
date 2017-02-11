@@ -28,9 +28,3 @@ for fname in all_txt:
         filedata = filedata.replace('NaN,NaN,NaN,99', 'NaN,NaN,NaN,NaN')
         with open(fname, 'w') as file:
             file.write(filedata)
-
-        import pdb;pdb.set_trace()
-    
-   # Write the file out again
-    
-   
