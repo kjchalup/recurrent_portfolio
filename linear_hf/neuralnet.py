@@ -86,7 +86,7 @@ class Linear(object):
             tf.float32, shape=[None, n_sharpe, n_markets * 4],
             name='output_batch')
         self.test_in_tf = tf.placeholder(
-            tf.float32, shape=[n_time-n_sharpe+1, n_ftrs], 
+            tf.float32, shape=[self.horizon, n_ftrs], 
             name='single_datapoint')
 
         # Neural net training-related placeholders.
@@ -101,6 +101,7 @@ class Linear(object):
         self.W = tf.Variable(W_init, name='nn_weights')
         self.b = tf.Variable(tf.zeros(n_markets), 
                              name='nn_biases')
+
         # Causality matrix: small for the causal entries. Clone it across 
         # the timesteps (so each market is either causal or not, at all timesteps).
 
@@ -141,6 +142,8 @@ class Linear(object):
         self.train_op_tf = tf.train.AdamOptimizer(
             learning_rate=self.lr_tf).minimize(self.loss_tf)
 
+        # Define the saver that will serialize the weights/biases.
+        self.saver = tf.train.Saver(max_to_keep=1)
         # Create a Tf session and initialize the variables.
         self.sess = tf.Session()
         self.init_op = tf.global_variables_initializer()
@@ -203,6 +206,12 @@ class Linear(object):
                       {self.batch_in_tf: batch_in,
                        self.batch_out_tf: batch_out,
                        self.lr_tf: lr})
+
+    def save(self, fname='saved_data/model'):
+        self.save_path = self.saver.save(self.sess, fname)
+
+    def load(self):
+        self.saver.restore(self.sess, self.save_path)
     
 
 

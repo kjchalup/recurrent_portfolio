@@ -20,10 +20,9 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
     returns_check(OPEN, CLOSE, HIGH, LOW, DATE, settings['markets'])
 
     market_data, all_data, should_retrain = preprocess(
-                                                        settings['markets'], OPEN, CLOSE, HIGH, LOW,
-                                                        VOL, DATE, CLOSE_LASTTRADE, CLOSE_ASK, 
-                                                        CLOSE_BID, RETURN, SHARE, DIVIDEND, TOTALCAP,
-                                                        postipo=100, filler=0.123456789)
+        settings['markets'], OPEN, CLOSE, HIGH, LOW, VOL, DATE, 
+        CLOSE_LASTTRADE, CLOSE_ASK, CLOSE_BID, RETURN, SHARE, 
+        DIVIDEND, TOTALCAP, postipo=100, filler=0.123456789)
     # Returns check afte preprocessing to make sure nothing crazy happens!
     returns_check(market_data[:,:n_markets],
                     market_data[:,n_markets:n_markets*2],
