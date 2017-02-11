@@ -116,6 +116,8 @@ def mySettings():
     print(settings['markets'])
     return settings
 
+
+
 if __name__ == '__main__':
     import quantiacsToolbox
     results = quantiacsToolbox.runts(__file__)

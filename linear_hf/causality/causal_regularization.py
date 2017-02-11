@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 
 from . import iscause_anm
 
-def causal_matrix(all_data, thr=1e-2):
+def causal_matrix(all_data, thr=1e-2, verbose=False):
     """ Compute the matrix of causal coefficients of the data.
 
     Args:
@@ -19,7 +19,10 @@ def causal_matrix(all_data, thr=1e-2):
     """
     n_data = all_data.shape[1]
     causal_coeffs = np.zeros((n_data, n_data))
+    iter_id = 0
     for x_id, y_id in itertools.product(range(n_data), repeat=2):
+        if verbose:
+            print('Computing causality {}/{}...'.format(iter_id, n_data**2))
         if x_id == y_id:
             causal_coeffs[x_id, y_id] = 1
         elif x_id < y_id:
@@ -29,4 +32,5 @@ def causal_matrix(all_data, thr=1e-2):
                 causal_coeffs[x_id, y_id] = xy_pval
             elif yx_pval > thr and xy_pval < thr:
                 causal_coeffs[y_id, x_id] = yx_pval
+        iter_id += 1
     return causal_coeffs
