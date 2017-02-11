@@ -18,6 +18,7 @@ def define_nn(batch_in_tf, n_sharpe,
       n_ftrs (float): Number of input features.
       W (n_ftrs * (n_time-n_sharpe+1), n_markets): Weight matrix.
       b (n_markets): Biases.
+      zero_thr (scalar): Set smaller weights to zero.
 
     Returns:
       positions (n_batch, n_sharpe, n_markets): Positions for each market
@@ -127,9 +128,11 @@ class Linear(object):
         if causality_matrix is None:
             self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(self.W))
         else:
-            self.causality_matrix = 1 - np.tile(causality_matrix, [self.horizon, 1])
+            self.causality_matrix = np.tile(causality_matrix, [self.horizon, 1])
+            # self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(
+            #     self.W * (1-self.causality_matrix)))
             self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(
-                self.W * self.causality_matrix))
+                tf.boolean_mask(self.W, self.causality_matrix==0)))
 
         # Define the unnormalized loss function.
         self.loss_tf = -sharpe_tf(self.positions_tf, self.batch_out_tf, 
