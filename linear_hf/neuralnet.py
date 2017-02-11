@@ -102,7 +102,6 @@ class Linear(object):
                              name='nn_biases')
         # Causality matrix: small for the causal entries. Clone it across 
         # the timesteps (so each market is either causal or not, at all timesteps).
-        self.causality_matrix = 1 - np.tile(causality_matrix, [self.horizon, 1])
 
         # Define the position outputs on a batch of timeseries.
         self.positions_tf = define_nn(self.batch_in_tf, 
@@ -125,9 +124,10 @@ class Linear(object):
                 prediction_tf)
 
         # Define the L1 penalty, taking causality into account.
-        if self.causality_matrix is None:
+        if causality_matrix is None:
             self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(self.W))
         else:
+            self.causality_matrix = 1 - np.tile(causality_matrix, [self.horizon, 1])
             self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(
                 self.W * self.causality_matrix))
 
