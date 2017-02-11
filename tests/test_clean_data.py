@@ -19,6 +19,6 @@ def test_clean_files():
             questionable_files.append(fname)
     
     print("This many dirty files: "+str(len(questionable_files)))
-    assert questionable_files is None, "Dirty files found! Run linear_hf/clean_data.py"
+    assert len(questionable_files)==0 , "Dirty files found! Run linear_hf/clean_data.py"
     
 
