@@ -126,11 +126,11 @@ def test_tf_sharpe_using_premade_positions(position=positions_rand, batch_out=ma
 '''
 
 def test_random_init_nn_sharpe():
-    beginInSample='20141001'
+    beginInSample='20141201'
     endInSample='20141231'
     names_with_no_nans = non_nan_markets(start_date=beginInSample, 
                                      end_date=endInSample, postipo=100, lookback=0)
-    names_with_no_nans = names_with_no_nans[:10]
+    names_with_no_nans = names_with_no_nans[:5]
     dataDict = loadData(marketList=names_with_no_nans, 
                     beginInSample=beginInSample, 
                     endInSample=endInSample, 
