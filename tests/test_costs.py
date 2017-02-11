@@ -13,6 +13,8 @@ from linear_hf.preprocessing import non_nan_markets
 from linear_hf.quantiacs_code import quantiacs_calculation
 from linear_hf.costs import compute_numpy_sharpe
 from linear_hf.costs import compute_sharpe_tf
+from linear_hf import neuralnet
+
 
 beginInSample='20090101'
 endInSample='20141231'
@@ -123,17 +125,78 @@ def test_tf_sharpe_using_premade_positions(position=positions_rand, batch_out=ma
     rs_qc = return_qc['returns'].sum(axis=1)
 '''
 
-'''
-def temp_test_nn_random_init():
+def test_random_init_nn_sharpe():
+    beginInSample='20141001'
+    endInSample='20141231'
+    names_with_no_nans = non_nan_markets(start_date=beginInSample, 
+                                     end_date=endInSample, postipo=100, lookback=0)
+    names_with_no_nans = names_with_no_nans[:10]
+    dataDict = loadData(marketList=names_with_no_nans, 
+                    beginInSample=beginInSample, 
+                    endInSample=endInSample, 
+                    dataDir='tickerData', refresh=False, 
+                    dataToLoad=set(['DATE', 'OPEN', 'CLOSE', 'HIGH', 'LOW']))
+    market_data = np.hstack([dataDict['OPEN'], dataDict['CLOSE'], 
+                         dataDict['HIGH'], dataDict['LOW']])
+    all_data = np.hstack([dataDict['OPEN'], dataDict['CLOSE'], 
+                      dataDict['HIGH'], dataDict['LOW']])
+ 
+    settings={'markets':names_with_no_nans,
+                  'lookback': 2,
+                  'slippage': 0.05}
+
+
+    n_timesteps, n_markets = market_data.shape
+    n_markets = n_markets/4
+    positions_all1 = np.ones([n_timesteps, n_markets])/float(n_markets)
+    np.random.seed(0)
+    positions_rand = np.random.rand(n_timesteps, n_markets)-0.5
+
+
     np.random.rand(1)
+    #import pdb;pdb.set_trace()    
     n_timesteps, n_ftrs = market_data.shape
     n_markets = n_ftrs/4
-    n_sharpe = n_timesteps-2
+    n_sharpe = n_timesteps-1
     batch_in = market_data[None,:-1,:]
     batch_out = market_data[None,1:,:]
     n_batch = 1
     n_time = n_timesteps-1
+
+    # Check if everything matches when lambda = 0
+    nn = neuralnet.Linear(n_ftrs, n_markets, n_time, n_sharpe, lbd=0,allow_shorting=False)
+    nn_pos = nn._positions_np(batch_in=batch_in)
+    nn_loss = nn.loss_np(batch_in=batch_in, batch_out=batch_out)
+    nn_l1 = nn.l1_penalty_np()
+    sharpe_nn_0 = -(nn_loss - nn_l1)
+    sharpe_tf_0 = compute_sharpe_tf(batch_in=nn_pos, batch_out=batch_out)
+    sharpe_np_0 = compute_numpy_sharpe(positions=nn_pos, prices=batch_out, slippage=0.05)
     
-    nn = neuralnet.Linear(n_ftrs, n_markets, n_time, n_sharpe, lbd=0)
-    nn_loss_before = nn.los_np(batch_in=batch_in, batch_out = batch_out)
-'''
+    ratio_nn_tf = sharpe_nn_0/float(sharpe_tf_0)
+    ratio_tf_np = sharpe_tf_0/float(sharpe_np_0)
+    ratio_np_nn = sharpe_np_0/float(sharpe_nn_0)
+
+    assert ratio_nn_tf < 1.03 and ratio_nn_tf > 0.97, "Neural net loss doesn't agree with TF Sharpe"
+    assert ratio_tf_np < 1.03 and ratio_tf_np > 0.97, "TF Sharpe doesn't agree with NP Sharpe"
+    assert ratio_np_nn < 1.03 and ratio_tf_np > 0.97, "NP Sharpe doesn't agree with NN Loss"
+
+    # Check if everything matches when lambda = 11
+    nn = neuralnet.Linear(n_ftrs, n_markets, n_time, n_sharpe, lbd=11,allow_shorting=False)
+    nn_pos = nn._positions_np(batch_in=batch_in)
+    nn_loss = nn.loss_np(batch_in=batch_in, batch_out=batch_out)
+    nn_l1 = nn.l1_penalty_np()
+        
+    sharpe_nn = -(nn_loss - nn_l1)
+    sharpe_tf = compute_sharpe_tf(batch_in=nn_pos, batch_out=batch_out)
+    sharpe_np = compute_numpy_sharpe(positions=nn_pos, prices=batch_out, slippage=0.05)
+
+ 
+    ratio_nn_tf = sharpe_nn/float(sharpe_tf)
+    ratio_tf_np = sharpe_tf/float(sharpe_np)
+    ratio_np_nn = sharpe_np/float(sharpe_nn)
+
+    assert ratio_nn_tf < 1.03 and ratio_nn_tf > 0.97, "Neural net loss doesn't agree with TF Sharpe"
+    assert ratio_tf_np < 1.03 and ratio_tf_np > 0.97, "TF Sharpe doesn't agree with NP Sharpe"
+    assert ratio_np_nn < 1.03 and ratio_tf_np > 0.97, "NP Sharpe doesn't agree with NN Loss"
+
+
