@@ -5,10 +5,14 @@ from sklearn.preprocessing import StandardScaler
 import numpy as np
 import joblib
 
-from .causality import causal_matrix
+from causality import causal_matrix
+from preprocessing import non_nan_markets
+from preprocessing import nan_markets
+
 
 def myTradingSystem(OPEN, exposure, equity, settings, fundEquity):
-    cm = causal_matrix(OPEN)
+    cm = causal_matrix(OPEN, verbose=True, method='nearest', n_neighbors=30)
+    import pdb; pdb.set_trace()
     joblib.dump([settings, cm], 'saved_data/causality_matrix.pkl')
     return None
 

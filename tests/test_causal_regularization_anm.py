@@ -40,7 +40,7 @@ def make_causal_data():
     return np.hstack([xs, ys])
 
 def test_causal_matrix(make_causal_data):
-    cm = causal_matrix(make_causal_data)
+    cm = causal_matrix(make_causal_data, method='nearest', n_neighbors=30, ind_method='hsic')
     should_be_causal = np.array([cm[0, 4], cm[1, 5], cm[2, 6], cm[3, 7],
                                  cm[0,0], cm[5,5], cm[3,3]]) 
     assert (should_be_causal < 1e-2).sum() == 0, 'Some of the causal relationships were not detected.'
