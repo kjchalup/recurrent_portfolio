@@ -8,17 +8,49 @@ import joblib
 import neuralnet
 from preprocessing import non_nan_markets
 from preprocessing import nan_markets
+from preprocessing import returns_check
+from preprocessing import preprocess
 from batching_splitting import split_validation_training
 
 def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE, 
     CLOSE_ASK, CLOSE_BID, RETURN, SHARE, DIVIDEND, TOTALCAP, exposure, equity, settings, fundEquity):
-    market_data = np.hstack([OPEN, CLOSE, HIGH, LOW])
-    all_data = StandardScaler().fit_transform(OPEN)#np.hstack([OPEN, VOL, DIVIDEND, TOTALCAP]))
+    
+    n_markets=len(settings['markets'])
+    # Returns check to make sure nothing crazy happens!
+    returns_check(OPEN, CLOSE, HIGH, LOW, DATE, settings['markets'])
+
+    market_data, all_data, should_retrain = preprocess(
+                                                        settings['markets'], OPEN, CLOSE, HIGH, LOW,
+                                                        VOL, DATE, CLOSE_LASTTRADE, CLOSE_ASK, 
+                                                        CLOSE_BID, RETURN, SHARE, DIVIDEND, TOTALCAP,
+                                                        postipo=100, filler=0.123456789)
+    # Returns check afte preprocessing to make sure nothing crazy happens!
+    returns_check(market_data[:,:n_markets],
+                    market_data[:,n_markets:n_markets*2],
+                    market_data[:,n_markets*2:n_markets*3],
+                    market_data[:,n_markets*3:n_markets*4],
+                    DATE, settings['markets'])
+    # Run backtester without preprocessing
+    #market_data = np.hstack([OPEN, CLOSE, HIGH, LOW])
+    #all_data = StandardScaler().fit_transform(OPEN)#np.hstack([OPEN, VOL, DIVIDEND, TOTALCAP]))
+    
+    # Run backtester with preprocessing
+    if settings['data_types'] is None:
+        all_data = Standardscaler().fit_transform(all_data[:,:n_markets])
+    else:
+        data = []
+        for j in settings['data_types']:
+            data.append(all_data[:,n_markets*(j):n_markets*(j+1)])
+    
+    # Stacks chosen data back into correct shape!
+    all_data = np.hstack(data)
+    
     print('Iter {} [{}], equity {}.'.format(settings['iter'], 
                                             DATE[-1],
                                             fundEquity[-2]))
     #import pdb;pdb.set_trace()
     if settings['iter'] == 0:
+        print 'Initializing net...\n'
         # Define a new neural net.
         settings['nn'] = neuralnet.Linear(n_ftrs=all_data.shape[1], 
                                           n_markets=OPEN.shape[1],
@@ -26,7 +58,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
                                           n_sharpe=settings['n_sharpe'],
                                           lbd=settings['lbd'],
                                           allow_shorting=False)
-
+        print 'Done with initializing neural net!'
     # Train the neural net on current data.
     if settings['iter'] % settings['n_sharpe'] == 0:
         settings['nn'].restart_variables()
@@ -58,7 +90,6 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
                 loss = settings['nn'].loss_np(all_batch, market_batch)
                 l1_loss = settings['nn'].l1_penalty_np()
                 tr_sharpe += -(loss - l1_loss)
-                print(tr_sharpe)
             if settings['val_period'] > 0:
                 val_loss = settings['nn'].loss_np(all_val, market_val)
                 val_l1_loss = settings['nn'].l1_penalty_np()
@@ -103,6 +134,25 @@ def mySettings():
     settings['beginInSample'] = '20090102'
     settings['endInSample'] = '20140101'
 
+    ''' Pick data types to feed into neural net. If empty, only CLOSE will be used. 
+    Circle dates added automatically if any setting is provided. 
+    0 = OPEN
+    1 = CLOSE
+    2 = HIGH
+    3 = LOW
+    4 = VOL
+    5 = CLOSE_LASTTRADE
+    6 = CLOSE_ASK
+    7 = CLOSE_BID
+    8 = RETURNS
+    9 = SHARES
+    10 = DIVIDENDS
+    11 = TOTALCAPS
+    '''
+    settings['data_types'] = [0,1]
+    settings['data_types'] = np.sort(settings['data_types'])
+    
+    
     # Only keep markets that have not died out by beginInSample.
     np.random.seed(1)
     random.seed(1)
@@ -112,7 +162,7 @@ def mySettings():
     #settings['markets'] = nan_markets(settings['beginInSample'],
     #                                  settings['endInSample'],
     #                                  lookback=settings['lookback'])
-    settings['markets'] = settings['markets'][:100]
+    settings['markets'] = settings['markets'][:10] + ['CASH']
     print(settings['markets'])
     return settings
 

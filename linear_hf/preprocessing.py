@@ -333,6 +333,20 @@ def fillnans(inArr):
     return myArr
 
 def returns_check(OPEN, CLOSE, HIGH, LOW, DATE, markets):
+    """ Quickly checks if any returns are crazy numbers using modified quantiacs code.
+
+    Args:
+        OPEN: open prices (n_timesteps, n_markets)
+        CLOSE: close prices
+        HIGH: high of daily prices
+        LOW: low of daily prices
+        DATE: dates of markets
+        markets: list of markets, often settings['markets']
+
+    Returns:
+        Nothing. If it fails, it will enter you into debugger.
+    """
+
     nMarkets = OPEN.shape[1]
     sessionReturnTemp = np.append( np.empty((1,nMarkets))*np.nan,(( CLOSE[1:,:]- OPEN[1:,:]) / CLOSE[0:-1,:] ), axis =0 ).copy()
     sessionReturn=np.nan_to_num( fillnans(sessionReturnTemp) )
@@ -345,8 +359,8 @@ def returns_check(OPEN, CLOSE, HIGH, LOW, DATE, markets):
     SLIPPAGE = np.nan_to_num(fillnans(slippageTemp))
 
     flag1 = (abs(SLIPPAGE)>0.7).sum()>0
-    flag2 = (abs(gaps)>4).sum()>0
-    flag3 = (abs(sessionReturn)>4).sum()>0
+    flag2 = (abs(gaps)>3).sum()>0
+    flag3 = (abs(sessionReturn)>3).sum()>0
     flag4 =  (abs(gaps)+abs(sessionReturn)>4).sum()>0
     flag5 =  (abs(gaps)==np.inf).sum()>0
     flag6 = (abs(sessionReturn)==np.inf).sum()>0
@@ -356,4 +370,3 @@ def returns_check(OPEN, CLOSE, HIGH, LOW, DATE, markets):
         pi = np.where(sessionReturn>4)
         
         import pdb;pdb.set_trace()
-        names = markets[pi[2]]
