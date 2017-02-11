@@ -43,20 +43,26 @@ fi
 
 # Check for pdbs.
 
-# Get list of commits.
-pdbdiffs=$(echo $commits |\
-		  awk -F'commit' '{for(i=1; i<=NF; i++)print $i}' |\
-		  awk 'NR>2 {print $1}' |\
-		  # Diff the commits in git.
-		  xargs git diff |\
-		  # Find pdbs in file changes.
-		  grep + | grep 'import pdb')
+# Get list of commits with import pdb added.
+pdbdiffs=$(git diff origin/master..HEAD -- '*.py' | grep + | grep 'import pdb')
 
 # If pdbdiffs is not empty, exit.
 if [ ! -z "$pdbdiffs" ]; then
     echo "Your commits have import pdbs. Please remove them."
     exit 1
 fi
+
+# Modified python files.
+pyfiles=$(git diff origin/master..HEAD --name-only -- '*.py')
+
+# Run pylint on each, generating the score.
+for f in $pyfiles
+do
+    pylint $f | grep 'Your code has been rated at' |\
+	awk -F'at ' '{print $2}' | awk -F'/' '{print $1}' | echo
+done
+
+# Get the score for each file
 
 # # Run the tests.
 # if [ $current = $protected ]; then

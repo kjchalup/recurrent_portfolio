@@ -1,4 +1,5 @@
 import itertools
+from joblib import Parallel, delayed
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -6,7 +7,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 from . import iscause_anm
 
-def causal_matrix(all_data, thr=1e-2, verbose=False, method='poly', **kwargs):
+def causal_matrix(all_data, thr=0, verbose=False, method='nearest', **kwargs):
     """ Compute the matrix of causal coefficients of the data.
 
     Args:
@@ -18,7 +19,7 @@ def causal_matrix(all_data, thr=1e-2, verbose=False, method='poly', **kwargs):
 
     Returns:
       causal_coeffs (n_data, n_data): Matrix of such that causal_coeffs[i, j]
-        is the p-value that i causes j if ij_pval > thr and ji_pval < thr. Otherwise, 0.
+        is the p-value that i causes j if ij_pval > thr and ji_pval <= thr. Otherwise, 0.
         In addition, the diagonal entries are all 1 (each variable "causes" itself).
     """
     n_data = all_data.shape[1]
@@ -35,14 +36,14 @@ def causal_matrix(all_data, thr=1e-2, verbose=False, method='poly', **kwargs):
             xy_pval, yx_pval = iscause_anm(all_data[:, x_id:x_id+1], 
                                            all_data[:, y_id:y_id+1], fig=fig,
                                            method=method, **kwargs)
-            if xy_pval > thr and yx_pval < thr:
+            if xy_pval > thr and yx_pval <= thr:
                 causal_coeffs[x_id, y_id] = xy_pval
-            elif yx_pval > thr and xy_pval < thr:
+            elif yx_pval > thr and xy_pval <= thr:
                 causal_coeffs[y_id, x_id] = yx_pval
+            print(('Computed causality {}/{} [xid={}, yid={}]. '
+                   'xy_pval = {:.4g}, yx_pval = {:.4g}').format(
+                iter_id, n_data**2, x_id, y_id, xy_pval, yx_pval))
             if verbose:
-                print(('Computed causality {}/{} [xid={}, yid={}]. '
-                       'xy_pval = {:.4g}, yx_pval = {:.4g}').format(
-                    iter_id, n_data**2, x_id, y_id, xy_pval, yx_pval))
                 pdf.savefig(fig)
                 plt.close()
 
