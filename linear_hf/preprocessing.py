@@ -106,11 +106,12 @@ def nan_markets(start_date, end_date, postipo=0, lookback=0):
         #import pdb;pdb.set_trace()
         if (int(f[1].split(',')[0]) < int(start_date_minuspostipo) and 
             int(f[-1].split(',')[0]) >= int(end_date)):
-            
-            if len([s for s in f if 'NaN' in s]) > 0:
+           
+            # Some data files have 99.0 as NaN in close price!
+            if len([s for s in f if 'NaN' in s]) > 0 and len([s for s in f if 'NaN,99' in s]) == 0:
                 alives.append(fname)
     #import pdb;pdb.set_trace()
-    print ('Found '+str(len(alives))+' stocks with no nans starting after '+start_date_minuspostipo)
+    print ('Found '+str(len(alives))+' stocks with nans starting after '+start_date_minuspostipo)
     return [symbol.split('/')[1][:-4] for symbol in alives] 
 
 
@@ -301,3 +302,53 @@ def circle_dates(dates):
         y_date[ind] = np.sin(frac_of_year*2*np.pi)
         x_date[ind] = np.cos(frac_of_year*2*np.pi)
     return y_date, x_date
+
+def fillnans(inArr):
+    ''' fills in (column-wise)value gaps with the most recent non-nan value.
+
+    fills in value gaps with the most recent non-nan value.
+    Leading nan's remain in place. The gaps are filled in only after the first non-nan entry.
+
+    Args:
+      inArr (list, numpy array)
+
+    Returns:
+      returns an array of the same size as inArr with the nan-values replaced by the most recent non-nan entry.
+    '''
+
+    inArr=inArr.astype(float)
+    nanPos= np.where(np.isnan(inArr))
+    nanRow=nanPos[0]
+    nanCol=nanPos[1]
+    myArr=inArr.copy()
+    for i in range(len(nanRow)):
+        if nanRow[i] >0:
+            myArr[nanRow[i],nanCol[i]]=myArr[nanRow[i]-1,nanCol[i]]
+            
+    return myArr
+
+def returns_check(OPEN, CLOSE, HIGH, LOW, DATE, markets):
+    nMarkets = OPEN.shape[1]
+    sessionReturnTemp = np.append( np.empty((1,nMarkets))*np.nan,(( CLOSE[1:,:]- OPEN[1:,:]) / CLOSE[0:-1,:] ), axis =0 ).copy()
+    sessionReturn=np.nan_to_num( fillnans(sessionReturnTemp) )
+    gapsTemp=np.append(np.empty((1,nMarkets))*np.nan, (OPEN[1:,:]- CLOSE[:-1,:].astype(float)) / CLOSE[:-1:],axis=0)
+    gaps=np.nan_to_num(fillnans(gapsTemp))
+
+    # check if a default slippage is specified
+    slippage_setting = 0.05
+    slippageTemp = np.append(np.empty((1,nMarkets))*np.nan, ((HIGH[1:,:] - LOW[1:,:]) / CLOSE[:-1,:] ), axis=0) * slippage_setting
+    SLIPPAGE = np.nan_to_num(fillnans(slippageTemp))
+
+    flag1 = (abs(SLIPPAGE)>0.7).sum()>0
+    flag2 = (abs(gaps)>4).sum()>0
+    flag3 = (abs(sessionReturn)>4).sum()>0
+    flag4 =  (abs(gaps)+abs(sessionReturn)>4).sum()>0
+    flag5 =  (abs(gaps)==np.inf).sum()>0
+    flag6 = (abs(sessionReturn)==np.inf).sum()>0
+    flag7 = (abs(SLIPPAGE)==np.inf).sum()>0
+
+    if flag1 or flag2 or flag3 or flag4 or flag5 or flag6 or flag7:
+        pi = np.where(sessionReturn>4)
+        
+        import pdb;pdb.set_trace()
+        names = markets[pi[2]]

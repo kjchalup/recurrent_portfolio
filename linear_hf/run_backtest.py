@@ -7,6 +7,7 @@ import joblib
 
 import neuralnet
 from preprocessing import non_nan_markets
+from preprocessing import nan_markets
 from batching_splitting import split_validation_training
 
 def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE, 
@@ -62,11 +63,12 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
                 loss = settings['nn'].loss_np(all_batch, market_batch)
                 l1_loss = settings['nn'].l1_penalty_np()
                 tr_sharpe += -(loss - l1_loss)
-
+                print(tr_sharpe)
             if settings['val_period'] > 0:
                 val_loss = settings['nn'].loss_np(all_val, market_val)
                 val_l1_loss = settings['nn'].l1_penalty_np()
                 val_sharpe = -(val_loss - val_l1_loss)
+                #import pdb;pdb.set_trace()
                 if val_sharpe > 1:
                     settings['dont_trade'] = False
                 else:
@@ -91,7 +93,7 @@ def mySettings():
     settings['n_time'] =  160 # Use this many timesteps in one datapoint.
     settings['n_sharpe'] = 100 # This many timesteps to compute Sharpes.
     settings['horizon'] = settings['n_time'] - settings['n_sharpe'] + 1
-    settings['lbd'] = .01 # L1 regularizer strength.
+    settings['lbd'] = .1 # L1 regularizer strength.
     settings['num_epochs'] = 10 # Number of epochs each day.
     settings['batch_size'] = 128
     settings['val_period'] = 1
@@ -112,7 +114,10 @@ def mySettings():
     settings['markets']  = non_nan_markets(settings['beginInSample'], 
                                            settings['endInSample'], 
                                            lookback=settings['lookback'])
-    settings['markets'] = settings['markets'][:20]
+    #settings['markets'] = nan_markets(settings['beginInSample'],
+    #                                  settings['endInSample'],
+    #                                  lookback=settings['lookback'])
+    settings['markets'] = settings['markets'][:100]
     print(settings['markets'])
     return settings
 
