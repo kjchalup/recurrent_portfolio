@@ -55,7 +55,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
     
     print('Iter {} [{}], equity {}.'.format(settings['iter'], 
                                             DATE[-1],
-                                            fundEquity[-2]))
+                                            fundEquity[-1]))
     #import pdb;pdb.set_trace()
     if settings['iter'] == 0:
         print 'Initializing net...\n'
