@@ -5,7 +5,7 @@ import random
 import numpy as np
 import joblib
 
-import neuralnet
+import neuralnet as neuralnet   
 from preprocessing import non_nan_markets
 from batching_splitting import split_validation_training
 
@@ -21,9 +21,9 @@ N_SHARPE_MIN = 10               # Minimum value for n_sharpe.
 N_SHARPE_GAP = 10               # n_sharpe's max is this much less than n_time.
 N_RUNS = 2
 
-def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE, 
-                    CLOSE_ASK, CLOSE_BID, RETURN, SHARE, DIVIDEND, TOTALCAP,
-                    exposure, equity, settings, fundEquity):
+
+def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, settings, fundEquity): # pylint: disable=invalid-name,too-many-arguments
+    """Neural net trading system."""
     all_data = np.array(OPEN)
     market_data = np.hstack([OPEN, CLOSE, HIGH, LOW])
     print('Iter {} [{}], equity {}.'.format(settings['iter'],
