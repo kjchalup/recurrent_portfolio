@@ -1,6 +1,6 @@
 """Test randomly supplied hyper parameters."""
 from linear_hf.hyperparameters import supply_hypers
-from linear_hf.hyperparameters import LBDS, CHOICES, N_SHARPE_MIN, N_SHARPE_GAP
+from linear_hf.hyperparameters import CHOICES, N_SHARPE_MIN, N_SHARPE_GAP
 
 def test_hypers():
     """Test the supply_hypers function."""
