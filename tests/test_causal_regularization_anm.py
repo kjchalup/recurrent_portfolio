@@ -88,6 +88,5 @@ def test_gradient_decreases_loss_100steps(make_nn_data):
     W = W.reshape((horizon, n_ftrs, n_markets))
     w_csl = np.abs(W[:, 0, 1]).mean()
     w_noncsl = np.abs(W[:, 1, 0]).mean()
-    import pdb; pdb.set_trace()
     assert nn_l1_before > nn_l1_after
     assert w_csl > w_noncsl
