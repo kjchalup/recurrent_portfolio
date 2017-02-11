@@ -1,5 +1,4 @@
 import itertools
-import time
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -19,9 +18,7 @@ def causal_matrix(all_data, thr=1e-2):
     """
     n_data = all_data.shape[1]
     causal_coeffs = np.zeros((n_data, n_data))
-    avg_t = 0
     for x_id, y_id in itertools.product(range(n_data), repeat=2):
-        t = time.time()
         if x_id == y_id:
             causal_coeffs[x_id, y_id] = -1
         elif x_id < y_id:
@@ -31,6 +28,4 @@ def causal_matrix(all_data, thr=1e-2):
                 causal_coeffs[x_id, y_id] = xy_pval
             elif yx_pval > thr and xy_pval < thr:
                 causal_coeffs[y_id, x_id] = yx_pval
-        duration = time.time() - t
-        avg_t += duration
-    return causal_coeffs, float(avg_t) / (n_data**2-n_data)
+    return causal_coeffs
