@@ -74,8 +74,6 @@ def test_gradient_decreases_loss_100steps(make_nn_data):
     nn = neuralnet.Linear(n_ftrs, n_markets, n_time, 
                           n_sharpe, lbd=1000., causality_matrix=cm)
     # Train the neural net for 10 steps and compute the loss.
-    # for step_id in range(10):
-    #     nn.train_step(lr=1e-5, batch_in=batch_in, batch_out=batch_out)
     nn_l1_before = nn.l1_penalty_np()
 
     l1s = []
