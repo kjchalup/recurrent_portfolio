@@ -38,17 +38,18 @@ def test_training_validation_separation(all_data=all_data,
                                         horizon=horizon, 
                                         n_for_sharpe=n_for_sharpe, 
                                         batch_id=batch_id, 
-                                        batch_size=batch_size/8, 
+                                        batch_size=batch_size, 
                                         randseed=randseed):
     count = 0
+    # want to make one batch
     all_val, market_val, all_batch, market_batch = batching_splitting.split_validation_training(
-                                                all_data=all_data,
-                                                market_data=market_data, 
-                                                valid_period=valid_period, 
-                                                horizon=horizon,
-                                                n_for_sharpe=n_for_sharpe, 
+                                                all_data=all_data[:32*8,:],
+                                                market_data=market_data[:32*8,:], 
+                                                valid_period=32, 
+                                                horizon=96,
+                                                n_for_sharpe=32, 
                                                 batch_id=batch_id, 
-                                                batch_size=batch_size, 
+                                                batch_size=all_data[:32*8,:].shape[0]-96-2-2*32-32+2, 
                                                 randseed= randseed)
     
     if market_val is not None:

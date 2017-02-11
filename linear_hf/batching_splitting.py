@@ -63,6 +63,7 @@ def split_validation_training(all_data, market_data, valid_period, horizon, n_fo
             batch_id=0, randseed=1)
         market_val = market_val[:, -n_for_sharpe:, :]
         # ASSUME THAT valid_period is a divisor of batch_size!
+        #import pdb;pdb.set_trace()
         if batch_size % valid_period != 0:
             raise ValueError, 'valid_period must be a divisor of batch_size!'
         all_val = np.tile(all_val, [batch_size/valid_period, 1, 1])

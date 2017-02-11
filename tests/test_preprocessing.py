@@ -157,7 +157,7 @@ def test_preprocessing_nonans_nozeros(dataDict_withCASH):
     slippage_setting = 0.05
     slippageTemp = np.append(np.empty((1,nMarkets))*np.nan, ((dataDict['HIGH'][1:,:] - dataDict['LOW'][1:,:]) / dataDict['CLOSE'][:-1,:] ), axis=0) * slippage_setting
     SLIPPAGE = np.nan_to_num(fillnans(slippageTemp))
-    import pdb;pdb.set_trace()    
+    #import pdb;pdb.set_trace()    
     # Check before
     assert (abs(SLIPPAGE)>0.7).sum()==0
     assert (abs(gaps)>6).sum()==0
