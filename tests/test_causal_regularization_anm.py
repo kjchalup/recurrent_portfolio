@@ -39,14 +39,15 @@ def make_causal_data():
 
     return np.hstack([xs, ys])
 
-# def test_causal_matrix(make_causal_data):
-#     cm = causal_matrix(make_causal_data)
-#     should_be_causal = np.array([cm[0, 4], cm[1, 5], cm[2, 6], cm[3, 7]]) 
-#     assert (should_be_causal < 1e-2).sum() == 0, 'Some of the causal relationships were not detected.'
-#     shouldnt_be_causal = np.array([cm[0,1], cm[1, 2], cm[2, 3], cm[3, 4], 
-#                                   cm[4, 5], cm[5, 6], cm[6, 7], cm[0, 5],
-#                                   cm[1, 7], cm[2, 5], cm[5, 1], cm[6, 2]])
-#     assert (shouldnt_be_causal > 1e-2).sum() == 0, 'Some of the causal relationships were not detected.'
+def test_causal_matrix(make_causal_data):
+    cm = causal_matrix(make_causal_data)
+    should_be_causal = np.array([cm[0, 4], cm[1, 5], cm[2, 6], cm[3, 7],
+                                 cm[0,0], cm[5,5], cm[3,3]]) 
+    assert (should_be_causal < 1e-2).sum() == 0, 'Some of the causal relationships were not detected.'
+    shouldnt_be_causal = np.array([cm[0,1], cm[1, 2], cm[2, 3], cm[3, 4], 
+                                  cm[4, 5], cm[5, 6], cm[6, 7], cm[0, 5],
+                                  cm[1, 7], cm[2, 5], cm[5, 1], cm[6, 2]])
+    assert (shouldnt_be_causal > 1e-2).sum() == 0, 'Some of the causal relationships were not detected.'
 
 def test_gradient_decreases_loss_100steps(make_nn_data):
     np.random.rand(1)
