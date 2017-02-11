@@ -42,20 +42,19 @@ if [ $branch_status != "=" ]; then
 fi
 
 # Check for pdbs.
-has_import=false
-git diff --cached --no-renames --name-status --diff-filter=AM |
-  while read st file; do
-    case "$file" in
-    *.py)
-        if git show ":$file" |
-          grep -E "^[^#]*\bimport[[:space:]]+pdb\b"; then
-            echo "$file: has import pdb"
-            exit 1
-        fi;;
-    esac
-done || has_import=true
 
-if $has_import; then
+# Get list of commits.
+pdbdiffs=$(echo $commits |\
+		  awk -F'commit' '{for(i=1; i<=NF; i++)print $i}' |\
+		  awk 'NR>2 {print $1}' |\
+		  # Diff the commits in git.
+		  xargs git diff |\
+		  # Find pdbs in file changes.
+		  grep + | grep 'import pdb')
+
+# If pdbdiffs is not empty, exit.
+if [ ! -z "$pdbdiffs" ]; then
+    echo "Your commits have import pdbs. Please remove them."
     exit 1
 fi
 
