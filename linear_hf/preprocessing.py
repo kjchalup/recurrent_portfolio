@@ -359,9 +359,9 @@ def returns_check(OPEN, CLOSE, HIGH, LOW, DATE, markets):
     SLIPPAGE = np.nan_to_num(fillnans(slippageTemp))
 
     flag1 = (abs(SLIPPAGE)>0.7).sum()>0
-    flag2 = (abs(gaps)>3).sum()>0
+    flag2 = (abs(gaps)>50).sum()>0
     flag3 = (abs(sessionReturn)>3).sum()>0
-    flag4 =  (abs(gaps)+abs(sessionReturn)>4).sum()>0
+    flag4 =  (abs(gaps)+abs(sessionReturn)>50).sum()>0
     flag5 =  (abs(gaps)==np.inf).sum()>0
     flag6 = (abs(sessionReturn)==np.inf).sum()>0
     flag7 = (abs(SLIPPAGE)==np.inf).sum()>0
