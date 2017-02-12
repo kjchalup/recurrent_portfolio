@@ -87,18 +87,18 @@ do
 	else
 	    grep -v $f scorelints.txt > lint_temp.txt
 	    echo "$f $newscore" >> lint_temp.txt
-	    mv lint_temp.txt scorelints.txt
+	    mv -f lint_temp.txt scorelints.txt
 	fi
     fi
 done
 
-# # Run the tests.
-# if [ $current = $protected ]; then
-#     python -m pytest
-#     RESULT=$?
-#     if [ $RESULT -ne 0 ]; then
-# 	echo "Failed pytests."
-# 	exit 1
-#     fi
-# fi
+# Run the tests.
+if [ $current = $protected ]; then
+    python -m pytest
+    RESULT=$?
+    if [ $RESULT -ne 0 ]; then
+	echo "Failed pytests."
+	exit 1
+    fi
+fi
 exit 0
