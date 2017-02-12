@@ -1,7 +1,4 @@
-import os
-import sys
-import joblib
-
+""" Neural network (really just a linear network) routines. """
 import numpy as np
 import tensorflow as tf
 
@@ -25,6 +22,7 @@ def define_nn(batch_in_tf, n_sharpe,
     """
     horizon = n_time - n_sharpe + 1
     def apply_net(x):
+        """ Feed-forward x through the net. """
         out = tf.add(tf.matmul(x, W), b)
         if allow_shorting:
             out = out / tf.reduce_sum(tf.abs(out), axis=1, keep_dims=True)
@@ -165,8 +163,7 @@ class Linear(object):
         Returns:
           positions (n_batch, n_markets): Positions.
         """
-        return self.sess.run(self.positions_tf, {self.batch_in_tf:
-                                            batch_in})
+        return self.sess.run(self.positions_tf, {self.batch_in_tf: batch_in})
 
     def predict(self, data_in):
         """ Predict a portfolio for a test batch.
