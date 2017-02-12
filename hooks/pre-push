@@ -78,7 +78,7 @@ do
 	oldscore=$(grep $f scorelints.txt | awk '{print $2}')
 
 	# Check if the score is not good enough.
-	okayscore=$(echo "$oldscore-$newscore>=0" | bc)
+	okayscore=$(echo "$newscore>=$oldscore" | bc)
 	if [ "$okayscore" -ne "1" ]; then
 	    echo "You've decreased the pylint score for $f. Please improve it and try again."
 	    exit 1
