@@ -27,7 +27,7 @@ CHOICES = {'n_time': range(20, 253), # Timesteps in one datapoint.
            'allow_shorting': [True, False],
            'data_types' : [[1]+list(j) for j in powerset([0]+range(2,13))],
            'lookback' : [200,300,400,500,600,700,800,900,1000],
-           'val_period' : [0,2,4,8,16,32]
+           'val_period' : [0,2,4,8,16,32],
            'val_sharpe_threshold' : [-np.inf, 0, 1, 2],
            'retrain_interval' : [1] + range(10,252), 
            }
