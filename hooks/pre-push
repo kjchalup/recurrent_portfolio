@@ -70,15 +70,13 @@ pyfiles=$(git diff origin/master..HEAD --name-only -- '*.py')
 #     fi
 # done
 
-# Get the score for each file
-
-# # Run the tests.
-# if [ $current = $protected ]; then
-#     python -m pytest
-#     RESULT=$?
-#     if [ $RESULT -ne 0 ]; then
-# 	echo "Failed tests."
-# 	exit 1
-#     fi
-# fi
-# exit 0
+# Run the tests.
+if [ $current = $protected ]; then
+    python -m pytest
+    RESULT=$?
+    if [ $RESULT -ne 0 ]; then
+	echo "Failed pytests."
+	exit 1
+    fi
+fi
+exit 0
