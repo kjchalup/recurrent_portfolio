@@ -22,8 +22,6 @@ def load_nyse_markets(start_date, end_date, postipo=100, lookback=0):
     all_nyse = glob.glob('tickerData/*nyse.txt')
     alives = []
     # Get end_date minus some a number!
-    #start_date_str = start_date
-    #start_date = datetime.strptime(start_date, '%Y%m%d') 
 
     end_date_minuspostipo = (datetime.strptime(end_date, '%Y%m%d') -
         timedelta(days=postipo)).strftime('%Y%m%d')
@@ -162,7 +160,6 @@ def preprocess(markets, opens, closes, highs, lows, vols, dates,
     n_markets = opens.shape[1]
 
     divide_prices_by = float(50000)
-    #divide_prices_by = float(100000)
     opens = opens / divide_prices_by
     closes = closes / divide_prices_by
     highs = highs / divide_prices_by
@@ -273,18 +270,16 @@ def preprocess(markets, opens, closes, highs, lows, vols, dates,
     all_data[np.isnan(all_data)] = 0
 
     # Returns check to make sure nothing crazy happens!
-    
     returns_check(filled_prices[:,:n_markets],
                   filled_prices[:,n_markets:n_markets*2],
                   filled_prices[:,n_markets*2:n_markets*3],
                   filled_prices[:,n_markets*3:n_markets*4],
                   dates, markets)
-                                                                                                                                   
     assert np.isnan(filled_prices).sum() == 0
     assert np.isinf(filled_prices).sum() == 0
     assert np.isnan(all_data).sum() == 0
     assert np.isinf(all_data).sum() == 0
-                                                                                                                                                     
+    
     return filled_prices, all_data, should_retrain
 
 def circle_dates(dates):

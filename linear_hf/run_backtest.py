@@ -133,8 +133,8 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
         positions[cash_index] = 1
     
     # Save validation sharpes and actualized sharpes!
-    settings['realized_sharpe'][settings['iter']] = recent_sharpe
-    settings['saved_val_sharpe'][settings['iter']] = best_val_sharpe
+    settings['realized_sharpe'].append(recent_sharpe)
+    settings['saved_val_sharpe'].(best_val_sharpe)
     
     settings['iter'] += 1
     return positions, settings
@@ -147,7 +147,7 @@ def mySettings():
     settings['n_sharpe'] = 50 # This many timesteps to compute Sharpes.
     settings['horizon'] = settings['n_time'] - settings['n_sharpe'] + 1
     settings['lbd'] = .1 # L1 regularizer strength.
-    settings['num_epochs'] = 30 # Number of epochs each day.
+    settings['num_epochs'] = 10 # Number of epochs each day.
     settings['batch_size'] = 128
     settings['val_period'] = 32
     settings['lr'] = 1e-4 # Learning rate.
