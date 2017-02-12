@@ -9,7 +9,7 @@ def test_hypers():
     CHOICES['n_sharpe'] = range(N_SHARPE_MIN, settings['n_time'] - N_SHARPE_GAP)
 
     # Test that keys match.
-    assert settings.keys() == CHOICES.keys()
+    assert set(settings.keys()) == set(CHOICES.keys())
 
     # Test that values are in range.
     for setting in settings:
