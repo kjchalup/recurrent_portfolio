@@ -162,6 +162,7 @@ def preprocess(markets, opens, closes, highs, lows, vols, dates,
     """
     # Check returns to make sure nothing crazy happens
     returns_check(opens, closes, highs, lows, dates, markets)
+    n_markets = opens.shape[1]
 
     divide_prices_by = float(50000)
     #divide_prices_by = float(100000)
