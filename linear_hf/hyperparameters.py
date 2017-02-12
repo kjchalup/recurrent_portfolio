@@ -9,14 +9,28 @@ import neuralnet as neuralnet
 from preprocessing import non_nan_markets
 from batching_splitting import split_validation_training
 
+import itertools
+
+def powerset(iterable):
+    "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
+    s = list(iterable)
+    
+    result = list(itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(len(s)+1)))
+    return result
 # Define constants for use in choosing hyperparameters.
-LBDS = np.append(10.**np.arange(-10, 2), [0.])
+LBDS = np.append(10.**np.arange(-5, 3), [0.])
 CHOICES = {'n_time': range(20, 253), # Timesteps in one datapoint.
            'lbd': LBDS,              # L1 regularizer strength.
            'num_epochs': range(1, 51),   # Number of epochs each day.
            'batch_size': [32, 64, 128],  # Batch size.
-           'lr': 10.**np.arange(-7, 0),  # Learning rate.
-           'allow_shorting': [True, False],}
+           'lr': 10.**np.arange(-5, 0),  # Learning rate.
+           'allow_shorting': [True, False],
+           'data_types' : [[1]+list(j) for j in powerset([0]+range(2,13))],
+           'lookback' : [200,300,400,500,600,700,800,900,1000],
+           'val_period' : [0,2,4,8,16,32]
+           'val_sharpe_threshold' : [-np.inf, 0, 1, 2],
+           }
+import pdb;pdb.set_trace()
 N_SHARPE_MIN = 10               # Minimum value for n_sharpe.
 N_SHARPE_GAP = 10               # n_sharpe's max is this much less than n_time.
 N_RUNS = 2
@@ -153,5 +167,5 @@ if __name__ == '__main__':
         # RESULTS['marketExposure'] = None
         HYPER_RESULTS.append(RESULTS)
 
-    # Save the resutls
-    joblib.dump(HYPER_RESULTS, 'saved_data/hyper_results.pkl')
+        # Save the results
+        joblib.dump(HYPER_RESULTS, 'saved_data/hyper_results.pkl')
