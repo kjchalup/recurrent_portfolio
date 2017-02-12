@@ -66,7 +66,6 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
         print('[Recent validation sharpe] Recent sharpe: [{}] {}'.format(
                                             settings['val_sharpe'],
                                             recent_sharpe))
-    
     if settings['iter'] == 0:
         print 'Initializing net...\n'
         # Define a new neural net.
@@ -152,6 +151,12 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
         positions *= 0 
         cash_index = settings['markets'].index('CASH')
         positions[cash_index] = 1
+    
+    # Save validation sharpes and actualized sharpes!
+    settings['realized_sharpe'][settings['iter']] = recent_sharpe
+    settings['saved_val_sharpe'][settings['iter']] = best_val_sharpe
+    
+    
     settings['iter'] += 1
     return positions, settings
 
@@ -213,6 +218,7 @@ def mySettings():
     #settings['markets'] = settings['markets'][-10:]
     print(settings['markets'])
     
+    settings['markets']  = settings['markets'][:20] + ['CASH']
     assert settings['markets'][-1] == 'CASH', "Cash is last position in markets for causality calculation!"
     return settings
 
