@@ -23,8 +23,9 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
         DIVIDEND, TOTALCAP, postipo=100, filler=0.123456789, 
         data_types = settings['data_types'])
     # Calculate Sharpe between training intervals
-    n_days_back = np.mod(settings['iter'],settings['n_sharpe'])
-    if n_days_back > 2:
+    n_days_back = np.mod(settings['iter']+1,settings['n_sharpe'])
+    
+    if n_days_back > 3:
         recent_sharpe=compute_numpy_sharpe(positions=exposure[None, -n_days_back-3:-1, :],
                              prices=market_data[None, -n_days_back-2:, :],
                              slippage=0.05,
