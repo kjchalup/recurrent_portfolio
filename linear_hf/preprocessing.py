@@ -107,7 +107,7 @@ def nan_markets(start_date, end_date, postipo=0, lookback=0):
 
 def preprocess(markets, opens, closes, highs, lows, vols, dates,
                close_lasttrade, close_ask, close_bid, returns, shares,
-               dividends, totalcaps, postipo=100, filler=0.0000001):
+               dividends, totalcaps, postipo=100, filler=0.0000001, data_types=[]):
     """Preprocesses stock price data for use in our neural nets.
 
     Replaces nans in market price data imported using quantiacsToolbox.py using
@@ -132,6 +132,7 @@ def preprocess(markets, opens, closes, highs, lows, vols, dates,
     8) All of the input data is normalized to make their values close to 1,
     to improve the performance of the neural net training.
     9) Any nans in other price data are replaced by zeros.
+    10) Selects correct data for all_data from data_types.
 
     Args:
         markets (list): names of markets
@@ -140,6 +141,7 @@ def preprocess(markets, opens, closes, highs, lows, vols, dates,
         dates (np array): dates in yyyymmdd format
         postipo (int): number of days to wait to begin including prices
         filler (float): value to fill with
+        data_types (list): list of selected features.
 
     Returns:
         filled_prices (np array): horizontally concatenated array of
@@ -259,6 +261,19 @@ def preprocess(markets, opens, closes, highs, lows, vols, dates,
                           totalcaps, x_date[:, None], y_date[:, None]))
     all_data = all_data.astype(np.float32)
     all_data[np.isnan(all_data)] = 0
+    
+
+    # Run backtester with preprocessing
+    if len('data_types') == 0:
+       # If no data_types are chosen, uses standard scaler on OPEN data.
+       all_data = StandardScaler().fit_transform(all_data[:,:n_markets])
+    else:
+       # Otherwise select the datatypes required. 
+       data = np.hstack([all_data[:, n_markets * j: n_markets * (j+1)] 
+                        for j in data_types])
+       all_data = data
+
+
 
     # Returns check to make sure nothing crazy happens!
     returns_check(filled_prices[:, :n_markets],

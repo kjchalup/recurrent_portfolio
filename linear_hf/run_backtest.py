@@ -20,7 +20,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
     market_data, all_data, should_retrain = preprocess(
         settings['markets'], OPEN, CLOSE, HIGH, LOW, VOL, DATE, 
         CLOSE_LASTTRADE, CLOSE_ASK, CLOSE_BID, RETURN, SHARE, 
-        DIVIDEND, TOTALCAP, postipo=100, filler=0.123456789)
+        DIVIDEND, TOTALCAP, postipo=100, filler=0.123456789, settings['data_types'])
     n_markets = OPEN.shape[1]
     # Run backtester with preprocessing
     if len(settings['data_types']) == 0:
