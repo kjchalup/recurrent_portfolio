@@ -1,9 +1,6 @@
-import os
 import glob
 import random
-import joblib
 import numpy as np
-
 from  datetime import datetime, timedelta
 
 def load_nyse_markets(start_date, end_date, postipo=100, lookback=0):
@@ -353,17 +350,14 @@ def returns_check(OPEN, CLOSE, HIGH, LOW, DATE, markets):
 
     # check if a default slippage is specified
     slippage_setting = 0.05
-    slippageTemp = np.append(np.empty((1,nMarkets))*np.nan, ((HIGH[1:,:] - LOW[1:,:]) / CLOSE[:-1,:] ), axis=0) * slippage_setting
+    slippageTemp = np.append(np.empty((1,nMarkets))*np.nan, ((HIGH[1:,:] - LOW[1:,:]) / CLOSE[:-1,:]), axis=0) * slippage_setting
     SLIPPAGE = np.nan_to_num(fillnans(slippageTemp))
 
-    flag1 = (abs(SLIPPAGE) >0.7).sum() > 0
-    flag2 = (abs(gaps) > 50).sum() > 0
+    flag1 = (abs(SLIPPAGE) > 0.7).sum() > 0
     flag3 = (abs(sessionReturn) > 3).sum() > 0
-    flag4 =  (abs(gaps) + abs(sessionReturn) > 50).sum() > 0
-    flag5 =  (abs(gaps) == np.inf).sum() > 0
+    flag5 = (abs(gaps) == np.inf).sum() > 0
     flag6 = (abs(sessionReturn) == np.inf).sum() > 0
     flag7 = (abs(SLIPPAGE) == np.inf).sum() > 0
 
-    if flag1 or flag2 or flag3 or flag4 or flag5 or flag6 or flag7:
-        pi = np.where(sessionReturn>4)
-        
+    if flag1 or flag3 or flag5 or flag6 or flag7:
+       print('Crazy returns!') 

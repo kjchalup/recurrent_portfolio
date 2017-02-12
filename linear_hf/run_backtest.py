@@ -32,13 +32,12 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
 
     # Calculate Sharpe between training intervals
     n_days_back = np.mod(settings['iter'],settings['n_sharpe'])
+    recent_sharpe = np.nan
     if n_days_back > 3:
         recent_sharpe=compute_numpy_sharpe(positions=exposure[None,-n_days_back:-1,:],
                              prices=market_data[None,-n_days_back+1:,:],
                              slippage=0.05,
                              n_ignore=0)
-    if settings['iter']==0:
-        recent_sharpe=0
 
     print('Iter {} [{}], equity {}.'.format(settings['iter'], 
                                             DATE[-1],
@@ -59,6 +58,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
         print 'Done with initializing neural net!'
 
     # Train the neural net on current data.
+    best_val_sharpe = -np.inf
     if settings['iter'] % settings['retrain_interval'] == 0:
         best_val_sharpe = -np.inf
         best_tr_loss = np.inf
