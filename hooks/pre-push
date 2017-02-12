@@ -70,7 +70,9 @@ do
 	goodstart=$(echo "$newscore>5" | bc)
 	if [ "$goodstart" -ne "1" ]; then
 	    echo "$f has a pylint score below 5. Please improve it and try again."
-	    exit 1
+	    exit 1       
+	else
+	    echo "$f $newscore" >> scorelints.txt
 	fi
     # If not new, check the old score and only push if score is same or better.
     else
@@ -82,6 +84,10 @@ do
 	if [ "$okayscore" -ne "1" ]; then
 	    echo "You've decreased the pylint score for $f. Please improve it and try again."
 	    exit 1
+	else
+	    grep -v $f scorelints.txt > lint_temp.txt
+	    echo "$f $newscore" >> lint_temp.txt
+	    mv lint_temp.txt scorelints.txt
 	fi
     fi
 done
