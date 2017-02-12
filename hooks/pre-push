@@ -52,15 +52,23 @@ if [ ! -z "$pdbdiffs" ]; then
     exit 1
 fi
 
-# Modified python files.
+# Find modified python files.
 pyfiles=$(git diff origin/master..HEAD --name-only -- '*.py')
 
-# Run pylint on each, generating the score.
-for f in $pyfiles
-do
-    pylint $f | grep 'Your code has been rated at' |\
-	awk -F'at ' '{print $2}' | awk -F'/' '{print $1}' | echo
-done
+# Check to see how the pylint score changed, rejecting bad ones.
+# for f in $pyfiles
+# do
+#     # Find the score of the
+#     oldscore=$(grep $f scorelints.txt | awk '{print $2}')
+#     newscore=$(pylint $f | grep 'Your code has been rated at' |\
+# 		      awk -F'at ' '{print $2}' | awk -F'/' '{print $1}')
+#     okayscore=$(echo "$oldscore-$newscore>=0" | bc)
+#     if [ "$okayscore" -eq "1" ]; then
+# 	echo ""
+#     else
+# 	echo "Not okay."
+#     fi
+# done
 
 # Get the score for each file
 
