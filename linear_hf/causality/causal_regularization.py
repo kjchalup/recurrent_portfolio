@@ -27,7 +27,6 @@ def causal_matrix(all_data, thr=0, verbose=False, method='nearest', **kwargs):
     iter_id = 0
     if verbose:
         pdf = PdfPages('saved_data/causal_matrix.pdf')
-
     for x_id, y_id in itertools.product(range(n_data), repeat=2):
         if x_id == y_id:
             causal_coeffs[x_id, y_id] = 1
