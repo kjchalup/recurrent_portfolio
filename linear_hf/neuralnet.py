@@ -1,7 +1,4 @@
-import os
-import sys
-import joblib
-
+""" Neural network (really just a linear network) routines. """
 import numpy as np
 import tensorflow as tf
 
@@ -25,6 +22,7 @@ def define_nn(batch_in_tf, n_sharpe,
     """
     horizon = n_time - n_sharpe + 1
     def apply_net(x):
+        """ Feed-forward x through the net. """
         out = tf.add(tf.matmul(x, W), b)
         if allow_shorting:
             out = out / tf.reduce_sum(tf.abs(out), axis=1, keep_dims=True)
@@ -52,7 +50,7 @@ class Linear(object):
     def __init__(self, n_ftrs, n_markets, n_time, 
                  n_sharpe, W_init=None, lbd=0.001, 
                  causality_matrix=None, n_csl_ftrs=None, seed=None,
-                 allow_shorting=True):
+                 allow_shorting=True, cost='sharpe'):
         """ Initialize the regressor.
         
         Args:
@@ -70,6 +68,7 @@ class Linear(object):
             on causally meaningful weights.
           seed (int): Graph-level random seed, for testing purposes.
           allow_shorting (bool): If True, allow negative positions.
+          cost (str): cost to use: 'sharpe', 'min_return', 'mean_return', or 'mixed_return'
         """
         self.n_ftrs = n_ftrs
         self.n_markets = n_markets
@@ -137,7 +136,7 @@ class Linear(object):
 
         # Define the unnormalized loss function.
         self.loss_tf = -sharpe_tf(self.positions_tf, self.batch_out_tf, 
-                                 n_sharpe, n_markets) + self.l1_penalty_tf
+                                  n_sharpe, n_markets, cost=cost) + self.l1_penalty_tf
         # Define the optimizer.
         self.train_op_tf = tf.train.AdamOptimizer(
             learning_rate=self.lr_tf).minimize(self.loss_tf)
@@ -164,8 +163,7 @@ class Linear(object):
         Returns:
           positions (n_batch, n_markets): Positions.
         """
-        return self.sess.run(self.positions_tf, {self.batch_in_tf:
-                                            batch_in})
+        return self.sess.run(self.positions_tf, {self.batch_in_tf: batch_in})
 
     def predict(self, data_in):
         """ Predict a portfolio for a test batch.
