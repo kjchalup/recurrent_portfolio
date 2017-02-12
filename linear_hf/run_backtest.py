@@ -44,7 +44,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
         all_data = StandardScaler().fit_transform(all_data[:,:n_markets])
     else:
         data = np.hstack([all_data[:, n_markets * j: n_markets * (j+1)] 
-                          for j in settings['data_types']]) +
+                          for j in settings['data_types']])
 
         # Stacks chosen data back into correct shape!
         all_data = np.hstack(data)
