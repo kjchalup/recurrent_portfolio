@@ -58,6 +58,7 @@ pyfiles=$(git diff origin/master..HEAD --name-only -- '*.py')
 # Check to see how the pylint score changed, rejecting bad ones.
 for f in $pyfiles
 do
+    echo $f
     # Check if the file is new.
     isnew=$(grep $f scorelints.txt)
 
@@ -69,7 +70,8 @@ do
     if [ -z "$isnew" ]; then
 	goodstart=$(echo "$newscore>5" | bc)
 	if [ "$goodstart" -ne "1" ]; then
-	    echo "$f has a pylint score below 5. Please imrove it and try again."
+	    echo "$f has a pylint score below 5. Please improve it and try again."
+	fi
     # If not new, check the old score and only push if score is same or better.
     else
 	# Find the old score.
