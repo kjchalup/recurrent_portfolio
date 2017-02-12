@@ -18,6 +18,6 @@ linear_hf/costs.py -2.08
 linear_hf/neuralnet.py 1.01
 linear_hf/preprocessing.py 0.14
 linear_hf/quantiacs_code.py -7.76
-linear_hf/hyperparameters.py 6.71
-linear_hf/run_backtest.py 0.89
 tests/test_hypers.py 8.89
+linear_hf/hyperparameters.py 5.00
+linear_hf/run_backtest.py -0.61

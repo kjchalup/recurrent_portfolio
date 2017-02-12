@@ -160,6 +160,9 @@ def preprocess(markets, opens, closes, highs, lows, vols, dates,
             which indicates which stocks were postipo days after their initial
             non-nan closing price on the final day of price data
     """
+    # Check returns to make sure nothing crazy happens
+    returns_check(opens, closes, highs, lows, dates, markets)
+
     divide_prices_by = float(50000)
     #divide_prices_by = float(100000)
     opens = opens / divide_prices_by
@@ -272,6 +275,19 @@ def preprocess(markets, opens, closes, highs, lows, vols, dates,
     all_data = all_data.astype(np.float32)
     all_data[np.isnan(all_data)] = 0
 
+    # Returns check to make sure nothing crazy happens!
+    
+    returns_check(filled_prices[:,:n_markets],
+                  filled_prices[:,n_markets:n_markets*2],
+                  filled_prices[:,n_markets*2:n_markets*3],
+                  filled_prices[:,n_markets*3:n_markets*4],
+                  dates, markets)
+                                                                                                                                   
+    assert np.isnan(filled_prices).sum() == 0
+    assert np.isinf(filled_prices).sum() == 0
+    assert np.isnan(all_data).sum() == 0
+    assert np.isinf(all_data).sum() == 0
+                                                                                                                                                     
     return filled_prices, all_data, should_retrain
 
 def circle_dates(dates):

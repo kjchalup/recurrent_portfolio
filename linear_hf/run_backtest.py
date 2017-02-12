@@ -43,12 +43,9 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
         # If no data_types are chosen, uses standard scaler on OPEN data.
         all_data = StandardScaler().fit_transform(all_data[:,:n_markets])
     else:
-        data = np.hstack([all_data[:, n_markets * j: n_markets * (j+1)] 
-                          for j in settings['data_types']])
+        z = [all_data[:, n_markets * j: n_markets * (j+1)] for j in settings['data_types']]
+        data = np.hstack([all_data[:, n_markets * j: n_markets * (j+1)] for j in settings['data_types']])
 
-        # Stacks chosen data back into correct shape!
-        all_data = np.hstack(data)
-    
     # Calculate Sharpe between training intervals
     n_days_back = np.mod(settings['iter'],settings['n_sharpe'])
     if n_days_back > 3:
@@ -154,7 +151,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
     # Save validation sharpes and actualized sharpes!
     settings['realized_sharpe'][settings['iter']] = recent_sharpe
     settings['saved_val_sharpe'][settings['iter']] = best_val_sharpe
-    
+    import pdb;pdb.set_trace() 
     
     settings['iter'] += 1
     return positions, settings
