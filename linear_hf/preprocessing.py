@@ -1,9 +1,6 @@
-import os
 import glob
 import random
-import joblib
 import numpy as np
-
 from  datetime import datetime, timedelta
 
 def load_nyse_markets(start_date, end_date, postipo=100, lookback=0):
@@ -13,28 +10,26 @@ def load_nyse_markets(start_date, end_date, postipo=100, lookback=0):
     Args:
         start_date: date of starting to consider data
         end_date: not used
-        postipo: number of days stock befor start_date the stock must start to be considered.
+        postipo: number of days stock befor start_date the stock must 
+        start to be considered.
         lookback: start_date - lookback is the actual date used for start_date
 
     """
 
-    # Load nyse stocks that IPDd between start and end date, with margin padding.
+    # Load nyse stocks that IPDd between start and end date, with margin 
+    # padding.
     all_nyse = glob.glob('tickerData/*nyse.txt')
     alives = []
     # Get end_date minus some a number!
-    #start_date_str = start_date
-    #start_date = datetime.strptime(start_date, '%Y%m%d') 
 
-    end_date_minuspostipo = (datetime.strptime(end_date, '%Y%m%d') -
-        timedelta(days=postipo)).strftime('%Y%m%d')
     start_date_minuspostipo = (datetime.strptime(start_date, '%Y%m%d') -
-        timedelta(days=postipo)).strftime('%Y%m%d')
+                               timedelta(days=postipo)).strftime('%Y%m%d')
     for fname in all_nyse:
         f = open(fname, 'r').readlines()
-        # Only include stocks that IPO at least 100 days before we begin trading,
-        # and that are still alive on that day.
+        # Only include stocks that IPO at least 100 days before we begin 
+        # trading, and that are still alive on that day.
         if (int(f[1].split(',')[0]) < int(start_date_minuspostipo) and 
-            int(f[-1].split(',')[0]) > int(start_date)):
+                int(f[-1].split(',')[0]) > int(start_date)):
             alives.append(fname)
     return [symbol.split('/')[1][:-4] for symbol in alives] 
 
@@ -44,7 +39,8 @@ def non_nan_markets(start_date, end_date, postipo=0, lookback=0):
         start_date-lookback-postipo and end after end_date.
 
     Args:
-        start_date: start date for which stocks must begin by, adjusted by postipo
+        start_date: start date for which stocks must begin by, 
+        adjusted by postipo
         end_date: stocks must live until this date
         postipo: number of days before start_date a stock must start by.
         lookback: not used.
@@ -58,21 +54,17 @@ def non_nan_markets(start_date, end_date, postipo=0, lookback=0):
     alives = []
     # Get end_date minus some a number!
 
-    end_date_minuspostipo = (datetime.strptime(end_date, '%Y%m%d') -
-        timedelta(days=postipo)).strftime('%Y%m%d')
     start_date_minuspostipo = (datetime.strptime(start_date, '%Y%m%d') -
-        timedelta(days=postipo)).strftime('%Y%m%d')
+                               timedelta(days=postipo)).strftime('%Y%m%d')
     for fname in all_nyse:
         f = open(fname, 'r').readlines()
-        # Only include stocks that IPO at least 100 days before we begin trading,
-        # and that are still alive on that day.
-        #import pdb;pdb.set_trace()
+        # Only include stocks that IPO at least 100 days before we begin 
+        # trading, and that are still alive on that day.
         if (int(f[1].split(',')[0]) < int(start_date_minuspostipo) and 
-            int(f[-1].split(',')[0]) >= int(end_date)):
-            
+                int(f[-1].split(',')[0]) >= int(end_date)):
             if len([s for s in f if 'NaN' in s]) == 0:
                 alives.append(fname)
-    print ('Found '+str(len(alives))+' stocks with no nans starting after '+start_date_minuspostipo)
+    print str(len(alives))+' stocks, start:' +start_date_minuspostipo
     return [symbol.split('/')[1][:-4] for symbol in alives] 
 
 def nan_markets(start_date, end_date, postipo=0, lookback=0):
@@ -82,7 +74,8 @@ def nan_markets(start_date, end_date, postipo=0, lookback=0):
 ""
 
     Args:
-        start_date: start date for which stocks must begin by, adjusted by postipo
+        start_date: start date for which stocks must begin by, 
+        adjusted by postipo
         end_date: not used
         postipo: number of days before start_date a stock must start by.
         lookback: number of days before start_date a stock must start by.
@@ -96,23 +89,19 @@ def nan_markets(start_date, end_date, postipo=0, lookback=0):
     alives = []
     # Get end_date minus some a number!
 
-    end_date_minuspostipo = (datetime.strptime(end_date, '%Y%m%d') -
-        timedelta(days=postipo)).strftime('%Y%m%d')
     start_date_minuspostipo = (datetime.strptime(start_date, '%Y%m%d') -
-        timedelta(days=postipo)).strftime('%Y%m%d')
+                               timedelta(days=postipo)).strftime('%Y%m%d')
     for fname in all_nyse:
         f = open(fname, 'r').readlines()
-        # Only include stocks that IPO at least 100 days before we begin trading,
-        # and that are still alive on that day.
-        #import pdb;pdb.set_trace()
+        # Only include stocks that IPO at least 100 days before
+        # we begin trading, and that are still alive on that day.
         if (int(f[1].split(',')[0]) < int(start_date_minuspostipo) and 
-            int(f[-1].split(',')[0]) >= int(start_date)):
+                int(f[-1].split(',')[0]) >= int(start_date)):
            
             # Some data files have 99.0 as NaN in close price!
-            if len([s for s in f if 'NaN' in s]) > 0 and len([s for s in f if 'NaN,99' in s]) == 0:
+            if len([s for s in f if 'NaN' in s]) > 0:
                 alives.append(fname)
-    #import pdb;pdb.set_trace()
-    print ('Found '+str(len(alives))+' stocks with nans starting after '+start_date_minuspostipo)
+    print str(len(alives))+' stocks, start:'+start_date_minuspostipo
     return [symbol.split('/')[1][:-4] for symbol in alives] 
 
 
@@ -160,8 +149,11 @@ def preprocess(markets, opens, closes, highs, lows, vols, dates,
             which indicates which stocks were postipo days after their initial
             non-nan closing price on the final day of price data
     """
+    # Check returns to make sure nothing crazy happens
+    returns_check(opens, closes, highs, lows, dates, markets)
+    n_markets = opens.shape[1]
+
     divide_prices_by = float(50000)
-    #divide_prices_by = float(100000)
     opens = opens / divide_prices_by
     closes = closes / divide_prices_by
     highs = highs / divide_prices_by
@@ -170,19 +162,15 @@ def preprocess(markets, opens, closes, highs, lows, vols, dates,
     close_ask = close_ask / divide_prices_by
     close_bid = close_bid / divide_prices_by
     dividends = dividends / divide_prices_by
-
     divide_vol_by = float(921000)
     vols = vols / divide_vol_by
-
     divide_tcap_by = float(2710000)
     totalcaps = totalcaps / divide_tcap_by
     divide_shares_by = float(90000)
     shares = shares / divide_shares_by
     
-    #import pdb;pdb.set_trace()
-    
     # -66 or -99 for returns is really zero!
-    returns[returns<-1]=0
+    returns[returns < -1] = 0
      
     # Make list of stocks for which close starts as nan. We will assume these
     # are preipo stocks in the data
@@ -272,6 +260,17 @@ def preprocess(markets, opens, closes, highs, lows, vols, dates,
     all_data = all_data.astype(np.float32)
     all_data[np.isnan(all_data)] = 0
 
+    # Returns check to make sure nothing crazy happens!
+    returns_check(filled_prices[:, :n_markets],
+                  filled_prices[:, n_markets:n_markets*2],
+                  filled_prices[:, n_markets*2:n_markets*3],
+                  filled_prices[:, n_markets*3:n_markets*4],
+                  dates, markets)
+    assert np.isnan(filled_prices).sum() == 0
+    assert np.isinf(filled_prices).sum() == 0
+    assert np.isnan(all_data).sum() == 0
+    assert np.isinf(all_data).sum() == 0
+    
     return filled_prices, all_data, should_retrain
 
 def circle_dates(dates):
@@ -308,28 +307,31 @@ def fillnans(inArr):
     ''' fills in (column-wise)value gaps with the most recent non-nan value.
 
     fills in value gaps with the most recent non-nan value.
-    Leading nan's remain in place. The gaps are filled in only after the first non-nan entry.
+    Leading nan's remain in place. The gaps are filled in 
+    only after the first non-nan entry.
 
     Args:
       inArr (list, numpy array)
 
     Returns:
-      returns an array of the same size as inArr with the nan-values replaced by the most recent non-nan entry.
+      returns an array of the same size as inArr with the 
+      nan-values replaced by the most recent non-nan entry.
     '''
 
-    inArr=inArr.astype(float)
-    nanPos= np.where(np.isnan(inArr))
-    nanRow=nanPos[0]
-    nanCol=nanPos[1]
-    myArr=inArr.copy()
+    inArr = inArr.astype(float)
+    nanPos = np.where(np.isnan(inArr))
+    nanRow = nanPos[0]
+    nanCol = nanPos[1]
+    myArr = inArr.copy()
     for i in range(len(nanRow)):
-        if nanRow[i] >0:
-            myArr[nanRow[i],nanCol[i]]=myArr[nanRow[i]-1,nanCol[i]]
+        if nanRow[i] > 0:
+            myArr[nanRow[i],nanCol[i]] = myArr[nanRow[i] - 1, nanCol[i]]
             
     return myArr
 
 def returns_check(OPEN, CLOSE, HIGH, LOW, DATE, markets):
-    """ Quickly checks if any returns are crazy numbers using modified qupantiacs code.
+    """ Quickly checks if any returns are crazy numbers 
+        using modified qupantiacs code.
 
     Args:
         OPEN: open prices (n_timesteps, n_markets)
@@ -344,25 +346,27 @@ def returns_check(OPEN, CLOSE, HIGH, LOW, DATE, markets):
     """
 
     nMarkets = OPEN.shape[1]
-    sessionReturnTemp = np.append( np.empty((1,nMarkets))*np.nan,(( CLOSE[1:,:]- OPEN[1:,:]) / CLOSE[0:-1,:] ), axis =0 ).copy()
-    sessionReturn=np.nan_to_num( fillnans(sessionReturnTemp) )
-    gapsTemp=np.append(np.empty((1,nMarkets))*np.nan, (OPEN[1:,:]- CLOSE[:-1,:].astype(float)) / CLOSE[:-1:],axis=0)
-    gaps=np.nan_to_num(fillnans(gapsTemp))
+    sessionReturnTemp = np.append( np.empty((1, nMarkets)) * 
+                                   np.nan, ((CLOSE[1:,:] -
+                                   OPEN[1:, :]) / CLOSE[0:-1, :]), 
+                                   axis =0).copy()
+    sessionReturn = np.nan_to_num(fillnans(sessionReturnTemp))
+    gapsTemp = np.append(
+                       np.empty((1, nMarkets)) * 
+                       np.nan, (OPEN[1:, :] - CLOSE[:-1, :].astype(float)) / 
+                       CLOSE[:-1, :], axis=0)
+    gaps = np.nan_to_num(fillnans(gapsTemp))
 
     # check if a default slippage is specified
     slippage_setting = 0.05
-    slippageTemp = np.append(np.empty((1,nMarkets))*np.nan, ((HIGH[1:,:] - LOW[1:,:]) / CLOSE[:-1,:] ), axis=0) * slippage_setting
+    slippageTemp = np.append(np.empty((1,nMarkets))*np.nan, ((HIGH[1:,:] - LOW[1:,:]) / CLOSE[:-1,:]), axis=0) * slippage_setting
     SLIPPAGE = np.nan_to_num(fillnans(slippageTemp))
 
-    flag1 = (abs(SLIPPAGE)>0.7).sum()>0
-    flag2 = (abs(gaps)>50).sum()>0
-    flag3 = (abs(sessionReturn)>3).sum()>0
-    flag4 =  (abs(gaps)+abs(sessionReturn)>50).sum()>0
-    flag5 =  (abs(gaps)==np.inf).sum()>0
-    flag6 = (abs(sessionReturn)==np.inf).sum()>0
-    flag7 = (abs(SLIPPAGE)==np.inf).sum()>0
+    flag1 = (abs(SLIPPAGE) > 0.7).sum() > 0
+    flag3 = (abs(sessionReturn) > 3).sum() > 0
+    flag5 = (abs(gaps) == np.inf).sum() > 0
+    flag6 = (abs(sessionReturn) == np.inf).sum() > 0
+    flag7 = (abs(SLIPPAGE) == np.inf).sum() > 0
 
-    if flag1 or flag2 or flag3 or flag4 or flag5 or flag6 or flag7:
-        pi = np.where(sessionReturn>4)
-        
-        import pdb;pdb.set_trace()
+    if flag1 or flag3 or flag5 or flag6 or flag7:
+       print('Crazy returns!') 

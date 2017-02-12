@@ -16,48 +16,28 @@ from costs import compute_numpy_sharpe
 def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE, 
     CLOSE_ASK, CLOSE_BID, RETURN, SHARE, DIVIDEND, TOTALCAP, exposure, equity, settings, fundEquity):
     
-    n_markets=len(settings['markets'])
-
-    # Returns check to make sure nothing crazy happens!
-    returns_check(OPEN, CLOSE, HIGH, LOW, DATE, settings['markets'])
 
     market_data, all_data, should_retrain = preprocess(
         settings['markets'], OPEN, CLOSE, HIGH, LOW, VOL, DATE, 
         CLOSE_LASTTRADE, CLOSE_ASK, CLOSE_BID, RETURN, SHARE, 
         DIVIDEND, TOTALCAP, postipo=100, filler=0.123456789)
-
-    # Returns check afte preprocessing to make sure nothing crazy happens!
-    returns_check(market_data[:,:n_markets],
-                    market_data[:,n_markets:n_markets*2],
-                    market_data[:,n_markets*2:n_markets*3],
-                    market_data[:,n_markets*3:n_markets*4],
-                    DATE, settings['markets'])
-    
-    assert np.isnan(market_data).sum() == 0
-    assert np.isinf(market_data).sum() == 0
-    assert np.isnan(all_data).sum() == 0
-    assert np.isinf(all_data).sum() == 0
-    
+    n_markets = OPEN.shape[1]
     # Run backtester with preprocessing
     if len(settings['data_types']) == 0:
         # If no data_types are chosen, uses standard scaler on OPEN data.
         all_data = StandardScaler().fit_transform(all_data[:,:n_markets])
     else:
-        data = np.hstack([all_data[:, n_markets * j: n_markets * (j+1)] 
-                          for j in settings['data_types']])
+        z = [all_data[:, n_markets * j: n_markets * (j+1)] for j in settings['data_types']]
+        data = np.hstack([all_data[:, n_markets * j: n_markets * (j+1)] for j in settings['data_types']])
 
-        # Stacks chosen data back into correct shape!
-        all_data = np.hstack(data)
-    
     # Calculate Sharpe between training intervals
     n_days_back = np.mod(settings['iter'],settings['n_sharpe'])
+    recent_sharpe = np.nan
     if n_days_back > 3:
         recent_sharpe=compute_numpy_sharpe(positions=exposure[None,-n_days_back:-1,:],
                              prices=market_data[None,-n_days_back+1:,:],
                              slippage=0.05,
                              n_ignore=0)
-    if settings['iter']==0:
-        recent_sharpe=0
 
     print('Iter {} [{}], equity {}.'.format(settings['iter'], 
                                             DATE[-1],
@@ -78,6 +58,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
         print 'Done with initializing neural net!'
 
     # Train the neural net on current data.
+    best_val_sharpe = -np.inf
     if settings['iter'] % settings['retrain_interval'] == 0:
         best_val_sharpe = -np.inf
         best_tr_loss = np.inf
@@ -152,9 +133,8 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
         positions[cash_index] = 1
     
     # Save validation sharpes and actualized sharpes!
-    settings['realized_sharpe'][settings['iter']] = recent_sharpe
-    settings['saved_val_sharpe'][settings['iter']] = best_val_sharpe
-    
+    settings['realized_sharpe'].append(recent_sharpe)
+    settings['saved_val_sharpe'].append(best_val_sharpe)
     
     settings['iter'] += 1
     return positions, settings
@@ -167,7 +147,7 @@ def mySettings():
     settings['n_sharpe'] = 50 # This many timesteps to compute Sharpes.
     settings['horizon'] = settings['n_time'] - settings['n_sharpe'] + 1
     settings['lbd'] = .1 # L1 regularizer strength.
-    settings['num_epochs'] = 30 # Number of epochs each day.
+    settings['num_epochs'] = 10 # Number of epochs each day.
     settings['batch_size'] = 128
     settings['val_period'] = 32
     settings['lr'] = 1e-4 # Learning rate.
@@ -182,6 +162,8 @@ def mySettings():
     settings['endInSample'] = '20140101'
     settings['val_sharpe_threshold'] = 1
     settings['retrain_interval'] = 10
+    settings['realized_sharpe'] = []
+    settings['saved_val_sharpe'] = []
     ''' Pick data types to feed into neural net. If empty, only CLOSE will be used. 
     Circle dates added automatically if any setting is provided. 
     0 = OPEN
