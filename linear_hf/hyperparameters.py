@@ -1,19 +1,18 @@
 """Determine the optimal hyperparameters for the neural net."""
 import sys
-import random
-
-import numpy as np
 import joblib
+import itertools
+
+import random
+import numpy as np
 
 import neuralnet
 from preprocessing import non_nan_markets
 from preprocessing import nan_markets
 from preprocessing import returns_check
 from preprocessing import preprocess
-from batching_splitting import split_validation_training
 from costs import compute_numpy_sharpe
 
-import itertools
 
 from run_backtest import myTradingSystem
 
@@ -73,7 +72,7 @@ def supply_hypers():
 
     # Get random choices from the ranges (inclusive).
     settings = {}
-    for setting in CHOICES.keys():
+    for setting in CHOICES:
         settings[setting] = random.choice(CHOICES[setting])
 
     # Get n_sharpe using n_time.
