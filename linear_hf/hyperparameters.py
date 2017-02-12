@@ -1,18 +1,9 @@
 """Determine the optimal hyperparameters for the neural net."""
-import sys
 import joblib
 import itertools
 
 import random
 import numpy as np
-
-import neuralnet
-from preprocessing import non_nan_markets
-from preprocessing import nan_markets
-from preprocessing import returns_check
-from preprocessing import preprocess
-from costs import compute_numpy_sharpe
-
 
 from run_backtest import myTradingSystem
 
