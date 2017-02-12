@@ -20,25 +20,17 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
     market_data, all_data, should_retrain = preprocess(
         settings['markets'], OPEN, CLOSE, HIGH, LOW, VOL, DATE, 
         CLOSE_LASTTRADE, CLOSE_ASK, CLOSE_BID, RETURN, SHARE, 
-        DIVIDEND, TOTALCAP, postipo=100, filler=0.123456789, settings['data_types'])
-    n_markets = OPEN.shape[1]
-    # Run backtester with preprocessing
-    if len(settings['data_types']) == 0:
-        # If no data_types are chosen, uses standard scaler on OPEN data.
-        all_data = StandardScaler().fit_transform(all_data[:,:n_markets])
-    else:
-        z = [all_data[:, n_markets * j: n_markets * (j+1)] for j in settings['data_types']]
-        data = np.hstack([all_data[:, n_markets * j: n_markets * (j+1)] for j in settings['data_types']])
-
+        DIVIDEND, TOTALCAP, postipo=100, filler=0.123456789, 
+        data_types = settings['data_types'])
     # Calculate Sharpe between training intervals
     n_days_back = np.mod(settings['iter'],settings['n_sharpe'])
-    recent_sharpe = np.nan
     if n_days_back > 3:
         recent_sharpe=compute_numpy_sharpe(positions=exposure[None,-n_days_back:-1,:],
                              prices=market_data[None,-n_days_back+1:,:],
                              slippage=0.05,
                              n_ignore=0)
-
+    else:
+        recent_sharpe = np.nan
     print('Iter {} [{}], equity {}.'.format(settings['iter'], 
                                             DATE[-1],
                                             fundEquity[-1]))
