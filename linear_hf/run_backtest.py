@@ -134,7 +134,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
     
     # Save validation sharpes and actualized sharpes!
     settings['realized_sharpe'].append(recent_sharpe)
-    settings['saved_val_sharpe'].(best_val_sharpe)
+    settings['saved_val_sharpe'].append(best_val_sharpe)
     
     settings['iter'] += 1
     return positions, settings
