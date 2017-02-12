@@ -101,7 +101,7 @@ def nan_markets(start_date, end_date, postipo=0, lookback=0):
             # Some data files have 99.0 as NaN in close price!
             if len([s for s in f if 'NaN' in s]) > 0:
                 alives.append(fname)
-    print str(len(alives))+' stocks, start:'+start_date_minuspostipo)
+    print str(len(alives))+' stocks, start:'+start_date_minuspostipo
     return [symbol.split('/')[1][:-4] for symbol in alives] 
 
 
