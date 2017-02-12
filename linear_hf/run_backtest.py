@@ -16,28 +16,12 @@ from costs import compute_numpy_sharpe
 def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE, 
     CLOSE_ASK, CLOSE_BID, RETURN, SHARE, DIVIDEND, TOTALCAP, exposure, equity, settings, fundEquity):
     
-    n_markets=len(settings['markets'])
-
-    # Returns check to make sure nothing crazy happens!
-    returns_check(OPEN, CLOSE, HIGH, LOW, DATE, settings['markets'])
 
     market_data, all_data, should_retrain = preprocess(
         settings['markets'], OPEN, CLOSE, HIGH, LOW, VOL, DATE, 
         CLOSE_LASTTRADE, CLOSE_ASK, CLOSE_BID, RETURN, SHARE, 
         DIVIDEND, TOTALCAP, postipo=100, filler=0.123456789)
 
-    # Returns check afte preprocessing to make sure nothing crazy happens!
-    returns_check(market_data[:,:n_markets],
-                    market_data[:,n_markets:n_markets*2],
-                    market_data[:,n_markets*2:n_markets*3],
-                    market_data[:,n_markets*3:n_markets*4],
-                    DATE, settings['markets'])
-    
-    assert np.isnan(market_data).sum() == 0
-    assert np.isinf(market_data).sum() == 0
-    assert np.isnan(all_data).sum() == 0
-    assert np.isinf(all_data).sum() == 0
-    
     # Run backtester with preprocessing
     if len(settings['data_types']) == 0:
         # If no data_types are chosen, uses standard scaler on OPEN data.
@@ -179,6 +163,8 @@ def mySettings():
     settings['endInSample'] = '20140101'
     settings['val_sharpe_threshold'] = 1
     settings['retrain_interval'] = 10
+    settings['realized_sharpe'] = []
+    settings['saved_val_sharpe'] = []
     ''' Pick data types to feed into neural net. If empty, only CLOSE will be used. 
     Circle dates added automatically if any setting is provided. 
     0 = OPEN
