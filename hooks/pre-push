@@ -41,12 +41,41 @@ if [ $branch_status != "=" ]; then
     exit 1
 fi
 
+# Check for pdbs.
+
+# Get list of commits with import pdb added.
+pdbdiffs=$(git diff origin/master..HEAD -- '*.py' | grep + | grep 'import pdb')
+
+# If pdbdiffs is not empty, exit.
+if [ ! -z "$pdbdiffs" ]; then
+    echo "Your commits have import pdbs. Please remove them."
+    exit 1
+fi
+
+# Find modified python files.
+pyfiles=$(git diff origin/master..HEAD --name-only -- '*.py')
+
+# Check to see how the pylint score changed, rejecting bad ones.
+# for f in $pyfiles
+# do
+#     # Find the score of the
+#     oldscore=$(grep $f scorelints.txt | awk '{print $2}')
+#     newscore=$(pylint $f | grep 'Your code has been rated at' |\
+# 		      awk -F'at ' '{print $2}' | awk -F'/' '{print $1}')
+#     okayscore=$(echo "$oldscore-$newscore>=0" | bc)
+#     if [ "$okayscore" -eq "1" ]; then
+# 	echo ""
+#     else
+# 	echo "Not okay."
+#     fi
+# done
+
 # Run the tests.
 if [ $current = $protected ]; then
     python -m pytest
     RESULT=$?
     if [ $RESULT -ne 0 ]; then
-	echo "Failed tests."
+	echo "Failed pytests."
 	exit 1
     fi
 fi
