@@ -17,7 +17,12 @@ linear_hf/costs.py -2.08
 linear_hf/neuralnet.py 1.01
 linear_hf/quantiacs_code.py -7.76
 tests/test_hypers.py 8.89
-linear_hf/hyperparameters.py 5.00
-linear_hf/preprocessing.py 
-linear_hf/run_backtest.py 0.81
-tests/test_preprocessing.py -14.74
+tests/test_hypers.py 8.89
+linear_hf/causality/causal_regularization.py 5.81
+linear_hf/causality/__init__.py 0.00
+linear_hf/causality/causal_base.py 2.34
+linear_hf/causality/tools/distcorr.py 2.86
+linear_hf/hyperparameters.py 7.53
+linear_hf/preprocessing.py 2.54
+linear_hf/run_backtest.py 0.90
+tests/test_preprocessing.py -15.34

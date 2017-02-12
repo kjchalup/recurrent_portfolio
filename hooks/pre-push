@@ -68,7 +68,7 @@ do
     isnew=$(grep $f scorelints.txt)
 
     # Find the new score
-    newscore=$(pylint $f | grep 'Your code has been rated at' |\
+    newscore=$(pylint --rcfile=~/.pylint.rc $f | grep 'Your code has been rated at' |\
 		      awk -F'at ' '{print $2}' | awk -F'/' '{print $1}')
 
     # If new, run pytest and only allow a push if the score > 5.
