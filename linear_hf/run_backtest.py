@@ -135,7 +135,6 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
     # Save validation sharpes and actualized sharpes!
     settings['realized_sharpe'][settings['iter']] = recent_sharpe
     settings['saved_val_sharpe'][settings['iter']] = best_val_sharpe
-    import pdb;pdb.set_trace() 
     
     settings['iter'] += 1
     return positions, settings

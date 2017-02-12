@@ -66,7 +66,6 @@ def non_nan_markets(start_date, end_date, postipo=0, lookback=0):
         f = open(fname, 'r').readlines()
         # Only include stocks that IPO at least 100 days before we begin trading,
         # and that are still alive on that day.
-        #import pdb;pdb.set_trace()
         if (int(f[1].split(',')[0]) < int(start_date_minuspostipo) and 
             int(f[-1].split(',')[0]) >= int(end_date)):
             
@@ -104,14 +103,12 @@ def nan_markets(start_date, end_date, postipo=0, lookback=0):
         f = open(fname, 'r').readlines()
         # Only include stocks that IPO at least 100 days before we begin trading,
         # and that are still alive on that day.
-        #import pdb;pdb.set_trace()
         if (int(f[1].split(',')[0]) < int(start_date_minuspostipo) and 
             int(f[-1].split(',')[0]) >= int(start_date)):
            
             # Some data files have 99.0 as NaN in close price!
             if len([s for s in f if 'NaN' in s]) > 0 and len([s for s in f if 'NaN,99' in s]) == 0:
                 alives.append(fname)
-    #import pdb;pdb.set_trace()
     print ('Found '+str(len(alives))+' stocks with nans starting after '+start_date_minuspostipo)
     return [symbol.split('/')[1][:-4] for symbol in alives] 
 
@@ -183,7 +180,6 @@ def preprocess(markets, opens, closes, highs, lows, vols, dates,
     divide_shares_by = float(90000)
     shares = shares / divide_shares_by
     
-    #import pdb;pdb.set_trace()
     
     # -66 or -99 for returns is really zero!
     returns[returns<-1]=0
@@ -382,4 +378,3 @@ def returns_check(OPEN, CLOSE, HIGH, LOW, DATE, markets):
     if flag1 or flag2 or flag3 or flag4 or flag5 or flag6 or flag7:
         pi = np.where(sessionReturn>4)
         
-        import pdb;pdb.set_trace()

@@ -157,7 +157,6 @@ def test_preprocessing_nonans_nozeros(dataDict_withCASH):
     SLIPPAGE = np.nan_to_num(fillnans(slippageTemp))
 
     # Check before
-    #import pdb;pdb.set_trace()
     assert (abs(SLIPPAGE)>0.7).sum()==0
     #assert (abs(gaps)>6).sum()==0
     assert (abs(sessionReturn)>6).sum()==0
@@ -177,7 +176,6 @@ def test_preprocessing_nonans_nozeros(dataDict_withCASH):
     n_markets4 = filled_prices.shape[1]
     assert (filled_prices==0).sum()==0, "Zeros put into preprocessor!"
     assert (np.isnan(filled_prices)).sum()==0, "NaNs put into preprocess!"
-    #import pdb;pdb.set_trace()
     assert np.mod((filled_prices==filler).sum(),filled_prices.shape[0]*4)==0, "Filler is only applied to dead stocks!"   
     
     dataDict['OPEN'] = filled_prices[:,:n_markets]
