@@ -20,7 +20,10 @@
 remote="$1"
 url="$2"
 
-# Test python code with pytest before push.
+# Add some color codes.
+RED='\033[0;31m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
 
 # Define protected branch and find current branch.
 protected='master'
@@ -36,24 +39,27 @@ fi
 branch_status=$(git fetch -v --dry-run 2>&1 | grep $current | awk '{print $1}')
 
 # Exit if we need to pull.
-if [ $branch_status != "=" ]; then
+if [ "$branch_status" != "=" ]; then
     echo 'Please pull and merge before pushing.'
-    exit 1
-fi
-
-# Check for pdbs.
-
-# Get list of commits with import pdb added.
-pdbdiffs=$(git diff origin/master..HEAD -- '*.py' | grep + | grep 'import pdb')
-
-# If pdbdiffs is not empty, exit.
-if [ ! -z "$pdbdiffs" ]; then
-    echo "Your commits have import pdbs. Please remove them."
     exit 1
 fi
 
 # Find modified python files.
 pyfiles=$(git diff origin/master..HEAD --name-only -- '*.py')
+
+# Check commited files for pdbs.
+for f in $pyfiles
+do
+    # Find pdbs in a given file.
+    pdbdiffs=$(git diff origin/master:"$f" "$f" | grep + | grep 'import pdb')
+
+    # If pdbdiffs is not empty, exit.
+    if [ ! -z "$pdbdiffs" ]; then
+	echo "${RED}$f${NC} has ${BLUE}\"import pdbs\"${NC}.
+Please remove them."
+	exit 1
+    fi
+done
 
 # Check to see how the pylint score changed, rejecting bad ones.
 for f in $pyfiles
@@ -69,7 +75,8 @@ do
     if [ -z "$isnew" ]; then
 	goodstart=$(echo "$newscore>5" | bc)
 	if [ "$goodstart" -ne "1" ]; then
-	    echo "$f has a pylint score below 5. Please improve it and try again."
+	    echo "${RED}$f${NC} has a ${BLUE}pylint${NC} score below 5.
+Please improve it and try again."
 	    exit 1       
 	else
 	    echo "$f $newscore" >> scorelints.txt
@@ -82,7 +89,8 @@ do
 	# Check if the score is not good enough.
 	okayscore=$(echo "$newscore>=$oldscore" | bc)
 	if [ "$okayscore" -ne "1" ]; then
-	    echo "You've decreased the pylint score for $f. Please improve it and try again."
+	    echo "You've decreased the ${BLUE}pylint${NC} score for ${RED}$f${NC}.
+Please improve it and try again."
 	    exit 1
 	else
 	    grep -v $f scorelints.txt > lint_temp.txt
@@ -92,7 +100,7 @@ do
     fi
 done
 
-# Run the tests.
+# Run pytests.
 if [ $current = $protected ]; then
     python -m pytest
     RESULT=$?
