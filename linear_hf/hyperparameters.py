@@ -10,7 +10,7 @@ from preprocessing import non_nan_markets
 from batching_splitting import split_validation_training
 
 import itertools
-
+import pdb; pdb.set_trace()
 def powerset(iterable):
     "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
     s = list(iterable)
