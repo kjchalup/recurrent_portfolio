@@ -12,14 +12,22 @@ from batching_splitting import split_validation_training
 import itertools
 
 def powerset(iterable):
-    "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
+    """ Returns the set of all subsets of the iterable.
+
+    Args:
+      iterable: A Python iterable.
+
+    Returns:
+      result: The set of all subsets of the iterable, including the empty set.
+    """
     s = list(iterable)
 
     result = list(itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(len(s)+1)))
     return result
+
 # Define constants for use in choosing hyperparameters.
 LBDS = np.append(10.**np.arange(-5, 3), [0.])
-CHOICES = {'n_time': range(20, 253), # Timesteps in one datapoint.
+CHOICES = {'n_time': range(21, 253), # Timesteps in one datapoint.
            'lbd': LBDS,              # L1 regularizer strength.
            'num_epochs': range(1, 51),   # Number of epochs each day.
            'batch_size': [32, 64, 128],  # Batch size.
@@ -99,7 +107,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, settings, fundEquity): # pylin
     return positions, settings
 
 def mySettings():
-    """Settings for strategy."""
+    """ Settings for strategy. """
     settings = {}
     settings = joblib.load('saved_data/hypers.pkl')
 
@@ -121,12 +129,12 @@ def supply_hypers():
 
     # Get random choices from the ranges (inclusive).
     settings = {}
-    for setting in CHOICES:
+    for setting in CHOICES.keys():
         settings[setting] = random.choice(CHOICES[setting])
 
     # Get n_sharpe using n_time.
-    settings['n_sharpe'] = random.randint(N_SHARPE_MIN,
-                                          settings['n_time'] - N_SHARPE_GAP)
+    settings['n_sharpe'] = random.randint(
+        N_SHARPE_MIN, settings['n_time'] - N_SHARPE_GAP)
 
     return settings
 
@@ -161,10 +169,6 @@ if __name__ == '__main__':
         print(RESULTS['stats'])
 
         # Reduce the size of the results files.
-        # RESULTS['fundDate'] = None
-        # RESULTS['marketEquity'] = None
-        # RESULTS['returns'] = None
-        # RESULTS['marketExposure'] = None
         HYPER_RESULTS.append(RESULTS)
 
         # Save the results
