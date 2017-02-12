@@ -10,24 +10,26 @@ def load_nyse_markets(start_date, end_date, postipo=100, lookback=0):
     Args:
         start_date: date of starting to consider data
         end_date: not used
-        postipo: number of days stock befor start_date the stock must start to be considered.
+        postipo: number of days stock befor start_date the stock must 
+        start to be considered.
         lookback: start_date - lookback is the actual date used for start_date
 
     """
 
-    # Load nyse stocks that IPDd between start and end date, with margin padding.
+    # Load nyse stocks that IPDd between start and end date, with margin 
+    # padding.
     all_nyse = glob.glob('tickerData/*nyse.txt')
     alives = []
     # Get end_date minus some a number!
 
     start_date_minuspostipo = (datetime.strptime(start_date, '%Y%m%d') -
-        timedelta(days=postipo)).strftime('%Y%m%d')
+                               timedelta(days=postipo)).strftime('%Y%m%d')
     for fname in all_nyse:
         f = open(fname, 'r').readlines()
-        # Only include stocks that IPO at least 100 days before we begin trading,
-        # and that are still alive on that day.
+        # Only include stocks that IPO at least 100 days before we begin 
+        # trading, and that are still alive on that day.
         if (int(f[1].split(',')[0]) < int(start_date_minuspostipo) and 
-            int(f[-1].split(',')[0]) > int(start_date)):
+                int(f[-1].split(',')[0]) > int(start_date)):
             alives.append(fname)
     return [symbol.split('/')[1][:-4] for symbol in alives] 
 
@@ -37,7 +39,8 @@ def non_nan_markets(start_date, end_date, postipo=0, lookback=0):
         start_date-lookback-postipo and end after end_date.
 
     Args:
-        start_date: start date for which stocks must begin by, adjusted by postipo
+        start_date: start date for which stocks must begin by, 
+        adjusted by postipo
         end_date: stocks must live until this date
         postipo: number of days before start_date a stock must start by.
         lookback: not used.
@@ -52,17 +55,17 @@ def non_nan_markets(start_date, end_date, postipo=0, lookback=0):
     # Get end_date minus some a number!
 
     start_date_minuspostipo = (datetime.strptime(start_date, '%Y%m%d') -
-        timedelta(days=postipo)).strftime('%Y%m%d')
+                               timedelta(days=postipo)).strftime('%Y%m%d')
     for fname in all_nyse:
         f = open(fname, 'r').readlines()
-        # Only include stocks that IPO at least 100 days before we begin trading,
-        # and that are still alive on that day.
+        # Only include stocks that IPO at least 100 days before we begin 
+        # trading, and that are still alive on that day.
         if (int(f[1].split(',')[0]) < int(start_date_minuspostipo) and 
-            int(f[-1].split(',')[0]) >= int(end_date)):
-            
+                int(f[-1].split(',')[0]) >= int(end_date)):
             if len([s for s in f if 'NaN' in s]) == 0:
                 alives.append(fname)
-    print ('Found '+str(len(alives))+' stocks with no nans starting after '+start_date_minuspostipo)
+    print 'Found '+str(len(alives))+' stocks with no nans starting after ' + 
+          start_date_minuspostipo
     return [symbol.split('/')[1][:-4] for symbol in alives] 
 
 def nan_markets(start_date, end_date, postipo=0, lookback=0):
