@@ -146,7 +146,6 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
     # Predict a portfolio.
     settings['nn'].load()
     positions = settings['nn'].predict(all_data[-settings['horizon']:])
-    #import pdb;pdb.set_trace()
     if settings['dont_trade']:
         positions *= 0 
         cash_index = settings['markets'].index('CASH')
