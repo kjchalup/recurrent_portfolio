@@ -56,19 +56,35 @@ fi
 pyfiles=$(git diff origin/master..HEAD --name-only -- '*.py')
 
 # Check to see how the pylint score changed, rejecting bad ones.
-# for f in $pyfiles
-# do
-#     # Find the score of the
-#     oldscore=$(grep $f scorelints.txt | awk '{print $2}')
-#     newscore=$(pylint $f | grep 'Your code has been rated at' |\
-# 		      awk -F'at ' '{print $2}' | awk -F'/' '{print $1}')
-#     okayscore=$(echo "$oldscore-$newscore>=0" | bc)
-#     if [ "$okayscore" -eq "1" ]; then
-# 	echo ""
-#     else
-# 	echo "Not okay."
-#     fi
-# done
+for f in $pyfiles
+do
+    # Check if the file is new.
+    isnew=$(grep $f scorelints.txt)
+
+    # Find the new score
+    newscore=$(pylint $f | grep 'Your code has been rated at' |\
+		      awk -F'at ' '{print $2}' | awk -F'/' '{print $1}')
+
+    # If new, run pytest and only allow a push if the score > 5.
+    if [ -z "$isnew" ]; then
+	goodstart=$(echo "$newscore>5" | bc)
+	if [ "$goodstart" -ne "1" ]; then
+	    echo "$f has a pylint score below 5. Please imrove it and try again."
+    # If not new, check the old score and only push if score is same or better.
+    else
+	# Find the old score.
+	oldscore=$(grep $f scorelints.txt | awk '{print $2}')
+
+	# Check if the score is not good enough.
+	okayscore=$(echo "$oldscore-$newscore>=0" | bc)
+	if [ "$okayscore" -ne "1" ]; then
+	    echo "You've decreased the pylint score for $f. Please improve it and try again."
+	    #exit 1
+	else
+	    echo "$f"
+	fi
+    fi
+done
 
 # Run the tests.
 if [ $current = $protected ]; then
