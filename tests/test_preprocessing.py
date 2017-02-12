@@ -171,7 +171,8 @@ def test_preprocessing_nonans_nozeros(dataDict_withCASH):
                                                         close_lasttrade, close_ask, 
                                                         close_bid, returns, 
                                                         shares, dividends, totalcaps, 
-                                                        postipo=postipo, filler=filler)
+                                                        postipo=postipo, filler=filler,
+                                                        data_types=[0,1,2,3,4,5,6,7,8,9,10,11,12])
     
     n_markets4 = filled_prices.shape[1]
     assert (filled_prices==0).sum()==0, "Zeros put into preprocessor!"
