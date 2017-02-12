@@ -22,7 +22,8 @@ def powerset(iterable):
     """
     s = list(iterable)
 
-    result = list(itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(len(s)+1)))
+    result = list(itertools.chain.from_iterable(
+        itertools.combinations(s, r) for r in range(len(s)+1)))
     return result
 
 # Define constants for use in choosing hyperparameters.
@@ -33,7 +34,7 @@ CHOICES = {'n_time': range(21, 253), # Timesteps in one datapoint.
            'batch_size': [32, 64, 128],  # Batch size.
            'lr': 10.**np.arange(-5, 0),  # Learning rate.
            'allow_shorting': [True, False],
-           'lookback' : [200,300,400,500,600,700,800,900,1000],
+           'lookback' : [200, 300, 400, 500, 600, 700, 800, 900, 1000],
            'val_period' : [0,2,4,8,16,32],
            'val_sharpe_threshold' : [-np.inf, 0, 1, 2],
            'retrain_interval' : [1] + range(10,252),
