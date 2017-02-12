@@ -21,7 +21,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
         settings['markets'], OPEN, CLOSE, HIGH, LOW, VOL, DATE, 
         CLOSE_LASTTRADE, CLOSE_ASK, CLOSE_BID, RETURN, SHARE, 
         DIVIDEND, TOTALCAP, postipo=100, filler=0.123456789)
-
+    n_markets = OPEN.shape[1]
     # Run backtester with preprocessing
     if len(settings['data_types']) == 0:
         # If no data_types are chosen, uses standard scaler on OPEN data.
