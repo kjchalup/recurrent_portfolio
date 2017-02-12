@@ -19,18 +19,20 @@ def powerset(iterable):
     return result
 # Define constants for use in choosing hyperparameters.
 LBDS = np.append(10.**np.arange(-5, 3), [0.])
+x = [[1] + list(j) for j in powerset([0]+range(2,13))]
 CHOICES = {'n_time': range(20, 253), # Timesteps in one datapoint.
            'lbd': LBDS,              # L1 regularizer strength.
            'num_epochs': range(1, 51),   # Number of epochs each day.
            'batch_size': [32, 64, 128],  # Batch size.
            'lr': 10.**np.arange(-5, 0),  # Learning rate.
            'allow_shorting': [True, False],
-           'data_types' : [[1]+list(j) for j in powerset([0]+range(2,13))],
            'lookback' : [200,300,400,500,600,700,800,900,1000],
            'val_period' : [0,2,4,8,16,32],
            'val_sharpe_threshold' : [-np.inf, 0, 1, 2],
-           'retrain_interval' : [1] + range(10,252), 
-           }
+           'retrain_interval' : [1] + range(10,252),
+           'data_types' : [[1] + list(j) for j in powerset([0]+range(2,13))]}
+
+
 N_SHARPE_MIN = 10               # Minimum value for n_sharpe.
 N_SHARPE_GAP = 10               # n_sharpe's max is this much less than n_time.
 N_RUNS = 2
