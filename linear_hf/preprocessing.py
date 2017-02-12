@@ -329,7 +329,7 @@ def fillnans(inArr):
     return myArr
 
 def returns_check(OPEN, CLOSE, HIGH, LOW, DATE, markets):
-    """ Quickly checks if any returns are crazy numbers using modified quantiacs code.
+    """ Quickly checks if any returns are crazy numbers using modified qupantiacs code.
 
     Args:
         OPEN: open prices (n_timesteps, n_markets)
