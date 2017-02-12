@@ -49,7 +49,7 @@ def compute_numpy_sharpe(positions, prices, slippage=0.05, return_returns = Fals
             (np.sqrt(252 * ((rs**2).sum(axis=1) / n_sharpe - 
             np.sum(rs, axis=1)**2 / n_sharpe**2)))).mean()
 
-def sharpe_tf(positions, prices, n_sharpe, n_markets, slippage=.05, n_ignore=2):
+def sharpe_tf(positions, prices, n_sharpe, n_markets, slippage=.05, n_ignore=2, cost='sharpe'):
     """ Compute average Sharpe ratio of a strategy using Tensorflow.
 
     Args:
@@ -65,6 +65,7 @@ def sharpe_tf(positions, prices, n_sharpe, n_markets, slippage=.05, n_ignore=2):
       slippage (float): slippage coefficient.
       n_ignore (int): ignore this many of the first returns 
         (to avoid boundary effects breaking training).
+      cost (str): cost to use: 'sharpe', 'min_return', 'mean_return', or 'mixed_return'
     
     Returns:
       sharpe (tf.float): Tensor, representation of the Sharpe 
@@ -93,11 +94,19 @@ def sharpe_tf(positions, prices, n_sharpe, n_markets, slippage=.05, n_ignore=2):
     rs = tf.stack(rs_list, axis=1)[:, :, 0]
     rs = rs[:, n_ignore:]
     n_sharpe -= n_ignore
-
-    return tf.reduce_mean((tf.pow(
-        tf.reduce_prod(rs+1, axis=1), (252./n_sharpe))-1) / 
-        (tf.sqrt(252 * (tf.reduce_sum(tf.pow(rs, 2), axis=1) / n_sharpe -
-                        tf.pow(tf.reduce_sum(rs, axis=1), 2) / n_sharpe**2))))
+    
+    if cost == 'sharpe':
+        return tf.reduce_mean((tf.pow(
+            tf.reduce_prod(rs+1, axis=1), (252./n_sharpe))-1) / 
+            (tf.sqrt(252 * (tf.reduce_sum(tf.pow(rs, 2), axis=1) / n_sharpe -
+                            tf.pow(tf.reduce_sum(rs, axis=1), 2) / n_sharpe**2))))
+    elif cost == 'min_return':
+        return tf.reduce_min(rs)
+    elif cost == 'mean_return':
+        return tf.reduce_mean(rs)
+    elif cost == 'mixed_return':
+        return tf.reduce_mean((tf.pow(tf.reduce_prod(rs+1, axis=1), (252./n_sharpe))-1)
+                              * tf.reduce_min(rs))
 
 def compute_sharpe_tf(batch_in, batch_out):
     n, n_time, n_ftrs = batch_in.shape
@@ -113,6 +122,5 @@ def compute_sharpe_tf(batch_in, batch_out):
         name='output_batch')
 
     return sess.run(sharpe_tf(batch_in_tf, batch_out_tf, n_sharpe, n_markets), 
-             {batch_in_tf: batch_in,
-              batch_out_tf: batch_out})
+                    {batch_in_tf: batch_in, batch_out_tf: batch_out})
 

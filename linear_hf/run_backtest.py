@@ -54,7 +54,8 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
                                           n_time=settings['n_time'],
                                           n_sharpe=settings['n_sharpe'],
                                           lbd=settings['lbd'],
-                                          allow_shorting=False)
+                                          allow_shorting=settings['allow_shorting'],
+                                          cost=settings['cost_type'])
         print 'Done with initializing neural net!'
 
     # Train the neural net on current data.
@@ -62,8 +63,9 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
     if settings['iter'] % settings['retrain_interval'] == 0:
         best_val_sharpe = -np.inf
         best_tr_loss = np.inf
-        settings['nn'].restart_variables()
-        lr_mult = .1 ** (1. / settings['num_epochs'])
+        if settings['restart_variables']:
+            settings['nn'].restart_variables()
+        lr_mult = settings['lr_mult_base'] ** (1. / settings['num_epochs'])
         batches_per_epoch = int(np.floor((all_data.shape[0] -
                                           settings['horizon'] -
                                           settings['val_period'] -
@@ -87,7 +89,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
                 settings['nn'].train_step(
                     batch_in=all_batch, 
                     batch_out=market_batch, 
-                    lr=settings['lr'] * lr_mult ** epoch_id)
+                    lr = settings['lr'] * lr_mult ** epoch_id)
                 loss = settings['nn'].loss_np(all_batch, market_batch)
                 l1_loss = settings['nn'].l1_penalty_np()
                 tr_sharpe += -(loss - l1_loss)
@@ -108,7 +110,6 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
 
                 # Record val_sharpe for results
                 settings['val_sharpe'] = best_val_sharpe
-                
 
             elif loss < best_tr_loss:
                 best_tr_loss = loss
@@ -118,12 +119,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
             sys.stdout.write('\nEpoch {}, val/tr Sharpe {:.4}/{:.4g}.'.format(
                 epoch_id, val_sharpe, tr_sharpe))
             sys.stdout.flush()
-
-        if settings['val_period'] > 0 and best_val_sharpe < 0:
-            settings['dont_trade'] = True
-        else:
-            settings['dont_trade'] = False
-
+        
     # Predict a portfolio.
     settings['nn'].load()
     positions = settings['nn'].predict(all_data[-settings['horizon']:])
@@ -143,11 +139,11 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
 def mySettings():
     settings={}
     # Futures Contracts
-    settings['n_time'] =  100 # Use this many timesteps in one datapoint.
-    settings['n_sharpe'] = 50 # This many timesteps to compute Sharpes.
+    settings['n_time'] =  60 # Use this many timesteps in one datapoint.
+    settings['n_sharpe'] = 30 # This many timesteps to compute Sharpes.
     settings['horizon'] = settings['n_time'] - settings['n_sharpe'] + 1
     settings['lbd'] = .1 # L1 regularizer strength.
-    settings['num_epochs'] = 10 # Number of epochs each day.
+    settings['num_epochs'] = 30 # Number of epochs each day.
     settings['batch_size'] = 128
     settings['val_period'] = 32
     settings['lr'] = 1e-4 # Learning rate.
@@ -160,10 +156,15 @@ def mySettings():
     #settings['endInSample'] = '20131231'
     settings['beginInSample'] = '20040101'
     settings['endInSample'] = '20140101'
-    settings['val_sharpe_threshold'] = 1
-    settings['retrain_interval'] = 10
+    settings['val_sharpe_threshold'] = -np.inf
+    settings['retrain_interval'] = 30
     settings['realized_sharpe'] = []
     settings['saved_val_sharpe'] = []
+    settings['val_sharpe'] = -np.inf
+    settings['cost_type'] = 'min_return'
+    settings['allow_shorting'] = True
+    settings['lr_mult_base'] = .1
+    settings['restart_variables'] = True
     ''' Pick data types to feed into neural net. If empty, only CLOSE will be used. 
     Circle dates added automatically if any setting is provided. 
     0 = OPEN

@@ -34,7 +34,7 @@ def powerset(iterable):
     return result
 
 # Define constants for use in choosing hyperparameters.
-LBDS = np.append(10.**np.arange(-5, 3), [0.])
+LBDS = 10.**np.arange(-5, 3) + [0.]
 CHOICES = {'n_time': range(21, 253), # Timesteps in one datapoint.
            'lbd': LBDS,              # L1 regularizer strength.
            'num_epochs': range(1, 51),   # Number of epochs each day.
@@ -45,11 +45,14 @@ CHOICES = {'n_time': range(21, 253), # Timesteps in one datapoint.
            'val_period' : [0, 2, 4, 8, 16, 32],
            'val_sharpe_threshold' : [-np.inf, 0, 1, 2],
            'retrain_interval' : [1] + range(10, 252),
-           'data_types' : [[1] + list(j) for j in powerset([0] + range(2, 13))]}
+           'data_types' : [[1] + list(j) for j in powerset([0] + range(2, 13))],
+           'cost_type': ['sharpe', 'min_return', 'mean_return', 'mixed_return'],
+           'lr_mult_base': [1., .1, .01, .001],
+           'restart_variables': [True, False]}
 
 N_SHARPE_MIN = 10 # Minimum value for n_sharpe.
 N_SHARPE_GAP = 10 # n_sharpe's max is this much less than n_time.
-N_RUNS = 2 # ??? - KC
+N_RUNS = 1000 # ??? - KC
 
 def mySettings(): # pylint: disable=invalid-name,too-many-arguments
     """ Settings for strategy. """
@@ -87,13 +90,17 @@ if __name__ == '__main__':
 
         # Other SETTINGS.
         SETTINGS['horizon'] = SETTINGS['n_time'] - SETTINGS['n_sharpe'] + 1
+        if SETTINGS['cost_type'] != 'sharpe':
+            SETTINGS['val_sharpe_threshold'] = -np.inf
         SETTINGS['iter'] = 0
         SETTINGS['lookback'] = 1000
         SETTINGS['budget'] = 10**6
         SETTINGS['slippage'] = 0.05
-        SETTINGS['val_period'] = 0
-        SETTINGS['beginInSample'] = '20080102'
+        SETTINGS['beginInSample'] = '20040102'
         SETTINGS['endInSample'] = '20131201'
+        SETTINGS['realized_sharpe'] = []
+        SETTINGS['saved_val_sharpe'] = []
+        SETTINGS['val_sharpe'] = -np.inf
 
         # Save settings for use in test.
         joblib.dump(SETTINGS, 'saved_data/hypers.pkl')
