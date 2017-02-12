@@ -24,13 +24,17 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
         data_types = settings['data_types'])
     # Calculate Sharpe between training intervals
     n_days_back = np.mod(settings['iter'],settings['n_sharpe'])
-    if n_days_back > 3:
-        recent_sharpe=compute_numpy_sharpe(positions=exposure[None,-n_days_back:-1,:],
-                             prices=market_data[None,-n_days_back+1:,:],
+    if n_days_back > 2:
+        recent_sharpe=compute_numpy_sharpe(positions=exposure[None, -n_days_back-3:-1, :],
+                             prices=market_data[None, -n_days_back-2:, :],
                              slippage=0.05,
-                             n_ignore=0)
+                             n_ignore=2)
+        if np.isnan(recent_sharpe):
+            # NaNs out when all positions are cash, therefore std.dev(ret) = 0
+            recent_sharpe = 0
     else:
         recent_sharpe = np.nan
+    
     print('Iter {} [{}], equity {}.'.format(settings['iter'], 
                                             DATE[-1],
                                             fundEquity[-1]))
@@ -139,7 +143,7 @@ def mySettings():
     settings['n_sharpe'] = 50 # This many timesteps to compute Sharpes.
     settings['horizon'] = settings['n_time'] - settings['n_sharpe'] + 1
     settings['lbd'] = .1 # L1 regularizer strength.
-    settings['num_epochs'] = 10 # Number of epochs each day.
+    settings['num_epochs'] = 2 # Number of epochs each day.
     settings['batch_size'] = 128
     settings['val_period'] = 32
     settings['lr'] = 1e-4 # Learning rate.
