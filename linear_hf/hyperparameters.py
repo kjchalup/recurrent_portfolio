@@ -5,7 +5,7 @@ import random
 import numpy as np
 import joblib
 
-import neuralnet as neuralnet
+import neuralnet
 from preprocessing import non_nan_markets
 from batching_splitting import split_validation_training
 
@@ -20,10 +20,11 @@ def powerset(iterable):
     Returns:
       result: The set of all subsets of the iterable, including the empty set.
     """
-    s = list(iterable)
+    all_vals = list(iterable)
 
     result = list(itertools.chain.from_iterable(
-        itertools.combinations(s, r) for r in range(len(s)+1)))
+        itertools.combinations(all_vals, this_val)
+        for this_val in range(len(all_vals)+1)))
     return result
 
 # Define constants for use in choosing hyperparameters.
@@ -35,11 +36,10 @@ CHOICES = {'n_time': range(21, 253), # Timesteps in one datapoint.
            'lr': 10.**np.arange(-5, 0),  # Learning rate.
            'allow_shorting': [True, False],
            'lookback' : [200, 300, 400, 500, 600, 700, 800, 900, 1000],
-           'val_period' : [0,2,4,8,16,32],
+           'val_period' : [0, 2, 4, 8, 16, 32],
            'val_sharpe_threshold' : [-np.inf, 0, 1, 2],
-           'retrain_interval' : [1] + range(10,252),
-           'data_types' : [[1] + list(j) for j in powerset([0]+range(2,13))]}
-
+           'retrain_interval' : [1] + range(10, 252),
+           'data_types' : [[1] + list(j) for j in powerset([0] + range(2, 13))]}
 
 N_SHARPE_MIN = 10               # Minimum value for n_sharpe.
 N_SHARPE_GAP = 10               # n_sharpe's max is this much less than n_time.
@@ -49,9 +49,9 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, settings, fundEquity): # pylin
     """Neural net trading system."""
     all_data = np.array(OPEN)
     market_data = np.hstack([OPEN, CLOSE, HIGH, LOW])
-    print('Iter {} [{}], equity {}.'.format(settings['iter'],
+    print 'Iter {} [{}], equity {}.'.format(settings['iter'],
                                             DATE[-1],
-                                            fundEquity[-1]))
+                                            fundEquity[-1])
 
     if settings['iter'] == 0:
         # Define a new neural net.
@@ -108,7 +108,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, settings, fundEquity): # pylin
     settings['iter'] += 1
     return positions, settings
 
-def mySettings():
+def mySettings(): # pylint: disable=invalid-name,too-many-arguments
     """ Settings for strategy. """
     settings = {}
     settings = joblib.load('saved_data/hypers.pkl')
@@ -120,7 +120,7 @@ def mySettings():
                                           settings['endInSample'],
                                           lookback=settings['lookback'])
     settings['markets'] = settings['markets'][:10]
-    print(settings['markets'])
+    print settings['markets']
     return settings
 
 def supply_hypers():
@@ -165,10 +165,10 @@ if __name__ == '__main__':
 
         # Show the results.
         RESULTS['settings']['nn'] = None
-        print([str(hyper) +': ' + str(SETTINGS[hyper])
-               for hyper in SETTINGS and CHOICES])
-        print(['n_time: ' + str(SETTINGS['n_time'])])
-        print(RESULTS['stats'])
+        print [str(hyper) +': ' + str(SETTINGS[hyper])
+               for hyper in SETTINGS and CHOICES]
+        print ['n_time: ' + str(SETTINGS['n_time'])]
+        print RESULTS['stats']
 
         # Reduce the size of the results files.
         HYPER_RESULTS.append(RESULTS)
