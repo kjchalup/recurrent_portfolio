@@ -35,10 +35,9 @@ def load_nyse_markets(start_date, end_date, postipo=100, lookback=0):
         if (int(data[1].split(',')[0]) < int(start_date_minuspostipo) and
                 int(data[-1].split(',')[0]) > int(start_date)):
             alives.append(fname)
+    assert len(alives) > 0, "No stocks returned! Check start_date-postipo is OK!"
     return [symbol.split('/')[1][:-4] for symbol in alives]
 
-z=load_nyse_markets('20000105','20140101',lookback=0,postipo=0)
-import pdb;pdb.set_trace()
 def non_nan_markets(start_date, end_date, postipo=0, lookback=0):
     """ Loads all stocks with zero nans anywhere which begin before
         start_date-postipo and end after end_date.
@@ -69,6 +68,7 @@ def non_nan_markets(start_date, end_date, postipo=0, lookback=0):
             if len([s for s in data if 'NaN' in s]) == 0:
                 alives.append(fname)
     print str(len(alives))+' stocks, start:' +start_date_minuspostipo
+    assert len(alives) > 0, "No stocks returned! Check start_date-postipo is OK!"
     return [symbol.split('/')[1][:-4] for symbol in alives]
 
 def nan_markets(start_date, end_date, postipo=0, lookback=0):
@@ -102,6 +102,7 @@ def nan_markets(start_date, end_date, postipo=0, lookback=0):
             if len([s for s in data if 'NaN' in s]) > 0:
                 alives.append(fname)
     print str(len(alives))+' stocks, start:'+start_date_minuspostipo
+    assert len(alives) > 0, "No stocks returned! Check start_date-postipo is OK!"
     return [symbol.split('/')[1][:-4] for symbol in alives]
 
 def preprocess(markets, opens, closes, highs, lows, vols, dates,
