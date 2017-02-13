@@ -8,7 +8,7 @@ from  datetime import datetime, timedelta
 """
 
 def load_nyse_markets(start_date, end_date, postipo=100, lookback=0):
-    """ Loads nyse markets which start before start_date-postipo-lookback, and
+    """ Loads nyse markets which start before start_date-postipo, and
         end after start_date-lookback.
 
     Args:
@@ -16,7 +16,7 @@ def load_nyse_markets(start_date, end_date, postipo=100, lookback=0):
         end_date: not used
         postipo: number of days stock befor start_date the stock must
         start to be considered.
-        lookback: start_date - lookback is the actual date used for start_date
+        lookback: not used
 
     """
 
@@ -37,10 +37,11 @@ def load_nyse_markets(start_date, end_date, postipo=100, lookback=0):
             alives.append(fname)
     return [symbol.split('/')[1][:-4] for symbol in alives]
 
-
+z=load_nyse_markets('20000105','20140101',lookback=0,postipo=0)
+import pdb;pdb.set_trace()
 def non_nan_markets(start_date, end_date, postipo=0, lookback=0):
     """ Loads all stocks with zero nans anywhere which begin before
-        start_date-lookback-postipo and end after end_date.
+        start_date-postipo and end after end_date.
 
     Args:
         start_date: start date for which stocks must begin by,
@@ -72,16 +73,14 @@ def non_nan_markets(start_date, end_date, postipo=0, lookback=0):
 
 def nan_markets(start_date, end_date, postipo=0, lookback=0):
     """ Loads all stocks with nans anywhere which begin before
-        start_date-lookback-postipo and end after start_date-lookback.
-
-""
+        start_date-postipo and end after start_date.
 
     Args:
         start_date: start date for which stocks must begin by,
         adjusted by postipo
         end_date: not used
         postipo: number of days before start_date a stock must start by.
-        lookback: number of days before start_date a stock must start by.
+        lookback: not used.
 
     Returns:
         Names of stocks which fit the above criteria
