@@ -39,7 +39,10 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
     print('Iter {} [{}], equity {}.'.format(settings['iter'], 
                                             DATE[-1],
                                             fundEquity[-1]))
-    if settings['iter']>2:
+    if fundEquity[-1] < .75:
+        raise ValueError('Strategy lost too much money')
+
+    if settings['iter'] > 2:
         print('[Recent validation sharpe] Recent sharpe: [{}] {}'.format(
                                             settings['val_sharpe'],
                                             recent_sharpe))
@@ -96,15 +99,15 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
                 val_l1_loss = settings['nn'].l1_penalty_np()
                 val_sharpe = -(val_loss - val_l1_loss)
                 
+                if val_sharpe > best_val_sharpe:
+                    best_val_sharpe = val_sharpe
+                    settings['nn'].save()
+
                 if best_val_sharpe > settings['val_sharpe_threshold']:
                     settings['dont_trade'] = False
                 else:
                     settings['dont_trade'] = True
                 
-                if val_sharpe > best_val_sharpe:
-                    best_val_sharpe = val_sharpe
-                    settings['nn'].save()
-
                 # Record val_sharpe for results
                 settings['val_sharpe'] = best_val_sharpe
 
