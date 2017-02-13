@@ -260,7 +260,6 @@ def preprocess(markets, opens, closes, highs, lows, vols, dates,
                           totalcaps, x_date[:, None], y_date[:, None]))
     all_data = all_data.astype(np.float32)
     all_data[np.isnan(all_data)] = 0
-    
 
     # Run backtester with preprocessing
     if len('data_types') == 0:
@@ -273,8 +272,6 @@ def preprocess(markets, opens, closes, highs, lows, vols, dates,
         data = np.hstack([all_data[:, n_markets * j: n_markets * (j+1)] 
                          for j in data_types])
         all_data = data
-
-
 
     # Returns check to make sure nothing crazy happens!
     returns_check(filled_prices[:, :n_markets],
@@ -293,6 +290,12 @@ def circle_dates(dates):
     Transform the dates into a unit circle so the algos can learn about
     seasonality. Takes a date of the form 20161231, calculates the equivalent
     (x,y) coordinate using sine and cosine.
+    
+    Args:
+        dates: list of dates specified as %Y%m%d
+
+    Returns:
+        x_date, y_date: unit circle of dates for a year with 366 days
     '''
 
     # The days in each month of the year.
@@ -356,7 +359,7 @@ def returns_check(OPEN, CLOSE, HIGH, LOW, DATE, markets):
         markets: list of markets, often settings['markets']
 
     Returns:
-        Nothing. If it fails, it will enter you into debugger.
+        Nothing. If it fails, it will print that there are crazy returns.
     """
 
     nMarkets = OPEN.shape[1]
@@ -383,4 +386,4 @@ def returns_check(OPEN, CLOSE, HIGH, LOW, DATE, markets):
     flag7 = (abs(SLIPPAGE) == np.inf).sum() > 0
 
     if flag1 or flag3 or flag5 or flag6 or flag7:
-       print 'Crazy returns!' 
+       print '*****Crazy returns! ******* Check data validity!' 
