@@ -27,14 +27,14 @@ def powerset(iterable):
 LBDS = 10.**np.arange(-5, 3) + [0.]
 CHOICES = {'n_time': range(21, 100), # Timesteps in one datapoint.
            'lbd': LBDS,              # L1 regularizer strength.
-           'num_epochs': range(1, 51),   # Number of epochs each day.
+           'num_epochs': [1, 10, 30],   # Number of epochs each day.
            'batch_size': [32, 64, 128],  # Batch size.
            'lr': 10.**np.arange(-5, 0),  # Learning rate.
            'allow_shorting': [True, False],
            'lookback' : [200, 300, 400, 500, 600, 700, 800, 900, 1000],
            'val_period' : [0, 2, 4, 8, 16, 32],
            'val_sharpe_threshold' : [-np.inf, 0],
-           'retrain_interval' : [1] + range(10, 252),
+           'retrain_interval' : [1, 10, 30, 60, 100],
            'data_types' : [[1]], # + list(j) for j in powerset([0] + range(2, 13))],
            'cost_type': ['sharpe', 'min_return', 'mean_return', 'mixed_return'],
            'lr_mult_base': [1., .1, .01, .001],
@@ -85,6 +85,7 @@ if __name__ == '__main__':
         SETTINGS['realized_sharpe'] = []
         SETTINGS['saved_val_sharpe'] = []
         SETTINGS['val_sharpe'] = -np.inf
+        SETTINGS['dont_trade'] = False
 
         # Save settings for use in test.
         joblib.dump(SETTINGS, 'saved_data/hypers.pkl')

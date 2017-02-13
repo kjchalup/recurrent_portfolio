@@ -22,6 +22,8 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
         CLOSE_LASTTRADE, CLOSE_ASK, CLOSE_BID, RETURN, SHARE, 
         DIVIDEND, TOTALCAP, postipo=100, filler=0.123456789, 
         data_types = settings['data_types'])
+
+    all_data = StandardScaler().fit_transform(all_data)
     # Calculate Sharpe between training intervals
     n_days_back = np.mod(settings['iter'],settings['n_sharpe'])
     
