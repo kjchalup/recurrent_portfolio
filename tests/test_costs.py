@@ -56,16 +56,12 @@ def evaluate_systems(dataDict, positions, settings, market_data):
 
     # Calculate daily numpy sharpe returns
     rs_numpy = compute_numpy_sharpe(positions=pos, prices=prices, slippage=0.05, return_returns = True, n_ignore = 0)
-    #import pdb;pdb.set_trace()    
     # Remove singleton dimension to directly compare two values.
     rs_np = rs_numpy[0,:]
-    #import pdb;pdb.set_trace()
     # Calculate daily returns ratio between numpy and backtester, 
     # should not deviate more than 3%!
     daily_returns_ratio = np.divide(rs_np[6:],rs_qc[7:])
     for num in daily_returns_ratio:
-        if num>1.10 or num<0.90:
-            import pdb;pdb.set_trace()
         assert num <= 1.05 and num>=0.95
     # Calculate sharpe ratio for numpy, quantiacs, and neural net!
     sharpe_np = compute_numpy_sharpe(positions=pos, prices=prices, slippage=0.05, n_ignore=0)
@@ -154,7 +150,6 @@ def test_random_init_nn_sharpe():
 
 
     np.random.rand(1)
-    #import pdb;pdb.set_trace()    
     n_timesteps, n_ftrs = market_data.shape
     n_markets = n_ftrs/4
     n_sharpe = n_timesteps-1
@@ -198,5 +193,44 @@ def test_random_init_nn_sharpe():
     assert ratio_nn_tf < 1.03 and ratio_nn_tf > 0.97, "Neural net loss doesn't agree with TF Sharpe"
     assert ratio_tf_np < 1.03 and ratio_tf_np > 0.97, "TF Sharpe doesn't agree with NP Sharpe"
     assert ratio_np_nn < 1.03 and ratio_tf_np > 0.97, "NP Sharpe doesn't agree with NN Loss"
+    
+    # Re-initialize network with cost argument to get min_return back out from loss.
+    nn = neuralnet.Linear(n_ftrs, n_markets, n_time, n_sharpe, lbd=11, 
+                          allow_shorting=False, cost='min_return')
+    nn_pos = nn._positions_np(batch_in=batch_in)
+    nn_loss = nn.loss_np(batch_in=batch_in, batch_out=batch_out)
+    nn_l1 = nn.l1_penalty_np()
+    # Multiplly the output min_return by -1 to account for -1 inside the nn.
+    nn_min_return = -1 * (nn_loss - nn_l1)
 
+    np_returns = compute_numpy_sharpe(positions=nn_pos, prices=batch_out, slippage=0.05, 
+                                          return_returns=True)
+    np_min_return = np_returns.min()
+    rat_np_nn = np_min_return / nn_min_return
+    assert rat_np_nn < 1.001 and rat_np_nn > 0.999, "Min return cost function is broken!"
+    
+    # Re-initialize network with cost argument to get mean_return back out from loss.
+    nn = neuralnet.Linear(n_ftrs, n_markets, n_time, n_sharpe, lbd=11, 
+                          allow_shorting=False, cost='mean_return')
+    nn_pos = nn._positions_np(batch_in=batch_in)
+    nn_loss = nn.loss_np(batch_in=batch_in, batch_out=batch_out)
+    nn_l1 = nn.l1_penalty_np()
+    nn_mean_return = -1 * (nn_loss - nn_l1)
+    np_returns = compute_numpy_sharpe(positions=nn_pos, prices=batch_out, slippage=0.05, 
+                                          return_returns=True)
+    np_mean_return = np_returns.mean()   
+    rat_np_nn = np_mean_return / nn_mean_return
+    assert rat_np_nn < 1.001 and rat_np_nn > 0.999, "Mean return cost function is broken!"
 
+    # Re-initialize network with cost argument to get mean_return back out from loss.
+    nn = neuralnet.Linear(n_ftrs, n_markets, n_time, n_sharpe, lbd=11, 
+                          allow_shorting=False, cost='mixed_return')
+    nn_pos = nn._positions_np(batch_in=batch_in)
+    nn_loss = nn.loss_np(batch_in=batch_in, batch_out=batch_out)
+    nn_l1 = nn.l1_penalty_np()
+    nn_mixed_return = -1 * (nn_loss - nn_l1)
+    np_returns = compute_numpy_sharpe(positions=nn_pos, prices=batch_out, slippage=0.05, 
+                                          return_returns=True)
+    np_mixed_return = np_returns.mean() * np_returns.min()  
+    rat_np_nn = np_mixed_return / nn_mixed_return
+    assert rat_np_nn < 1.01 and rat_np_nn > 0.99, "Mixed return cost function is broken!"
