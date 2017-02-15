@@ -8,7 +8,7 @@ from  datetime import datetime, timedelta
 """
 
 def load_nyse_markets(start_date, end_date, postipo=100, lookback=0):
-    """ Loads nyse markets which start before start_date-postipo-lookback, and
+    """ Loads nyse markets which start before start_date-postipo, and
         end after start_date-lookback.
 
     Args:
@@ -16,7 +16,7 @@ def load_nyse_markets(start_date, end_date, postipo=100, lookback=0):
         end_date: not used
         postipo: number of days stock befor start_date the stock must
         start to be considered.
-        lookback: start_date - lookback is the actual date used for start_date
+        lookback: not used
 
     """
 
@@ -35,12 +35,12 @@ def load_nyse_markets(start_date, end_date, postipo=100, lookback=0):
         if (int(data[1].split(',')[0]) < int(start_date_minuspostipo) and
                 int(data[-1].split(',')[0]) > int(start_date)):
             alives.append(fname)
+    assert len(alives) > 0, "No stocks returned! Check start_date-postipo is OK!"
     return [symbol.split('/')[1][:-4] for symbol in alives]
-
 
 def non_nan_markets(start_date, end_date, postipo=0, lookback=0):
     """ Loads all stocks with zero nans anywhere which begin before
-        start_date-lookback-postipo and end after end_date.
+        start_date-postipo and end after end_date.
 
     Args:
         start_date: start date for which stocks must begin by,
@@ -68,20 +68,19 @@ def non_nan_markets(start_date, end_date, postipo=0, lookback=0):
             if len([s for s in data if 'NaN' in s]) == 0:
                 alives.append(fname)
     print str(len(alives))+' stocks, start:' +start_date_minuspostipo
+    assert len(alives) > 0, "No stocks returned! Check start_date-postipo is OK!"
     return [symbol.split('/')[1][:-4] for symbol in alives]
 
 def nan_markets(start_date, end_date, postipo=0, lookback=0):
     """ Loads all stocks with nans anywhere which begin before
-        start_date-lookback-postipo and end after start_date-lookback.
-
-""
+        start_date-postipo and end after start_date.
 
     Args:
         start_date: start date for which stocks must begin by,
         adjusted by postipo
         end_date: not used
         postipo: number of days before start_date a stock must start by.
-        lookback: number of days before start_date a stock must start by.
+        lookback: not used.
 
     Returns:
         Names of stocks which fit the above criteria
@@ -103,6 +102,7 @@ def nan_markets(start_date, end_date, postipo=0, lookback=0):
             if len([s for s in data if 'NaN' in s]) > 0:
                 alives.append(fname)
     print str(len(alives))+' stocks, start:'+start_date_minuspostipo
+    assert len(alives) > 0, "No stocks returned! Check start_date-postipo is OK!"
     return [symbol.split('/')[1][:-4] for symbol in alives]
 
 def preprocess(markets, opens, closes, highs, lows, vols, dates,
@@ -260,7 +260,6 @@ def preprocess(markets, opens, closes, highs, lows, vols, dates,
                           totalcaps, x_date[:, None], y_date[:, None]))
     all_data = all_data.astype(np.float32)
     all_data[np.isnan(all_data)] = 0
-    
 
     # Run backtester with preprocessing
     if len('data_types') == 0:
@@ -273,8 +272,6 @@ def preprocess(markets, opens, closes, highs, lows, vols, dates,
         data = np.hstack([all_data[:, n_markets * j: n_markets * (j+1)] 
                          for j in data_types])
         all_data = data
-
-
 
     # Returns check to make sure nothing crazy happens!
     returns_check(filled_prices[:, :n_markets],
@@ -293,6 +290,12 @@ def circle_dates(dates):
     Transform the dates into a unit circle so the algos can learn about
     seasonality. Takes a date of the form 20161231, calculates the equivalent
     (x,y) coordinate using sine and cosine.
+    
+    Args:
+        dates: list of dates specified as %Y%m%d
+
+    Returns:
+        x_date, y_date: unit circle of dates for a year with 366 days
     '''
 
     # The days in each month of the year.
@@ -356,7 +359,7 @@ def returns_check(OPEN, CLOSE, HIGH, LOW, DATE, markets):
         markets: list of markets, often settings['markets']
 
     Returns:
-        Nothing. If it fails, it will enter you into debugger.
+        Nothing. If it fails, it will print that there are crazy returns.
     """
 
     nMarkets = OPEN.shape[1]
@@ -383,4 +386,4 @@ def returns_check(OPEN, CLOSE, HIGH, LOW, DATE, markets):
     flag7 = (abs(SLIPPAGE) == np.inf).sum() > 0
 
     if flag1 or flag3 or flag5 or flag6 or flag7:
-       print 'Crazy returns!' 
+       print '*****Crazy returns! ******* Check data validity!' 
