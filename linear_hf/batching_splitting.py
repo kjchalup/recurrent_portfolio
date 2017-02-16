@@ -18,10 +18,8 @@ def draw_timeseries_batch(all_data, market_data, horizon, batch_size, batch_id, 
     """
     next_seed = np.random.randint(0, 100000)
     np.random.seed(randseed)
-    #import pdb;pdb.set_trace()
     perm_ids = np.random.permutation(all_data.shape[0] - horizon + 1)
     np.random.seed(next_seed)
-    #import pdb;pdb.set_trace()
     if (batch_id + 1) * batch_size > perm_ids.size:
         raise IndexError('Cant make this many batches, not enough data!')
     all_batch = np.zeros((batch_size, horizon, all_data.shape[1])).astype(np.float32)
@@ -58,7 +56,6 @@ def split_validation_training(all_data, market_data, valid_period, horizon,
     all_val = None
     market_val = None
     if valid_period > 0:
-        #import pdb;pdb.set_trace()
         all_val, market_val = draw_timeseries_batch(
             all_data=all_data[-valid_period-horizon-n_for_sharpe+1:-1],
             market_data=market_data[-valid_period-horizon-n_for_sharpe+2:],
@@ -67,7 +64,6 @@ def split_validation_training(all_data, market_data, valid_period, horizon,
             batch_id=0, randseed=1)
         market_val = market_val[:, -n_for_sharpe:, :]
         # ASSUME THAT valid_period is a divisor of batch_size!
-        #import pdb;pdb.set_trace()
         if batch_size % valid_period != 0:
             raise ValueError, 'valid_period must be a divisor of batch_size!'
         all_val = np.tile(all_val, [batch_size/valid_period, 1, 1])
@@ -80,5 +76,5 @@ def split_validation_training(all_data, market_data, valid_period, horizon,
         batch_size=batch_size,
         batch_id=batch_id, randseed=randseed)
     market_batch = market_batch[:, -n_for_sharpe:, :]
-    
+
     return all_val, market_val, all_batch, market_batch

@@ -25,6 +25,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
         CLOSE_LASTTRADE, CLOSE_ASK, CLOSE_BID, RETURN, SHARE,
         DIVIDEND, TOTALCAP, postipo=100, filler=0.123456789,
         data_types = settings['data_types'])
+ 
     # Calculate Sharpe between training intervals
     recent_cost = calculate_recent(iteration=settings['iter'],
                                    retrain_interval=settings['retrain_interval'],
@@ -228,12 +229,17 @@ def calc_batches(n_timesteps, settings):
         batches_per_epoch: the floor of total_possible_timesteps/batch_size,
                            where total_possible is taken from batches
     """
-
-    batches_per_epoch = int(np.floor((n_timesteps -
-                                      settings['horizon'] -
-                                      settings['val_period'] -
-                                      2 * settings['n_sharpe'] + 1)
-                                     / float(settings['batch_size'])))
+    if settings['val_period'] > 0:
+        batches_per_epoch = int(np.floor((n_timesteps -
+                                        settings['horizon'] -
+                                        settings['val_period'] -
+                                        2 * settings['n_sharpe'] + 1)
+                                        / float(settings['batch_size'])))
+    else:
+        batches_per_epoch = int(np.floor((n_timesteps -
+                                          settings['horizon'] -
+                                          settings['n_sharpe'] + 1)
+                                          / float(settings['batch_size'])))
     return batches_per_epoch
 
 
@@ -350,6 +356,7 @@ def training(settings, all_data, market_data):
             settings['nn'].train_step(batch_in=all_batch, batch_out=market_batch, lr=lr_new)
             tr_sharpe += loss_calc(settings, all_batch, market_batch)
 
+
         # Calculate sharpes for the epoch
         tr_sharpe /= batches_per_epoch
         if settings['val_period'] > 0:
@@ -360,6 +367,8 @@ def training(settings, all_data, market_data):
         else:
             settings, best_tr_sharpe = update_nn(settings, best_tr_sharpe, tr_sharpe)
         
+        #nn_pos = np.vstack([settings['nn'].predict(all_data[i:horizon+i, :]) for i in range (all_data.shape[0]-horizon-1)])
+
         # Record best_val_sharpe
         settings['best_val_sharpe'] = best_val_sharpe
 
