@@ -6,8 +6,9 @@ import os
 import random
 import numpy as np
 
-from run_backtest import myTradingSystem
+import quantiacsToolbox
 from preprocessing import load_nyse_markets
+from run_backtest import myTradingSystem
 
 def powerset(iterable):
     """ Returns the set of all subsets of the iterable.
@@ -76,8 +77,7 @@ if __name__ == '__main__':
         HYPER_RESULTS = joblib.load('saved_data/hyper_new_results_local.pkl')
     else:
         HYPER_RESULTS = []
-    
-    #for run in range(N_RUNS):
+
     # Get hyperparameters.
     SETTINGS = supply_hypers()
 
@@ -99,7 +99,6 @@ if __name__ == '__main__':
     joblib.dump(SETTINGS, 'saved_data/hypers.pkl')
 
     # Run the strategy.
-    import quantiacsToolbox
     print [str(hyper) +': ' + str(SETTINGS[hyper])
            for hyper in SETTINGS and CHOICES]
     print ['n_time: ' + str(SETTINGS['n_time'])]
@@ -108,8 +107,8 @@ if __name__ == '__main__':
         # Show the results.
         RESULTS['settings']['nn'] = None
         print RESULTS['stats']
-    except:
-        print('Strategy failed so bad, we are skipping it.')
+    except ValueError:
+        print 'Strategy failed so bad, we are skipping it.'
         RESULTS = SETTINGS
 
     # Reduce the size of the results files.

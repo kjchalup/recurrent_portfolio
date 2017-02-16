@@ -64,4 +64,3 @@ def test_nn_all_inputs_ones(make_data):
     assert_array_almost_equal(nn.predict(batch_in[0, -horizon:]), 
                               np.ones(n_markets, dtype=np.float32) / 
                               float(n_markets))
-

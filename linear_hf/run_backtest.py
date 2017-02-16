@@ -44,6 +44,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
                                             DATE[-1],
                                             fundEquity[-1]))
     if fundEquity[-1] < .75:
+        settings['nn'].sess.close()
         raise ValueError('Strategy lost too much money')
 
     if settings['iter'] > 2:
@@ -82,7 +83,8 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
             tr_sharpe = 0.
             val_sharpe = 0.
             for batch_id in range(batches_per_epoch):
-                all_val, market_val, all_batch, market_batch = split_validation_training(
+                (all_val, market_val, 
+                 all_batch, market_batch) = split_validation_training(
                     all_data, market_data, 
                     valid_period=settings['val_period'], 
                     horizon=settings['horizon'], 
