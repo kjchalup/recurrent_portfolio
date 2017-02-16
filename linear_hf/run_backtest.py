@@ -146,17 +146,17 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
 def mySettings():
     settings={}
     # Futures Contracts
-    settings['n_time'] =  40 # Use this many timesteps in one datapoint.
-    settings['n_sharpe'] = 10 # This many timesteps to compute Sharpes.
+    settings['n_time'] =  31 # Use this many timesteps in one datapoint.
+    settings['n_sharpe'] = 14 # This many timesteps to compute Sharpes.
     settings['horizon'] = settings['n_time'] - settings['n_sharpe'] + 1
-    settings['lbd'] = .1 # L1 regularizer strength.
-    settings['num_epochs'] = 50 # Number of epochs each day.
+    settings['lbd'] = 1. # L1 regularizer strength.
+    settings['num_epochs'] = 48 # Number of epochs each day.
     settings['batch_size'] = 128
     settings['val_period'] = 32
-    settings['lr'] = 1e-4 # Learning rate.
+    settings['lr'] = 1e-9 # Learning rate.
     settings['dont_trade'] = False # If on, don't trade.
     settings['iter'] = 0
-    settings['lookback'] = 400
+    settings['lookback'] = 1800
     settings['budget'] = 10**6
     settings['slippage'] = 0.05
     #settings['beginInSample'] = '20090102'
@@ -164,13 +164,13 @@ def mySettings():
     settings['beginInSample'] = '20000601'
     settings['endInSample'] = '20140101'
     settings['val_sharpe_threshold'] = -np.inf
-    settings['retrain_interval'] = 30
+    settings['retrain_interval'] = 51
     settings['realized_sharpe'] = []
     settings['saved_val_sharpe'] = []
     settings['val_sharpe'] = -np.inf
     settings['cost_type'] = 'sharpe'
     settings['allow_shorting'] = True
-    settings['lr_mult_base'] = .1
+    settings['lr_mult_base'] = 1.
     settings['restart_variables'] = True
     ''' Pick data types to feed into neural net. If empty, only CLOSE will be used. 
     Circle dates added automatically if any setting is provided. 
@@ -188,7 +188,7 @@ def mySettings():
     11 = TOTALCAPS
     12 = DATE
     '''
-    settings['data_types'] = [0]
+    settings['data_types'] = [1]
     
     # Hard code markets for testing.
     settings['markets'] = load_nyse_markets(start_date=settings['beginInSample'],
@@ -197,8 +197,8 @@ def mySettings():
                                             postipo=0)
     # Set the n_markets to be a multiple of 10 (including CASH) so
     # we can chunk!
-    n_markets = ((len(settings['markets']) + 1) / 10) * 10
-    settings['markets'] = settings['markets'][:n_markets]
+    n_markets = ((len(settings['markets']) + 1) / 10) * 10 - 1
+    settings['markets'] = settings['markets'][:n_markets] + ['CASH']
     print(settings['markets'])
     return settings
 

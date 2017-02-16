@@ -157,7 +157,7 @@ class ChunkLinear(object):
         else:
             self.causality_matrix = np.tile(causality_matrix, [self.horizon, 1])
             self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(
-                tf.boolean_mask(self.Ws, self.causality_matrix==0)))
+                tf.boolean_mask(self.Ws, self.causality_matrix == 0)))
 
         # Define the unnormalized loss function.
         self.loss_tf = -sharpe_tf(self.positions_tf, self.batch_out_tf,

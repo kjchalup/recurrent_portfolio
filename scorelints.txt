@@ -5,7 +5,6 @@ tests/test_causality_anm.py 0.77
 tests/test_clean_data.py -2.50
 tests/test_costs.py -6.22
 tests/test_git.py 5.56
-tests/test_nn_feedforward.py 3.33
 tests/test_nn_l1.py 2.33
 tests/test_nn_save_load.py 6.36
 tests/test_random_hyper.py 8.89
@@ -27,3 +26,5 @@ linear_hf/costs.py -1.09
 linear_hf/hyperparameters.py 9.50
 linear_hf/neuralnet.py 5.48
 linear_hf/run_backtest.py 1.57
+tests/test_chunknet.py 6.89
+tests/test_nn_feedforward.py 3.71
