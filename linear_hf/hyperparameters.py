@@ -102,7 +102,7 @@ if __name__ == '__main__':
         # Show the results.
         RESULTS['settings']['nn'] = None
         print RESULTS['stats']
-        #except:
+        # except:
         #    print('Strategy failed so bad, we are skipping it.')
         #    RESULTS = SETTINGS
 
