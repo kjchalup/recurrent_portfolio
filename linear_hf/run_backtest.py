@@ -16,6 +16,10 @@ from costs import compute_numpy_sharpe
 
 def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE, 
     CLOSE_ASK, CLOSE_BID, RETURN, SHARE, DIVIDEND, TOTALCAP, exposure, equity, settings, fundEquity):
+
+    if fundEquity[-1] < .75:
+        raise ValueError('Strategy lost too much money')
+ 
     # Preprocess the data
     market_data, all_data, should_retrain = preprocess(
         settings['markets'], OPEN, CLOSE, HIGH, LOW, VOL, DATE, 
@@ -29,22 +33,10 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
                                      market_data=market_data,
                                      cost=settings['cost_type'])
     print_things(settings['iter'],DATE[-1],fundEquity[-1],settings['val_sharpe'],recent_cost)
-    
-    # Kill the backtester run if we lose too much money.
-    if fundEquity[-1] < .75:
-        raise ValueError('Strategy lost too much money')
-    
+   
+    # Initialize neural net.
     if settings['iter'] == 0:
-        print 'Initializing net...\n'
-        # Define a new neural net.
-        settings['nn'] = neuralnet.Linear(n_ftrs=all_data.shape[1], 
-                                          n_markets=OPEN.shape[1],
-                                          n_time=settings['n_time'],
-                                          n_sharpe=settings['n_sharpe'],
-                                          lbd=settings['lbd'],
-                                          allow_shorting=settings['allow_shorting'],
-                                          cost=settings['cost_type'])
-        print 'Done with initializing neural net!'
+        settings = init_nn(settings, all_data, 'linear')
 
     # Train the neural net on current data.
     if settings['iter'] % settings['retrain_interval'] == 0:
@@ -52,9 +44,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
         best_tr_loss = -np.inf
         if settings['restart_variables']:
             settings['nn'].restart_variables()
-                
         batches_per_epoch = calc_batches(all_data.shape[0], settings)
-        
         # Start an epoch!
         for epoch_id in range(settings['num_epochs']):
             seed = np.random.randint(10000)
@@ -333,3 +323,17 @@ def update_nn(settings, best_sharpe, epoch_sharpe):
         settings['nn'].save()
       
     return settings, best_sharpe 
+
+
+def init_nn(settings, n_ftrs, nn_type)
+    print 'Initializing net...\n'
+    if nn_type == 'linear':
+        settings['nn'] = neuralnet.Linear(n_ftrs=all_data.shape[1], 
+                                          n_markets=len(settings['markets']),
+                                          n_time=settings['n_time'],
+                                          n_sharpe=settings['n_sharpe'],
+                                          lbd=settings['lbd'],
+                                          allow_shorting=settings['allow_shorting'],
+                                          cost=settings['cost_type'])
+    print 'Done with initializing neural net!'
+    return settings 
