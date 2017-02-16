@@ -236,3 +236,23 @@ def test_random_init_nn_sharpe():
     rat_np_nn = np_mixed_return / nn_mixed_return
     assert rat_np_nn < 1.05 and rat_np_nn > 0.95, "Mixed return cost function is broken!"
 
+    # Re-initialize network with cost argument to sortino to check loss
+    nn = neuralnet.Linear(n_ftrs, n_markets, n_time, n_sharpe, lbd=11,
+                          allow_shorting=False, cost='sortino')
+    nn_pos = nn._positions_np(batch_in=batch_in)
+    nn_loss = nn.loss_np(batch_in=batch_in, batch_out=batch_out)
+    nn_l1 = nn.l1_penalty_np()
+    nn_sortino_return = -1 * (nn_loss - nn_l1)
+    np_returns = compute_numpy_sharpe(positions=nn_pos, prices=batch_out, slippage=0.05,
+                                      return_returns=True)
+
+    # Standard deviation is: np.std on daily returns * sqrt(252) to annualize
+    denominator = (np.std(np_returns[np_returns < 0.0])) * np.sqrt(252) * np.sqrt(float(len(np_returns[0])) /(np_returns < 0).sum() ) + 1e-7
+    numerator = np.prod(np_returns+1)**(252/n_sharpe)-1
+    np_sortino_return = numerator / denominator
+    rat_np_nn = np_sortino_return / nn_sortino_return
+    assert rat_np_nn < 1.15 and rat_np_nn > 0.85, "Sortino cost function is broken!"
+
+
+
+
