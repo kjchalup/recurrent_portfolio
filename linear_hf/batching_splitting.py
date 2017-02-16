@@ -47,7 +47,7 @@ def split_validation_training(all_data, market_data, valid_period, horizon, n_fo
         randseed: the epoch number, randomize between epochs. should be for epoch_id in range(num_epochs)
 
         This argument is called for every batch_id.
-        batches_per_epoch calculated as follows: int(np.floor((all_data.shape[0]-horizon-2*n_ofr_sharpe-valid_period+2)/float(batch_size)))
+        batches_per_epoch calculated as follows: int(np.floor((all_data.shape[0]-horizon-2*n_ofr_sharpe-valid_period+1)/float(batch_size)))
         For validation data, the batch_id is set to 0, and the randseed is set to 1, so it will always return the same validation data.
         For time indexing, all_data is indexed -1 from market_data so that the positions are predicted from all_data, and scored against market_data.
     """

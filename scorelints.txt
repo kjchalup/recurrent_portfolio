@@ -3,7 +3,6 @@ tests/test_batching.py -23.65
 tests/test_causal_regularization_anm.py 3.45
 tests/test_causality_anm.py 0.77
 tests/test_clean_data.py -2.50
-tests/test_costs.py -6.22
 tests/test_git.py 5.56
 tests/test_nn_feedforward.py 3.33
 tests/test_nn_l1.py 2.33
@@ -24,5 +23,6 @@ linear_hf/causality/tools/distcorr.py 2.86
 linear_hf/costs.py -1.27
 linear_hf/hyperparameters.py 9.44
 linear_hf/preprocessing.py 4.69
-linear_hf/run_backtest.py 1.26
 tests/test_preprocessing.py -16.47
+linear_hf/run_backtest.py 3.66
+tests/test_costs.py -1.26
