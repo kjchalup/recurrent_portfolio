@@ -24,7 +24,14 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
         DIVIDEND, TOTALCAP, postipo=100, filler=0.123456789, 
         data_types = settings['data_types'])
     # Calculate Sharpe between training intervals
+    recent_cost = calculate_recent(iteration=settings['iter'], 
+                                     retrain_interval=settings['retrain_interval'], 
+                                     exposure=exposure, 
+                                     market_data=market_data,
+                                     cost=settings['cost_type'])
+    '''
     n_days_back = np.mod(settings['iter']-1,settings['retrain_interval'])
+
     
     if n_days_back > 2:
         recent_sharpe=compute_numpy_sharpe(positions=exposure[None, -n_days_back-4:-1, :],
@@ -36,17 +43,17 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
             recent_sharpe = 0
     else:
         recent_sharpe = np.nan
-    
+    '''
     print('Iter {} [{}], equity {}.'.format(settings['iter'], 
                                             DATE[-1],
                                             fundEquity[-1]))
     if fundEquity[-1] < .75:
         raise ValueError('Strategy lost too much money')
 
-    if settings['iter'] > 2:
+    if settings['iter'] > 1:
         print('[Recent validation sharpe] Recent sharpe: [{}] {}'.format(
                                             settings['val_sharpe'],
-                                            recent_sharpe))
+                                            recent_cost))
     if settings['iter'] == 0:
         print 'Initializing net...\n'
         # Define a new neural net.
@@ -130,7 +137,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
         positions[cash_index] = 1
     
     # Save validation sharpes and actualized sharpes!
-    settings['realized_sharpe'].append(recent_sharpe)
+    settings['realized_sharpe'].append(recent_cost)
     settings['saved_val_sharpe'].append(best_val_sharpe)
     
     settings['iter'] += 1
@@ -190,7 +197,7 @@ def mySettings():
                                             end_date=settings['endInSample'],
                                             lookback=0,
                                             postipo=0)
-    settings['markets'] = settings['markets'][-1000:] + ['CASH']
+    settings['markets'] = settings['markets'][-10:] + ['CASH']
     print(settings['markets'])
     return settings
 
@@ -199,3 +206,55 @@ if __name__ == '__main__':
     results = quantiacsToolbox.runts(__file__)
     # joblib.dump(results, 'saved_data/results.pkl')
     print(results['stats'])
+
+
+def calculate_recent(iteration, retrain_interval, exposure, market_data, cost='sharpe'):
+    """ Calculate the realized sharpe ratios from the output of the neural net
+        using the latest trading positions.
+
+    Args:
+        iteration: iteration number in backtester, used to calculate n_days_back
+        retrain_interval: how often the nn retrains
+        exposure: output from the backtester, settings['exposure'] (ntimesteps, nmarkets)
+        market_data: output from the backtester, [open close high low] (ntimesteps, nmarkets) 
+
+    Returns:
+        Cost function estimate:
+            if cost = 'sharpe', returns annualized sharpe since last retrain
+            if cost = 'min_return', returns minimium of the daily return since last retrain
+            if cost = 'mean_return', returns the mean of the returns since last retrain
+            if cost = 'mixed_return', returns mean*min of returns since last retrain
+    """
+
+    # Calculate Sharpe between training intervals. iteration-1 is used because we score one day back.
+    n_days_back = np.mod(iteration,retrain_interval)
+     
+    # Only start scoring realized sharpes from greater than 2!
+    if n_days_back > 2:
+        recent_sharpe = compute_numpy_sharpe(positions=exposure[None, -n_days_back-3:-1, :],
+                             prices=market_data[None, -n_days_back-2:, :],
+                             slippage=0.05, n_ignore=2)
+        
+        recent_returns = compute_numpy_sharpe(positions=exposure[None, -n_days_back-3:-1, :],
+                             prices=market_data[None, -n_days_back-1:, :],
+                             slippage=0.05, n_ignore=2, return_returns = True)
+         
+
+        if np.isnan(recent_sharpe):
+            # NaNs out when all positions are cash, therefore std.dev(ret) = 0
+            recent_sharpe = 0
+    else:
+        # Return nans for the first couple days.
+        recent_sharpe = np.nan
+        recent_returns = np.array([np.nan, np.nan])
+
+    if cost == 'sharpe':        
+        return recent_sharpe
+    elif cost == 'min_return':
+        return recent_returns.min()
+        return returns.mean() * returns.min()
+    elif cost == 'mean_return':
+        return recent_returns.mean()
+    elif cost == 'mixed_return':
+        return recent_returns.mean() * recent_returns.min()
+

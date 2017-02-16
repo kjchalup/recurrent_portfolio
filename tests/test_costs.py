@@ -14,7 +14,7 @@ from linear_hf.quantiacs_code import quantiacs_calculation
 from linear_hf.costs import compute_numpy_sharpe
 from linear_hf.costs import compute_sharpe_tf
 from linear_hf import neuralnet
-
+from linear_hf.run_backtest import calculate_sharpe
 
 beginInSample='20090101'
 endInSample='20141231'
