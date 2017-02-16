@@ -64,10 +64,10 @@ def supply_hypers():
     # Get random choices from the ranges (inclusive).
     settings = {}
     for setting in CHOICES:
-        settings[setting] = random.choice(CHOICES[setting])
+        settings[setting] = np.random.choice(CHOICES[setting])
 
     # Get n_sharpe using n_time.
-    settings['n_sharpe'] = random.randint(
+    settings['n_sharpe'] = np.random.randint(
         N_SHARPE_MIN, settings['n_time'] - N_SHARPE_GAP)
 
     return settings

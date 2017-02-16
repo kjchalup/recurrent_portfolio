@@ -108,7 +108,8 @@ class Linear(object):
 
         # Define the L1 penalty, taking causality into account.
         if causality_matrix is None:
-            self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(self.W))
+            #self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(self.W))
+            self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.pow(self.W, 2))
         else:
             self.causality_matrix = np.tile(causality_matrix, [self.horizon, 1])
             self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(

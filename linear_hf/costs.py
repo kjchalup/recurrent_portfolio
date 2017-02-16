@@ -86,11 +86,11 @@ def sharpe_tf(positions, prices, n_sharpe, n_markets, slippage=.05, n_ignore=2, 
         elem2 = ((cs[:, i, :] - os[:, i, :]) *
                  positions[:, i, :]/cs[:, i-1, :])
         elem3 = hs[:, i, :] - ls[:, i, :]
-        elem4 = (positions[:, i, :]/cs[:, i-1, :] - 
-                  positions[:, i-1, :]/
+        elem4 = (positions[:, i, :]/cs[:, i-1, :] -
+                 positions[:, i-1, :]/
                  (cs[:, i-2, :] * (1 + rs_list[i-1])))
         rs_list.append(tf.reduce_sum(
-            elem1 + elem2 - slippage*np.abs(elem3 * elem4), 
+            elem1 + elem2 - slippage*np.abs(elem3 * elem4),
             axis=1, keep_dims=True))
     rs = tf.stack(rs_list, axis=1)[:, n_ignore:, 0]
     n_sharpe -= n_ignore
@@ -102,16 +102,17 @@ def sharpe_tf(positions, prices, n_sharpe, n_markets, slippage=.05, n_ignore=2, 
                 tf.pow(tf.reduce_sum(rs, axis=1), 2) / n_sharpe**2))))
     elif cost == 'sortino':
         pos_rets = tf.minimum(rs, 0)
-        pos_std = (tf.sqrt(252 * (tf.reduce_sum(tf.pow(rs, 2), axis=1) / n_sharpe -
-                    tf.pow(tf.reduce_sum(rs, axis=1), 2) / n_sharpe**2)))
+        pos_std = (tf.sqrt(252 * (tf.reduce_sum(tf.pow(pos_rets, 2), axis=1) / n_sharpe -
+                    tf.pow(tf.reduce_sum(pos_rets, axis=1), 2) / n_sharpe**2)))
         return tf.reduce_mean((tf.pow(
             tf.reduce_prod(rs+1, axis=1), (252./n_sharpe))-1) / (pos_std + 1e-7))
     elif cost == 'min_return':
-        return tf.reduce_min(rs)
+        return tf.reduce_mean(tf.reduce_min(rs, axis=1))
     elif cost == 'mean_return':
         return tf.reduce_mean(rs)
     elif cost == 'mixed_return':
-        return tf.reduce_mean(rs) + tf.reduce_min(rs)
+        return (tf.reduce_mean(tf.reduce_min(rs, axis=1)) + 
+                tf.reduce_mean(rs))
 
 def compute_sharpe_tf(batch_in, batch_out):
     n, n_time, n_ftrs = batch_in.shape

@@ -27,10 +27,10 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
     market_data, all_data, should_retrain = preprocess(
         settings['markets'], OPEN, CLOSE, HIGH, LOW, VOL, DATE,
         CLOSE_LASTTRADE, CLOSE_ASK, CLOSE_BID, RETURN, SHARE,
-        DIVIDEND, TOTALCAP, postipo=100, filler=0.123456789,
+        DIVIDEND, TOTALCAP, postipo = 100, filler = 0.123456789,
         data_types = settings['data_types'])
 
-    all_data = StandardScaler().fit_transform(all_data)
+    # all_data = StandardScaler().fit_transform(all_data)
     # Calculate Sharpe between training intervals
 
     recent_cost = calculate_recent(iteration=settings['iter'],
@@ -82,14 +82,14 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
 def mySettings():
     settings = {}
     # Futures Contracts
-    settings['n_time'] = 40 # Use this many timesteps in one datapoint.
-    settings['n_sharpe'] = 10 # This many timesteps to compute Sharpes.
+    settings['n_time'] = 60 # Use this many timesteps in one datapoint.
+    settings['n_sharpe'] = 30 # This many timesteps to compute Sharpes.
     settings['horizon'] = settings['n_time'] - settings['n_sharpe'] + 1
-    settings['lbd'] = .0001 # L1 regularizer strength.
+    settings['lbd'] = .01 # L1 regularizer strength.
     settings['num_epochs'] = 30 # Number of epochs each day.
     settings['batch_size'] = 128
-    settings['val_period'] = 32
-    settings['lr'] = 1e-7 # Learning rate.
+    settings['val_period'] = 1
+    settings['lr'] = 1e-4 # Learning rate.
     settings['dont_trade'] = False # If on, don't trade.
     settings['iter'] = 0
     settings['lookback'] = 1000
@@ -104,9 +104,9 @@ def mySettings():
     settings['realized_sharpe'] = []
     settings['saved_val_sharpe'] = []
     settings['best_val_sharpe'] = -np.inf
-    settings['cost_type'] = 'sortino'
+    settings['cost_type'] = 'mixed_return'
     settings['allow_shorting'] = False
-    settings['lr_mult_base'] = .1
+    settings['lr_mult_base'] = 1.
     settings['restart_variables'] = True
     ''' Pick data types to feed into neural net. If empty, only CLOSE will be used. 
     Circle dates added automatically if any setting is provided.

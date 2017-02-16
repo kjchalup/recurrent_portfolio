@@ -21,13 +21,13 @@ linear_hf/preprocessing.py 4.69
 tests/test_preprocessing.py -16.47
 <<<<<<< HEAD
 =======
-linear_hf/batching_splitting.py -4.14
-tests/test_costs.py -0.36
 >>>>>>> 8f1a1baf51749275dea02849ed70c6a222d01d98
 linear_hf/chunknet.py 8.07
-linear_hf/costs.py -1.09
 linear_hf/hyperparameters.py 9.50
 linear_hf/neuralnet.py 5.48
-linear_hf/run_backtest.py 2.40
 tests/test_chunknet.py 6.89
 tests/test_nn_feedforward.py 3.71
+linear_hf/batching_splitting.py 0.69
+linear_hf/costs.py 1.90
+linear_hf/run_backtest.py 2.85
+tests/test_costs.py 1.93
