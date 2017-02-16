@@ -16,7 +16,7 @@ from costs import compute_numpy_sharpe
 
 def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE, 
     CLOSE_ASK, CLOSE_BID, RETURN, SHARE, DIVIDEND, TOTALCAP, exposure, equity, settings, fundEquity):
-
+    # Preprocess the data
     market_data, all_data, should_retrain = preprocess(
         settings['markets'], OPEN, CLOSE, HIGH, LOW, VOL, DATE, 
         CLOSE_LASTTRADE, CLOSE_ASK, CLOSE_BID, RETURN, SHARE, 
@@ -28,12 +28,12 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
                                      exposure=exposure, 
                                      market_data=market_data,
                                      cost=settings['cost_type'])
-    
     print_things(settings['iter'],DATE[-1],fundEquity[-1],settings['val_sharpe'],recent_cost)
     
+    # Kill the backtester run if we lose too much money.
     if fundEquity[-1] < .75:
         raise ValueError('Strategy lost too much money')
-
+    
     if settings['iter'] == 0:
         print 'Initializing net...\n'
         # Define a new neural net.
@@ -55,11 +55,14 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
                 
         batches_per_epoch = calc_batches(all_data.shape[0], settings)
         
+        # Start an epoch!
         for epoch_id in range(settings['num_epochs']):
             seed = np.random.randint(10000)
             tr_sharpe = 0.
             val_sharpe = 0.
             lr_new = lr_calc(settings, epoch_id)
+            
+            # Train an epoch.
             for batch_id in range(batches_per_epoch):
                 # Split data into validation and training batches.
                 all_val, market_val, all_batch, market_batch = split_validation_training(
@@ -74,42 +77,31 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
                 settings['nn'].train_step(batch_in=all_batch, batch_out=market_batch, lr=lr_new)
                 tr_sharpe += loss_calc(settings,all_batch,market_batch)
             
-            # Calculate average training sharpe for the epoch.
+            # Calculate sharpes for the epoch
             tr_sharpe /= batches_per_epoch
-
-            # Update neural net, and attendant values if NN is better.
             if settings['val_period'] > 0:
-                # Calculate validation sharpe for epoch.
-                val_sharpe = loss_calc(settings, all_val, market_val)
-                
-                if val_sharpe > best_val_sharpe:
-                    best_val_sharpe = val_sharpe
-                    settings['nn'].save()
+                val_sharpe = loss_calc(settings, all_val, market_val) 
+            
+            # Update neural net, and attendant values if NN is better than previous.
+            if settings['val_period'] > 0:
+                settings, best_val_sharpe = update_nn(settings, best_val_sharpe, val_sharpe)
+            else:
+                settings, best_tr_sharpe = update_nn(settings, best_tr_sharpe, tr_sharpe)
 
-                if best_val_sharpe > settings['val_sharpe_threshold']:
-                    settings['dont_trade'] = False
-                else:
-                    settings['dont_trade'] = True
-                
-                # Record val_sharpe for results
-                settings['val_sharpe'] = best_val_sharpe
-
-            elif tr_sharpe > best_tr_loss:
-                best_tr_loss = loss
-                settings['nn'].save()
-
+            # Write out data for epoch.
             sys.stdout.write('\nEpoch {}, val/tr Sharpe {:.4}/{:.4g}.'.format(
                 epoch_id, val_sharpe, tr_sharpe))
             sys.stdout.flush()
-        
-    # Predict a portfolio.
-    settings['nn'].load()
-    positions = settings['nn'].predict(all_data[-settings['horizon']:])
-    
-    # Set positions to zero, cash to 1 if don't trade is True.
-    if settings['dont_trade']:
-        positions = dont_trade_positions(positions, settings)
-   
+       
+        # After all epochs, check if the best_sharpe_val allows for trading.
+        if settings['val_period'] > 0:
+            if best_val_sharpe > settings['val_sharpe_threshold']:
+                settings['dont_trade'] = False
+            else:
+                settings['dont_trade'] = True
+            # Also save val sharpe for display.
+            settings['val_sharpe'] = best_val_sharpe
+  
     # Save validation sharpes and actualized sharpes!
     settings['realized_sharpe'].append(recent_cost)
     
@@ -119,8 +111,15 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
         settings['saved_val_sharpe'].append(settings['val_sharpe'])
     
     settings['iter'] += 1
+      
+    # Predict a portfolio.
+    settings['nn'].load()
+    positions = settings['nn'].predict(all_data[-settings['horizon']:])
+    
+    # Set positions to zero, cash to 1 if don't trade is True.
+    if settings['dont_trade']:
+        positions = dont_trade_positions(positions, settings)
     return positions, settings
-
 
 def mySettings():
     settings={}
@@ -317,3 +316,20 @@ def loss_calc(settings, all_batch, market_batch):
     l1_loss = settings['nn'].l1_penalty_np()
     return -(loss - l1_loss)
 
+def update_nn(settings, best_sharpe, epoch_sharpe):
+    """ Saves neural net and updates best_sharpe if better in this epoch.
+
+    Args:
+        settings: contains the neuralnet
+        best_sharpe: the previously highest sharpe (or cost function)
+        epoch_sharpe: the sharpe for the current epoch (either validation or avg)
+
+    Returns:
+        settings: saved neuralnet in settings
+        best_sharpe: updated new sharpe or old best sharpe
+    """
+    if best_sharpe > epoch_sharpe:
+        best_sharpe = epoch_sharpe
+        settings['nn'].save()
+      
+    return settings, best_sharpe 

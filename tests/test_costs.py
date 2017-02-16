@@ -14,7 +14,6 @@ from linear_hf.quantiacs_code import quantiacs_calculation
 from linear_hf.costs import compute_numpy_sharpe
 from linear_hf.costs import compute_sharpe_tf
 from linear_hf import neuralnet
-from linear_hf.run_backtest import calculate_sharpe
 
 beginInSample='20090101'
 endInSample='20141231'
@@ -233,4 +232,4 @@ def test_random_init_nn_sharpe():
                                           return_returns=True)
     np_mixed_return = np_returns.mean() * np_returns.min()  
     rat_np_nn = np_mixed_return / nn_mixed_return
-    assert rat_np_nn < 1.01 and rat_np_nn > 0.99, "Mixed return cost function is broken!"
+    assert rat_np_nn < 1.03 and rat_np_nn > 0.97, "Mixed return cost function is broken!"
