@@ -218,7 +218,7 @@ def test_random_init_nn_sharpe():
     nn_mean_return = -1 * (nn_loss - nn_l1)
     np_returns = compute_numpy_sharpe(positions=nn_pos, prices=batch_out, slippage=0.05,
                                       return_returns=True)
-    np_mean_return = np_returns.mean()   
+    np_mean_return = np_returns.mean()
     rat_np_nn = np_mean_return / nn_mean_return
     assert rat_np_nn < 1.01 and rat_np_nn > 0.99, "Mean return cost function is broken!"
 
@@ -229,9 +229,10 @@ def test_random_init_nn_sharpe():
     nn_loss = nn.loss_np(batch_in=batch_in, batch_out=batch_out)
     nn_l1 = nn.l1_penalty_np()
     nn_mixed_return = -1 * (nn_loss - nn_l1)
-    np_returns = compute_numpy_sharpe(positions=nn_pos, prices=batch_out, slippage=0.05,
+    np_returns = compute_numpy_sharpe(
+        positions=nn_pos, prices=batch_out, slippage=0.05,
                                       return_returns=True)
-    np_mixed_return = np_returns.mean() * np_returns.min()
+    np_mixed_return = np_returns.mean() +  np_returns.min()
     rat_np_nn = np_mixed_return / nn_mixed_return
     assert rat_np_nn < 1.05 and rat_np_nn > 0.95, "Mixed return cost function is broken!"
 

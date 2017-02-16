@@ -1,8 +1,9 @@
 import sys
+import joblib
 import random
 
+from sklearn.preprocessing import StandardScaler
 import numpy as np
-import joblib
 
 import neuralnet
 import chunknet
@@ -96,14 +97,14 @@ def mySettings():
     settings['slippage'] = 0.05
     #settings['beginInSample'] = '20090102'
     #settings['endInSample'] = '20131231'
-    settings['beginInSample'] = '20040601'
+    settings['beginInSample'] = '20000601'
     settings['endInSample'] = '20140101'
     settings['val_sharpe_threshold'] = -np.inf
     settings['retrain_interval'] = 51
     settings['realized_sharpe'] = []
     settings['saved_val_sharpe'] = []
     settings['best_val_sharpe'] = -np.inf
-    settings['cost_type'] = 'sharpe'
+    settings['cost_type'] = 'sortino'
     settings['allow_shorting'] = False
     settings['lr_mult_base'] = .1
     settings['restart_variables'] = True

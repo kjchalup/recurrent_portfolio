@@ -1,5 +1,5 @@
 import numpy as np
-from linear_hf.preprocessing import non_nan_markets
+from preprocessing import non_nan_markets
 
 def draw_timeseries_batch(all_data, market_data, horizon, batch_size, batch_id, randseed=1):
     """ Make batches of data.
