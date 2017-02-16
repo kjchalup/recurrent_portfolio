@@ -327,7 +327,7 @@ def training(settings, all_data, market_data):
     """ 
     # Intiailize sharpe ratios
     best_val_sharpe = -np.inf
-    best_tr_loss = -np.inf
+    best_tr_sharpe = -np.inf
     batches_per_epoch = calc_batches(all_data.shape[0], settings)
     # Start an epoch!
     for epoch_id in range(settings['num_epochs']):
@@ -335,7 +335,6 @@ def training(settings, all_data, market_data):
         tr_sharpe = 0.
         val_sharpe = 0.
         lr_new = lr_calc(settings, epoch_id)
-
         # Train an epoch.
         for batch_id in range(batches_per_epoch):
             # Split data into validation and training batches.
