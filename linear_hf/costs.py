@@ -102,7 +102,7 @@ def sharpe_tf(positions, prices, n_sharpe, n_markets, slippage=.05, n_ignore=2, 
                 tf.pow(tf.reduce_sum(rs, axis=1), 2) / n_sharpe**2))))
     elif cost == 'sortino':
         pos_rets = tf.minimum(rs, 0)
-        pos_std = (tf.sqrt(252 * (tf.reduce_sum(tf.pow(rs, 2), axis=1) / n_sharpe -
+        pos_std = (tf.sqrt(252 * (tf.reduce_sum(tf.pow(pos_rets, 2), axis=1) / n_sharpe -
                     tf.pow(tf.reduce_sum(rs, axis=1), 2) / n_sharpe**2)))
         return tf.reduce_mean((tf.pow(
             tf.reduce_prod(rs+1, axis=1), (252./n_sharpe))-1) / (pos_std + 1e-7))

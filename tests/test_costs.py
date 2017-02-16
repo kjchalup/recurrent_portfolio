@@ -247,7 +247,7 @@ def test_random_init_nn_sharpe():
                                       return_returns=True)
 
     # Standard deviation is: np.std on daily returns * sqrt(252) to annualize
-    denominator = (np.std(np_returns[np_returns < 0.0])) * np.sqrt(252) + 1e-7
+    denominator = (np.std(np_returns[np_returns < 0.0])) * np.sqrt(252) * np.sqrt((np_returns < 0).sum() / float(n_sharpe)) + 1e-7
     numerator = np.prod(np_returns+1)**(252/n_sharpe)-1
     np_sortino_return = numerator / denominator
     rat_np_nn = np_sortino_return / nn_sortino_return
