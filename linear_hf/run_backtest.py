@@ -58,7 +58,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
                                               n_markets=OPEN.shape[1],
                                               n_time=settings['n_time'],
                                               n_sharpe=settings['n_sharpe'],
-                                              n_chunks=10,
+                                              n_chunks=30,
                                               lbd=settings['lbd'],
                                               allow_shorting=settings['allow_shorting'],
                                           cost=settings['cost_type'])
@@ -153,10 +153,10 @@ def mySettings():
     settings['num_epochs'] = 48 # Number of epochs each day.
     settings['batch_size'] = 128
     settings['val_period'] = 32
-    settings['lr'] = 1e-9 # Learning rate.
+    settings['lr'] = 1e-7 # Learning rate.
     settings['dont_trade'] = False # If on, don't trade.
     settings['iter'] = 0
-    settings['lookback'] = 1800
+    settings['lookback'] = 1000
     settings['budget'] = 10**6
     settings['slippage'] = 0.05
     #settings['beginInSample'] = '20090102'
