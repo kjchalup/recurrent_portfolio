@@ -53,17 +53,14 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
         best_tr_loss = np.inf
         if settings['restart_variables']:
             settings['nn'].restart_variables()
-        lr_mult = settings['lr_mult_base'] ** (1. / settings['num_epochs'])
-        batches_per_epoch = int(np.floor((all_data.shape[0] -
-                                          settings['horizon'] -
-                                          settings['val_period'] -
-                                          2 * settings['n_sharpe'] + 1)
-                                         /float(settings['batch_size'])))
-
+                
+        batches_per_epoch = calc_batches(all_data.shape[0], settings)
+        
         for epoch_id in range(settings['num_epochs']):
             seed = np.random.randint(10000)
             tr_sharpe = 0.
             val_sharpe = 0.
+            lr_new = lr_calc(settings, epoch_id)
             for batch_id in range(batches_per_epoch):
                 all_val, market_val, all_batch, market_batch = split_validation_training(
                     all_data, market_data, 
@@ -74,13 +71,8 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
                     batch_size=settings['batch_size'],
                     randseed=seed)
 
-                settings['nn'].train_step(
-                    batch_in=all_batch, 
-                    batch_out=market_batch, 
-                    lr = settings['lr'] * lr_mult ** epoch_id)
-                loss = settings['nn'].loss_np(all_batch, market_batch)
-                l1_loss = settings['nn'].l1_penalty_np()
-                tr_sharpe += -(loss - l1_loss)
+                settings['nn'].train_step(batch_in=all_batch, batch_out=market_batch, lr=lr_new)
+                tr_sharpe += loss_calc(settings,all_batch,market_batch)
 
             if settings['val_period'] > 0:
                 val_loss = settings['nn'].loss_np(all_val, market_val)
@@ -112,7 +104,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
     settings['nn'].load()
     positions = settings['nn'].predict(all_data[-settings['horizon']:])
     if settings['dont_trade']:
-        positions = dont_trade_positions(positions)
+        positions = dont_trade_positions(positions, settings)
    
     # Save validation sharpes and actualized sharpes!
     settings['realized_sharpe'].append(recent_cost)
@@ -236,6 +228,15 @@ def calculate_recent(iteration, retrain_interval, exposure, market_data, cost='s
 
 
 def print_things(iteration,DATE,fundEquity,val_sharpe,recent_cost):
+    """ Prints out things
+
+    Args:
+        iteration: iteration in backtester
+        DATE: last date
+        fundEquity: last fundEquity amount
+        val_sharpe: most recent validation sharpe saved in settings
+        recent_cost: most recent recent_cost.
+    """
     print('Iter {} [{}], equity {}.'.format(iteration, 
                                             DATE,
                                             fundEquity))
@@ -245,8 +246,66 @@ def print_things(iteration,DATE,fundEquity,val_sharpe,recent_cost):
                                             recent_cost))
 
 
-def dont_trade_positions(positions):
+def dont_trade_positions(positions, settings):
+    """ Sets positions to zero, and cash to 1
+
+    Args:
+        positions: positions output from neuralnet
+        settings: needed to find 'CASH' index
+    Returns:
+        positions: all zeroed out except for CASH, which is 1
+    """
+    
     positions *= 0 
     cash_index = settings['markets'].index('CASH')
     positions[cash_index] = 1
     return positions
+
+
+def calc_batches(n_timesteps, settings):
+    """ Calculates the total groups of batch_size that are one epoch.
+    
+    Args:
+        n_timesteps: total number of timesteps
+        settings: takes horizon, val_period, n_sharpe, and batch_size
+    Returns:
+        batches_per_epoch: the floor of total_possible_timesteps/batch_size,
+                           where total_possible is taken from batches
+    """
+    
+    batches_per_epoch = int(np.floor((n_timesteps -
+                                          settings['horizon'] -
+                                          settings['val_period'] -
+                                          2 * settings['n_sharpe'] + 1)
+                                         /float(settings['batch_size'])))
+    return batches_per_epoch
+
+
+def lr_calc(settings, epoch_id)
+    """ Learning rate update based on epoch_id
+
+    Args:
+        settings: used to caluclate an lr multiplier
+        epoch_id: used to calculate the new lr
+    Return:
+        lr_new: new learning rate, dependent on epoch_id, lr, lr_mult_base.
+    """
+    lr_mult = settings['lr_mult_base'] ** (1. / settings['num_epochs'])
+    lr_new = settings['lr'] * lr_mult ** epoch_id
+
+    return lr_new
+
+def loss_calc(settings, all_batch, market_batch)
+    """ Calculates loss from neuralnet
+
+    Args: 
+        settings: contains the neural net
+        all_batch: the inputs to neural net
+        market_batch: [open close high low] used to calculate loss
+    Returns:
+        cost: loss - l1 penalty
+    """
+    loss = settings['nn'].loss_np(all_batch, market_batch)
+    l1_loss = settings['nn'].l1_penalty_np()
+    return -(loss - l1_loss)
+
