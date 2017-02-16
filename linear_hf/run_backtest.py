@@ -10,6 +10,7 @@ import chunknet
 from preprocessing import non_nan_markets
 from preprocessing import nan_markets
 from preprocessing import returns_check
+from preprocessing import load_nyse_markets
 from preprocessing import preprocess
 from batching_splitting import split_validation_training
 from costs import compute_numpy_sharpe
@@ -26,11 +27,11 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
 
     all_data = StandardScaler().fit_transform(all_data)
     # Calculate Sharpe between training intervals
-    n_days_back = np.mod(settings['iter'],settings['n_sharpe'])
+    n_days_back = np.mod(settings['iter']-1,settings['retrain_interval'])
     
     if n_days_back > 2:
-        recent_sharpe=compute_numpy_sharpe(positions=exposure[None, -n_days_back-3:-1, :],
-                             prices=market_data[None, -n_days_back-2:, :],
+        recent_sharpe=compute_numpy_sharpe(positions=exposure[None, -n_days_back-4:-1, :],
+                             prices=market_data[None, -n_days_back-3:, :],
                              slippage=0.05,
                              n_ignore=2)
         if np.isnan(recent_sharpe):
@@ -143,29 +144,29 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
 def mySettings():
     settings={}
     # Futures Contracts
-    settings['n_time'] =  60 # Use this many timesteps in one datapoint.
-    settings['n_sharpe'] = 30 # This many timesteps to compute Sharpes.
+    settings['n_time'] =  40 # Use this many timesteps in one datapoint.
+    settings['n_sharpe'] = 10 # This many timesteps to compute Sharpes.
     settings['horizon'] = settings['n_time'] - settings['n_sharpe'] + 1
     settings['lbd'] = .1 # L1 regularizer strength.
-    settings['num_epochs'] = 2 # Number of epochs each day.
+    settings['num_epochs'] = 50 # Number of epochs each day.
     settings['batch_size'] = 128
     settings['val_period'] = 32
     settings['lr'] = 1e-4 # Learning rate.
     settings['dont_trade'] = False # If on, don't trade.
     settings['iter'] = 0
-    settings['lookback'] = 1000
+    settings['lookback'] = 400
     settings['budget'] = 10**6
     settings['slippage'] = 0.05
     #settings['beginInSample'] = '20090102'
     #settings['endInSample'] = '20131231'
-    settings['beginInSample'] = '20040101'
+    settings['beginInSample'] = '20000601'
     settings['endInSample'] = '20140101'
     settings['val_sharpe_threshold'] = -np.inf
     settings['retrain_interval'] = 30
     settings['realized_sharpe'] = []
     settings['saved_val_sharpe'] = []
     settings['val_sharpe'] = -np.inf
-    settings['cost_type'] = 'min_return'
+    settings['cost_type'] = 'sharpe'
     settings['allow_shorting'] = True
     settings['lr_mult_base'] = .1
     settings['restart_variables'] = True
@@ -188,8 +189,14 @@ def mySettings():
     settings['data_types'] = [0]
     
     # Hard code markets for testing.
-    settings['markets'] = ['85653_AI_nyse', '81061_MCK_nyse', '62148_CSX_nyse', '85621_MTD_nyse', '85442_TSM_nyse', '36468_SHW_nyse', '50788_ESL_nyse', '46690_CBT_nyse', '86023_MUS_nyse', '77925_MQT_nyse', '77823_KMP_nyse', '32678_HEI_nyse', '87198_ARLP_nasdaq', '87289_SNH_nyse', '77971_EFII_nasdaq', '77860_JEQ_nyse', '55001_TRN_nyse', '79323_ALL_nyse', '47941_TGNA_nyse', '46463_GFF_nyse', '51633_VVC_nyse', '80691_LPT_nyse', '75429_PHF_nyse_mkt', '77604_ALU_nyse', '22840_HSH_nyse', '75183_PCF_nyse', '19350_DE_nyse', '78034_PDCO_nasdaq', '38762_NI_nyse', '75278_AB_nyse', '49656_BK_nyse', '11369_UBSI_nasdaq', '79665_TEI_nyse', '24328_EQT_nyse', '76697_HNT_nyse', '61778_KYO_nyse', '82924_JW_nyse', '84042_PAG_nyse', '83604_SKM_nyse', '55213_RT_nyse', '86143_VVR_nyse', '70826_MFM_nyse', '85421_CHL_nyse', '59504_BTI_nyse_mkt', '14816_TR_nyse', '79363_AZN_nyse', '68187_WRI_nyse', '73139_SYK_nyse', '86102_FII_nyse', '77078_TOT_nyse', '78775_CREAF_nasdaq', '88249_SCRX_nasdaq', '85074_LQ_nyse', '79195_PERY_nasdaq', '84351_BHBC_nasdaq', '79795_ASCA_nasdaq', '78758_BBHL_nasdaq', '86290_CVV_nasdaq', '89556_MPQ_nyse_mkt', '12236_NOVN_nasdaq', '77420_FRED_nasdaq', '89374_PCO_nyse', '80122_FFLC_nasdaq', '11634_RBNC_nasdaq', '87268_CIR_nyse', '81705_FEIC_nasdaq', '76515_DHC_nyse_mkt', '11292_ICCC_nasdaq', '88784_ADLR_nasdaq', '23799_CIA_nyse', '91265_HAXS_nasdaq', '69892_GG_nyse', '89103_GLAD_nasdaq', '82261_GSIG_nasdaq', '85686_DEPO_nasdaq', '76037_CBC_nyse', '89928_FBTX_nasdaq', '88550_OPNT_nasdaq', '38172_WOC_nyse_mkt', '77555_REM_nyse', '86313_UBA_nyse', '80539_NKTR_nasdaq', '86839_OBAS_nasdaq', '83533_MXIC_nasdaq', '82207_TRKN_nasdaq', '79358_VMV_nyse_mkt', '85510_TONS_nasdaq', '37460_TLX_nyse_mkt', '86915_RMIX_nasdaq', '77262_TTES_nasdaq', '88836_GNVC_nasdaq', '87649_CHRD_nasdaq', '83145_IRIX_nasdaq', '84562_HGRD_nasdaq', '87762_CRYP_nasdaq', '17778_BRK_nyse', '89929_FLCN_nasdaq', '87663_IPK_nyse_mkt', '89495_TAP_nyse', '76691_AETC_nasdaq'][:99] + ['CASH']
-
+    settings['markets'] = load_nyse_markets(start_date=settings['beginInSample'],
+                                            end_date=settings['endInSample'],
+                                            lookback=0,
+                                            postipo=0)
+    # Set the n_markets to be a multiple of 10 (including CASH) so
+    # we can chunk!
+    n_markets = ((len(settings['markets']) + 1) / 10) * 10
+    settings['markets'] = settings['markets'][:n_markets]
     print(settings['markets'])
     return settings
 

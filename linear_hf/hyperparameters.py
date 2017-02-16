@@ -1,6 +1,7 @@
 """Determine the optimal hyperparameters for the neural net."""
 import joblib
 import itertools
+import os
 
 import random
 import numpy as np
@@ -26,7 +27,7 @@ def powerset(iterable):
 
 # Define constants for use in choosing hyperparameters.
 LBDS = 10.**np.arange(-5, 3) + [0.]
-CHOICES = {'n_time': range(21, 100), # Timesteps in one datapoint.
+CHOICES = {'n_time': range(21, 50), # Timesteps in one datapoint.
            'lbd': LBDS,              # L1 regularizer strength.
            'num_epochs': [100],   # Number of epochs each day.
            'batch_size': [32, 64, 128],  # Batch size.
@@ -52,8 +53,9 @@ def mySettings(): # pylint: disable=invalid-name,too-many-arguments
 
     # Only keep markets that have not died out by beginInSample.
     random.seed(1)
-    settings['markets'] = load_nyse_markets(settings['beginInSample'],
-                                            settings['endInSample'], postipo=0)[:30] + ['CASH']
+    all_nyse = load_nyse_markets('20000601', None)
+    np.random.seed(1)
+    settings['markets'] = np.random.choice(all_nyse, 1000).tolist() + ['CASH']
     return settings
 
 def supply_hypers():
@@ -70,44 +72,48 @@ def supply_hypers():
     return settings
 
 if __name__ == '__main__':
-    HYPER_RESULTS = []
-    for run in range(N_RUNS):
-        # Get hyperparameters.
-        SETTINGS = supply_hypers()
+    if os.path.isfile('saved_data/hyper_new_results_local.pkl'):
+        HYPER_RESULTS = joblib.load('saved_data/hyper_new_results_local.pkl')
+    else:
+        HYPER_RESULTS = []
+    
+    #for run in range(N_RUNS):
+    # Get hyperparameters.
+    SETTINGS = supply_hypers()
 
-        # Other SETTINGS.
-        SETTINGS['horizon'] = SETTINGS['n_time'] - SETTINGS['n_sharpe'] + 1
-        if SETTINGS['cost_type'] != 'sharpe':
-            SETTINGS['val_sharpe_threshold'] = -np.inf
-        SETTINGS['iter'] = 0
-        SETTINGS['budget'] = 10**6
-        SETTINGS['slippage'] = 0.05
-        SETTINGS['beginInSample'] = '20000602'
-        SETTINGS['endInSample'] = '20131201'
-        SETTINGS['realized_sharpe'] = []
-        SETTINGS['saved_val_sharpe'] = []
-        SETTINGS['val_sharpe'] = -np.inf
-        SETTINGS['dont_trade'] = False
+    # Other SETTINGS.
+    SETTINGS['horizon'] = SETTINGS['n_time'] - SETTINGS['n_sharpe'] + 1
+    if SETTINGS['cost_type'] != 'sharpe':
+        SETTINGS['val_sharpe_threshold'] = -np.inf
+    SETTINGS['iter'] = 0
+    SETTINGS['budget'] = 10**6
+    SETTINGS['slippage'] = 0.05
+    SETTINGS['beginInSample'] = '20020102'
+    SETTINGS['endInSample'] = '20131201'
+    SETTINGS['realized_sharpe'] = []
+    SETTINGS['saved_val_sharpe'] = []
+    SETTINGS['val_sharpe'] = -np.inf
+    SETTINGS['dont_trade'] = False
 
-        # Save settings for use in test.
-        joblib.dump(SETTINGS, 'saved_data/hypers.pkl')
+    # Save settings for use in test.
+    joblib.dump(SETTINGS, 'saved_data/hypers.pkl')
 
-        # Run the strategy.
-        import quantiacsToolbox
-        print [str(hyper) +': ' + str(SETTINGS[hyper])
-               for hyper in SETTINGS and CHOICES]
-        print ['n_time: ' + str(SETTINGS['n_time'])]
-        #try:
+    # Run the strategy.
+    import quantiacsToolbox
+    print [str(hyper) +': ' + str(SETTINGS[hyper])
+           for hyper in SETTINGS and CHOICES]
+    print ['n_time: ' + str(SETTINGS['n_time'])]
+    try:
         RESULTS = quantiacsToolbox.runts(__file__, plotEquity=False)
         # Show the results.
         RESULTS['settings']['nn'] = None
         print RESULTS['stats']
-        # except:
-        #    print('Strategy failed so bad, we are skipping it.')
-        #    RESULTS = SETTINGS
+    except:
+        print('Strategy failed so bad, we are skipping it.')
+        RESULTS = SETTINGS
 
-        # Reduce the size of the results files.
-        HYPER_RESULTS.append(RESULTS)
+    # Reduce the size of the results files.
+    HYPER_RESULTS.append(RESULTS)
 
-        # Save the results
-        joblib.dump(HYPER_RESULTS, 'saved_data/hyper_results.pkl')
+    # Save the results
+    joblib.dump(HYPER_RESULTS, 'saved_data/hyper_new_results_local.pkl')
