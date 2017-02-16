@@ -14,6 +14,4 @@ def test_hypers():
     # Test that values are in range.
     for setting in settings:
         print(settings)
-        if settings[setting] not in CHOICES[setting]:
-            import pdb;pdb.set_trace()
         assert settings[setting] in CHOICES[setting]
