@@ -47,10 +47,9 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
         print 'Done with initializing neural net!'
 
     # Train the neural net on current data.
-    best_val_sharpe = -np.inf
     if settings['iter'] % settings['retrain_interval'] == 0:
         best_val_sharpe = -np.inf
-        best_tr_loss = np.inf
+        best_tr_loss = -np.inf
         if settings['restart_variables']:
             settings['nn'].restart_variables()
                 
@@ -62,6 +61,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
             val_sharpe = 0.
             lr_new = lr_calc(settings, epoch_id)
             for batch_id in range(batches_per_epoch):
+                # Split data into validation and training batches.
                 all_val, market_val, all_batch, market_batch = split_validation_training(
                     all_data, market_data, 
                     valid_period=settings['val_period'], 
@@ -70,14 +70,17 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
                     batch_id=batch_id, 
                     batch_size=settings['batch_size'],
                     randseed=seed)
-
+                # Train.
                 settings['nn'].train_step(batch_in=all_batch, batch_out=market_batch, lr=lr_new)
                 tr_sharpe += loss_calc(settings,all_batch,market_batch)
+            
+            # Calculate average training sharpe for the epoch.
+            tr_sharpe /= batches_per_epoch
 
+            # Update neural net, and attendant values if NN is better.
             if settings['val_period'] > 0:
-                val_loss = settings['nn'].loss_np(all_val, market_val)
-                val_l1_loss = settings['nn'].l1_penalty_np()
-                val_sharpe = -(val_loss - val_l1_loss)
+                # Calculate validation sharpe for epoch.
+                val_sharpe = loss_calc(settings, all_val, market_val)
                 
                 if val_sharpe > best_val_sharpe:
                     best_val_sharpe = val_sharpe
@@ -91,11 +94,10 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
                 # Record val_sharpe for results
                 settings['val_sharpe'] = best_val_sharpe
 
-            elif loss < best_tr_loss:
+            elif tr_sharpe > best_tr_loss:
                 best_tr_loss = loss
                 settings['nn'].save()
 
-            tr_sharpe /= batches_per_epoch
             sys.stdout.write('\nEpoch {}, val/tr Sharpe {:.4}/{:.4g}.'.format(
                 epoch_id, val_sharpe, tr_sharpe))
             sys.stdout.flush()
@@ -103,12 +105,18 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
     # Predict a portfolio.
     settings['nn'].load()
     positions = settings['nn'].predict(all_data[-settings['horizon']:])
+    
+    # Set positions to zero, cash to 1 if don't trade is True.
     if settings['dont_trade']:
         positions = dont_trade_positions(positions, settings)
    
     # Save validation sharpes and actualized sharpes!
     settings['realized_sharpe'].append(recent_cost)
-    settings['saved_val_sharpe'].append(best_val_sharpe)
+    
+    if settings['val_period'] == 0:
+        settings['saved_val_sharpe'].append(np.nan)
+    else:
+        settings['saved_val_sharpe'].append(settings['val_sharpe'])
     
     settings['iter'] += 1
     return positions, settings
@@ -281,7 +289,7 @@ def calc_batches(n_timesteps, settings):
     return batches_per_epoch
 
 
-def lr_calc(settings, epoch_id)
+def lr_calc(settings, epoch_id):
     """ Learning rate update based on epoch_id
 
     Args:
@@ -295,7 +303,7 @@ def lr_calc(settings, epoch_id)
 
     return lr_new
 
-def loss_calc(settings, all_batch, market_batch)
+def loss_calc(settings, all_batch, market_batch):
     """ Calculates loss from neuralnet
 
     Args: 
