@@ -105,7 +105,7 @@ def sharpe_tf(positions, prices, n_sharpe, n_markets, slippage=.05, n_ignore=2, 
     elif cost == 'mean_return':
         return tf.reduce_mean(rs)
     elif cost == 'mixed_return':
-        return tf.reduce_mean(rs) * tf.reduce_min(rs)
+        return tf.reduce_mean(rs) + tf.reduce_min(rs)
 
 def compute_sharpe_tf(batch_in, batch_out):
     n, n_time, n_ftrs = batch_in.shape
