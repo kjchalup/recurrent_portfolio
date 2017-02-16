@@ -4,7 +4,7 @@ import tensorflow as tf
 
 from costs import sharpe_tf
 
-def define_nn(batch_in_tf, n_sharpe, 
+def define_nn(batch_in_tf, n_sharpe,
               n_time, n_ftrs, W, b, allow_shorting):
     """ Define a neural net for the Linear regressor.
     
@@ -18,7 +18,7 @@ def define_nn(batch_in_tf, n_sharpe,
       zero_thr (scalar): Set smaller weights to zero.
 
     Returns:
-      positions (n_batch, n_sharpe, n_markets): Positions for each market
+      positions (n_batch, n_sharpe, n_markets): Positions for each market.
     """
     horizon = n_time - n_sharpe + 1
     def apply_net(x):
@@ -36,7 +36,7 @@ def define_nn(batch_in_tf, n_sharpe,
         positions.append(apply_net(tf.reshape(
             batch_in_tf[:, t_id:t_id+horizon, :], 
             (-1, n_ftrs * horizon))))
-    
+
     return tf.transpose(positions, [1, 0, 2])
 
 class Linear(object):
@@ -52,19 +52,19 @@ class Linear(object):
                  causality_matrix=None, n_csl_ftrs=None, seed=None,
                  allow_shorting=True, cost='sharpe'):
         """ Initialize the regressor.
-        
+
         Args:
           n_ftrs (float): Number of input features.
           n_markets (float): Number of markets (== number of outputs/4).
           n_time (float): Timesteps in batches.
           n_sharpe (float): Use this many timesteps to predict each
             position vector.
-          W_init (n_ftrs * (n_time-n_sharpe+1), n_markets): Weight 
+          W_init (n_ftrs * (n_time-n_sharpe+1), n_markets): Weight
             initalization.
           lbd (float): l1 penalty coefficient.
           causality_matrix (n_ftrs, n_markets): A matrix where the [ij]
-            entry is positive if market corresponding to feature i seems 
-            to cause changes in market j. Used to decrease the L1 penalty 
+            entry is positive if market corresponding to feature i seems
+            to cause changes in market j. Used to decrease the L1 penalty
             on causally meaningful weights.
           seed (int): Graph-level random seed, for testing purposes.
           allow_shorting (bool): If True, allow negative positions.
@@ -76,7 +76,7 @@ class Linear(object):
         self.n_sharpe = n_sharpe
         self.horizon = n_time - n_sharpe + 1
         self.lbd = lbd
-        
+
         # Doefine symbolic placeholders for data batches.
         self.batch_in_tf = tf.placeholder(
             tf.float32, shape=[None, n_time, n_ftrs], 
@@ -92,20 +92,17 @@ class Linear(object):
         # Define nn weights and biases.
         if W_init is None:
             W_init = tf.truncated_normal(
-                [n_ftrs * self.horizon, n_markets], 
+                [n_ftrs * self.horizon, n_markets],
                 stddev=1. / (n_ftrs * self.horizon))
         self.W = tf.Variable(W_init, name='nn_weights')
-        self.b = tf.Variable(tf.zeros(n_markets), 
+        self.b = tf.Variable(tf.zeros(n_markets),
                              name='nn_biases')
 
-        # Causality matrix: small for the causal entries. Clone it across 
-        # the timesteps (so each market is either causal or not, at all timesteps).
-
         # Define the position outputs on a batch of timeseries.
-        self.positions_tf = define_nn(self.batch_in_tf, 
-                                      n_sharpe=n_sharpe, 
+        self.positions_tf = define_nn(self.batch_in_tf,
+                                      n_sharpe=n_sharpe,
                                       n_time=n_time,
-                                      n_ftrs=n_ftrs, 
+                                      n_ftrs=n_ftrs,
                                       W=self.W, b=self.b,
                                       allow_shorting=allow_shorting)
 
@@ -114,14 +111,12 @@ class Linear(object):
             self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(self.W))
         else:
             self.causality_matrix = np.tile(causality_matrix, [self.horizon, 1])
-            # self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(
-            #     self.W * (1-self.causality_matrix)))
             self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(
-                tf.boolean_mask(self.W, self.causality_matrix==0)))
+                tf.boolean_mask(self.W, self.causality_matrix == 0)))
 
         # Define the unnormalized loss function.
-        self.loss_tf = -sharpe_tf(self.positions_tf, self.batch_out_tf, 
-                                  n_sharpe, n_markets, cost=cost) + self.l1_penalty_tf
+        self.loss_tf = -sharpe_tf(self.positions_tf, self.batch_out_tf, n_sharpe,
+                                  n_markets, cost=cost) + self.l1_penalty_tf
         # Define the optimizer.
         self.train_op_tf = tf.train.AdamOptimizer(
             learning_rate=self.lr_tf).minimize(self.loss_tf)
@@ -135,7 +130,7 @@ class Linear(object):
 
     def restart_variables(self):
         self.sess.run(self.init_op)
-        
+
     def get_weights(self):
         return self.sess.run(self.W)
 
@@ -144,7 +139,7 @@ class Linear(object):
 
         Args:
           batch_in (n_batch, n_time, n_ftrs): Input data.
-        
+
         Returns:
           positions (n_batch, n_markets): Positions.
         """
@@ -153,12 +148,12 @@ class Linear(object):
 
     def predict(self, data_in):
         """ Predict a portfolio for a test batch.
-        
+
         Args:
           data_in (horizon, n_ftrs): Input data, where
             horizon = n_time - n_sharpe + 1. This corresponds
             to data needed to predict just one portfolio.
-        
+
         Returns:
           positions (n_markets): Positions.
         """
@@ -166,7 +161,7 @@ class Linear(object):
                              data_in])
         data_in = np.expand_dims(data_in, axis=0)
         # Pad the data with n_sharpe-1 fake datapoints.
-        return self.sess.run(self.positions_tf, 
+        return self.sess.run(self.positions_tf,
                              {self.batch_in_tf: data_in})[-1, -1]
 
     def l1_penalty_np(self):
@@ -182,15 +177,15 @@ class Linear(object):
             close, high and low prices.
 
         Returns:
-          loss (float): the average negative Sharpe ratio of the 
+          loss (float): the average negative Sharpe ratio of the
             current strategy.
         """
-        return self.sess.run(self.loss_tf, 
-                             {self.batch_in_tf: batch_in, 
+        return self.sess.run(self.loss_tf,
+                             {self.batch_in_tf: batch_in,
                               self.batch_out_tf: batch_out})
-        
+
     def train_step(self, batch_in, batch_out, lr):
-        self.sess.run(self.train_op_tf, 
+        self.sess.run(self.train_op_tf,
                       {self.batch_in_tf: batch_in,
                        self.batch_out_tf: batch_out,
                        self.lr_tf: lr})
