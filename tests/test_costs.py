@@ -1,11 +1,8 @@
 import pytest
 import quantiacsToolbox
 from quantiacsToolbox import loadData
-import sys
-import os
 import pandas as pd
 import numpy as np
-import inspect
 
 #Include scripts from parent directory
 from context import linear_hf
@@ -15,8 +12,8 @@ from linear_hf.costs import compute_numpy_sharpe
 from linear_hf.costs import compute_sharpe_tf
 from linear_hf import neuralnet
 
-beginInSample='20090101'
-endInSample='20141231'
+beginInSample = '20090101'
+endInSample = '20141231'
 names_with_no_nans = non_nan_markets(start_date=beginInSample,
                                      end_date=endInSample, postipo=100, lookback=0)
 names_with_no_nans = names_with_no_nans[200:250]
@@ -34,14 +31,11 @@ settings={'markets': names_with_no_nans,
           'lookback': 2,
           'slippage': 0.05}
 
-
 n_timesteps, n_markets = market_data.shape
 n_markets = n_markets / 4
 positions_all1 = np.ones([n_timesteps, n_markets]) / float(n_markets)
 np.random.seed(0)
 positions_rand = np.random.rand(n_timesteps, n_markets) - 0.5
-
-    
 
 def evaluate_systems(dataDict, positions, settings, market_data):
     # Calculate QC returns, sum the returns across stocks to get daily returns. 
@@ -80,15 +74,15 @@ def evaluate_systems(dataDict, positions, settings, market_data):
 def test_costfn_backtester_all1s(dataDict=dataDict,
                                  positions=positions_all1,
                                  settings=settings,
-                                 market_data = market_data):
+                                 market_data=market_data):
     evaluate_systems(dataDict=dataDict,
                      positions=positions_all1,
                      settings=settings,
                      market_data=market_data)
 
-def test_costfn_backtester_randpos(dataDict=dataDict, 
-                                   positions=positions_rand, 
-                                   settings=settings, 
+def test_costfn_backtester_randpos(dataDict=dataDict,
+                                   positions=positions_rand,
+                                   settings=settings,
                                    market_data=market_data):
     evaluate_systems(dataDict=dataDict,
                      positions=positions_rand,
@@ -121,9 +115,9 @@ def test_tf_sharpe_using_premade_positions(position=positions_rand,
     qc_np_ratio = sharpe_qc/float(sharpe_np)
     np_tf_ratio = sharpe_np/float(sharpe_tf)
 
-    assert tf_qc_ratio > 0.95 and tf_qc_ratio < 1.05,"TF Sharpe and Quantiacs Sharpe don't agree to 5%"
-    assert qc_np_ratio > 0.95 and qc_np_ratio < 1.05,"Quantiacs Sharpe and Numpy Sharpe don't agree to 5%"
-    assert np_tf_ratio > 0.95 and np_tf_ratio < 1.05,"Numpy Sharpe and TF Sharpe don't agree to 5%"
+    assert tf_qc_ratio > 0.95 and tf_qc_ratio < 1.05, "TFSharpe / Quantiacs Sharpe don't agree to 5%"
+    assert qc_np_ratio > 0.95 and qc_np_ratio < 1.05, "Quantiacs Sharpe / NP Sharpe don't agree to 5%"
+    assert np_tf_ratio > 0.95 and np_tf_ratio < 1.05, "Numpy Sharpe and TF Sharpe don't agree to 5%"
 
 '''
     ret_np = compute_numpy_sharpe(positions=pos, prices=prices, slippage=0.05, return_returns = True)
@@ -146,11 +140,10 @@ def test_random_init_nn_sharpe():
                              dataDict['HIGH'], dataDict['LOW']])
     all_data = np.hstack([dataDict['OPEN'], dataDict['CLOSE'],
                           dataDict['HIGH'], dataDict['LOW']])
- 
+
     settings = {'markets':names_with_no_nans,
                 'lookback': 2,
                 'slippage': 0.05}
-
 
     n_timesteps, n_markets = market_data.shape
     n_markets = n_markets/4
