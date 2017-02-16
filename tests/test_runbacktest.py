@@ -1,7 +1,5 @@
 import pytest
 import quantiacsToolbox
-import sys
-import os
 import numpy as np
 
 from context import linear_hf
@@ -139,7 +137,6 @@ def test_training_fakedata():
                 'lbd': 0,
                 'realized_sharpe': [],
                 'saved_val_sharpe': [],
-                'realized_sharpe': [],
                 'retrain_interval': 1,
                 'allow_shorting': True}
 
@@ -188,7 +185,8 @@ def temp_test_training_fakedata_2():
 
     horizon = settings['horizon']
     # Predict prices at time = horizon+1
-    nn_pos_b4 = np.vstack([settings['nn'].predict(data_in[i:horizon+i, :]) for i in range(data_in.shape[0]-horizon -1)])
+    nn_pos_b4 = np.vstack([settings['nn'].predict(data_in[i:horizon+i, :]) 
+                          for i in range(data_in.shape[0]-horizon -1)])
     poscheck = nn_pos_b4[None, :, :]
     pricecheck = data_all[None, horizon+1:, :]
 
@@ -198,9 +196,9 @@ def temp_test_training_fakedata_2():
     settings = training(settings, all_data=data_in, market_data=data_all)
     settings['nn'].load()
 
-    nn_pos_after = np.vstack([settings['nn'].predict(data_in[i:horizon+i, :]) for i in range(data_in.shape[0]-horizon -1)])
+    nn_pos_after = np.vstack([settings['nn'].predict(data_in[i:horizon+i, :]) 
+                             for i in range(data_in.shape[0]-horizon -1)])
 
     nn_pos_after = np.vstack(nn_pos_after)
-    sharpe_after = compute_numpy_sharpe(positions=nn_pos_after[None, :, :], prices=data_all[None, horizon:, :])
-    assert sharpe > 1000
-
+    sharpe_after = compute_numpy_sharpe(positions=nn_pos_after[None, :, :],
+                                        prices=data_all[None, horizon:, :])
