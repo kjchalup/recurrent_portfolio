@@ -16,7 +16,6 @@ from costs import compute_numpy_sharpe
 
 def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE, 
     CLOSE_ASK, CLOSE_BID, RETURN, SHARE, DIVIDEND, TOTALCAP, exposure, equity, settings, fundEquity):
-    
 
     market_data, all_data, should_retrain = preprocess(
         settings['markets'], OPEN, CLOSE, HIGH, LOW, VOL, DATE, 
@@ -29,31 +28,12 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
                                      exposure=exposure, 
                                      market_data=market_data,
                                      cost=settings['cost_type'])
-    '''
-    n_days_back = np.mod(settings['iter']-1,settings['retrain_interval'])
-
     
-    if n_days_back > 2:
-        recent_sharpe=compute_numpy_sharpe(positions=exposure[None, -n_days_back-4:-1, :],
-                             prices=market_data[None, -n_days_back-3:, :],
-                             slippage=0.05,
-                             n_ignore=2)
-        if np.isnan(recent_sharpe):
-            # NaNs out when all positions are cash, therefore std.dev(ret) = 0
-            recent_sharpe = 0
-    else:
-        recent_sharpe = np.nan
-    '''
-    print('Iter {} [{}], equity {}.'.format(settings['iter'], 
-                                            DATE[-1],
-                                            fundEquity[-1]))
+    print_things(settings['iter'],DATE[-1],fundEquity[-1],settings['val_sharpe'],recent_cost)
+    
     if fundEquity[-1] < .75:
         raise ValueError('Strategy lost too much money')
 
-    if settings['iter'] > 1:
-        print('[Recent validation sharpe] Recent sharpe: [{}] {}'.format(
-                                            settings['val_sharpe'],
-                                            recent_cost))
     if settings['iter'] == 0:
         print 'Initializing net...\n'
         # Define a new neural net.
@@ -132,10 +112,8 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE,
     settings['nn'].load()
     positions = settings['nn'].predict(all_data[-settings['horizon']:])
     if settings['dont_trade']:
-        positions *= 0 
-        cash_index = settings['markets'].index('CASH')
-        positions[cash_index] = 1
-    
+        positions = dont_trade_positions(positions)
+   
     # Save validation sharpes and actualized sharpes!
     settings['realized_sharpe'].append(recent_cost)
     settings['saved_val_sharpe'].append(best_val_sharpe)
@@ -234,12 +212,10 @@ def calculate_recent(iteration, retrain_interval, exposure, market_data, cost='s
         recent_sharpe = compute_numpy_sharpe(positions=exposure[None, -n_days_back-3:-1, :],
                              prices=market_data[None, -n_days_back-2:, :],
                              slippage=0.05, n_ignore=2)
-        
         recent_returns = compute_numpy_sharpe(positions=exposure[None, -n_days_back-3:-1, :],
-                             prices=market_data[None, -n_days_back-1:, :],
+                             prices=market_data[None, -n_days_back-2:, :],
                              slippage=0.05, n_ignore=2, return_returns = True)
-         
-
+        
         if np.isnan(recent_sharpe):
             # NaNs out when all positions are cash, therefore std.dev(ret) = 0
             recent_sharpe = 0
@@ -258,3 +234,19 @@ def calculate_recent(iteration, retrain_interval, exposure, market_data, cost='s
     elif cost == 'mixed_return':
         return recent_returns.mean() * recent_returns.min()
 
+
+def print_things(iteration,DATE,fundEquity,val_sharpe,recent_cost):
+    print('Iter {} [{}], equity {}.'.format(iteration, 
+                                            DATE,
+                                            fundEquity))
+    if iteration > 1:
+        print('[Recent validation costfn] Recent costfn: [{}] {}'.format(
+                                            val_sharpe,
+                                            recent_cost))
+
+
+def dont_trade_positions(positions):
+    positions *= 0 
+    cash_index = settings['markets'].index('CASH')
+    positions[cash_index] = 1
+    return positions
