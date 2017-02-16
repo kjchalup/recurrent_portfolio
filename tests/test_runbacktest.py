@@ -150,58 +150,57 @@ def test_training_fakedata():
 
     assert sharpe > 1000
 
-#def test_training_fakedata_2():
-np.random.rand(1)
-n_time = 50
-n_markets = 3
-n_batch = 1
-n_sharpe = 10
+def temp_test_training_fakedata_2():
+    np.random.rand(1)
+    n_time = 50
+    n_markets = 3
+    n_batch = 1
+    n_sharpe = 10
 
-data1 = np.random.rand(n_time, 1) + 20
+    data1 = np.random.rand(n_time, 1) + 20
 
-data2 = np.random.rand(n_time, 1) + 20
+    data2 = np.random.rand(n_time, 1) + 20
 
-data3 = np.random.rand(n_time, 1) + 20
+    data3 = np.random.rand(n_time, 1) + 20
 
-data_all = np.hstack([data1, data2, data3] *4)
-data_in = np.hstack([data1, data2, data3])
-assert data_all.shape == (n_time, n_markets * 4)
-n_ftrs = data_in.shape[1]
-n_time = data_all.shape[0] - 25
-nn = neuralnet.Linear(n_ftrs, n_markets, n_time, n_sharpe)
-settings = {'nn': nn,
-            'num_epochs': 100,
-            'n_time': n_time,
-            'n_sharpe': n_sharpe,
-            'horizon': n_time - n_sharpe + 1,
-            'val_period': 0,
-            'lr': 1e-1,
-            'lr_mult_base': 0.1,
-            'batch_size': 25,
-            'iter': 0,
-            'lbd': 0,
-            'realized_sharpe': [],
-            'saved_val_sharpe': [],
-            'realized_sharpe': [],
-            'retrain_interval': np.nan,
-            'allow_shorting': True}
+    data_all = np.hstack([data1, data2, data3] *4)
+    data_in = np.hstack([data1, data2, data3])
+    assert data_all.shape == (n_time, n_markets * 4)
+    n_ftrs = data_in.shape[1]
+    n_time = data_all.shape[0] - 25
+    nn = neuralnet.Linear(n_ftrs, n_markets, n_time, n_sharpe)
+    settings = {'nn': nn,
+                'num_epochs': 100,
+                'n_time': n_time,
+                'n_sharpe': n_sharpe,
+                'horizon': n_time - n_sharpe + 1,
+                'val_period': 0,
+                'lr': 1e-1,
+                'lr_mult_base': 0.1,
+                'batch_size': 25,
+                'iter': 0,
+                'lbd': 0,
+                'realized_sharpe': [],
+                'saved_val_sharpe': [],
+                'realized_sharpe': [],
+                'retrain_interval': np.nan,
+                'allow_shorting': True}
 
-horizon = settings['horizon']
-# Predict prices at time = horizon+1
-nn_pos_b4 = np.vstack([settings['nn'].predict(data_in[i:horizon+i, :]) for i in range(data_in.shape[0]-horizon -1)])
-poscheck = nn_pos_b4[None, :, :]
-pricecheck = data_all[None, horizon+1:, :]
+    horizon = settings['horizon']
+    # Predict prices at time = horizon+1
+    nn_pos_b4 = np.vstack([settings['nn'].predict(data_in[i:horizon+i, :]) for i in range(data_in.shape[0]-horizon -1)])
+    poscheck = nn_pos_b4[None, :, :]
+    pricecheck = data_all[None, horizon+1:, :]
 
 
-sharpe_b4 = compute_numpy_sharpe(positions=poscheck, prices=pricecheck)
-print sharpe_b4
-settings = training(settings, all_data=data_in, market_data=data_all)
-settings['nn'].load()
+    sharpe_b4 = compute_numpy_sharpe(positions=poscheck, prices=pricecheck)
+    print sharpe_b4
+    settings = training(settings, all_data=data_in, market_data=data_all)
+    settings['nn'].load()
 
-nn_pos_after = np.vstack([settings['nn'].predict(data_in[i:horizon+i, :]) for i in range(data_in.shape[0]-horizon -1)])
+    nn_pos_after = np.vstack([settings['nn'].predict(data_in[i:horizon+i, :]) for i in range(data_in.shape[0]-horizon -1)])
 
-nn_pos_after = np.vstack(nn_pos_after)
-sharpe_after = compute_numpy_sharpe(positions=nn_pos_after[None, :, :], prices=data_all[None, horizon:, :])
-import pdb;pdb.set_trace()
-assert sharpe > 1000
+    nn_pos_after = np.vstack(nn_pos_after)
+    sharpe_after = compute_numpy_sharpe(positions=nn_pos_after[None, :, :], prices=data_all[None, horizon:, :])
+    assert sharpe > 1000
 
