@@ -27,4 +27,4 @@ linear_hf/neuralnet.py 5.81
 linear_hf/run_backtest.py 3.77
 tests/test_costs.py 2.43
 tests/test_nn_l1.py 3.82
-tests/test_runbacktest.py 
+tests/test_runbacktest.py 8.48

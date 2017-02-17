@@ -68,46 +68,57 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
         settings['saved_val_sharpe'].append(np.nan)
     else:
         settings['saved_val_sharpe'].append(settings['best_val_sharpe'])
-    settings['iter'] += 1
 
     # Predict a portfolio.
-    settings['nn'].load()
-    positions = settings['nn'].predict(all_data[-settings['horizon']:])
+    if (settings['iter'] % settings['retrain_interval'] == 0 or
+        not settings['cost_type'].startswith('onepos')):
+        # If we have a variable-position strategy, compute the position
+        # for this timestep.
+        #
+        # Similarly, compute a new position for constant-position stra-
+        # tegy, but only if we're on a beginning of a retrain_interval.
+        settings['nn'].load()
+        positions = settings['nn'].predict(all_data[-settings['horizon']:])
+        settings['current_positions'] = positions
+    else:
+        positions = settings['current_positions']
 
     # Set positions to zero, cash to 1 if don't trade is True.
     if settings['dont_trade']:
         positions = dont_trade_positions(positions, settings)
+    settings['iter'] += 1
     return positions, settings
 
 def mySettings():
     settings = {}
     # Futures Contracts
-    settings['n_time'] = 60 # Use this many timesteps in one datapoint.
-    settings['n_sharpe'] = 30 # This many timesteps to compute Sharpes.
+    settings['n_time'] =  100 # Use this many timesteps in one datapoint.
+    settings['n_sharpe'] = 50 # This many timesteps to compute Sharpes.
     settings['horizon'] = settings['n_time'] - settings['n_sharpe'] + 1
-    settings['lbd'] = 1. # L1 regularizer strength.
-    settings['num_epochs'] = 30 # Number of epochs each day.
-    settings['batch_size'] = 128
+    settings['lbd'] = 10000. # L1 regularizer strength.
+    settings['num_epochs'] = 20 # Number of epochs each day.
+    settings['batch_size'] = 32
     settings['val_period'] = 1
-    settings['lr'] = 1e-7 # Learning rate.
+    settings['lr'] = 1e-5 # Learning rate.
     settings['dont_trade'] = False # If on, don't trade.
     settings['iter'] = 0
-    settings['lookback'] = 1000
+    settings['lookback'] = 400
     settings['budget'] = 10**6
     settings['slippage'] = 0.05
     #settings['beginInSample'] = '20090102'
     #settings['endInSample'] = '20131231'
-    settings['beginInSample'] = '20000601'
+    settings['beginInSample'] = '20000104'
     settings['endInSample'] = '20140101'
     settings['val_sharpe_threshold'] = -np.inf
-    settings['retrain_interval'] = 30
+    settings['retrain_interval'] = 20
     settings['realized_sharpe'] = []
     settings['saved_val_sharpe'] = []
     settings['best_val_sharpe'] = -np.inf
-    settings['cost_type'] = 'sortino'
+    settings['cost_type'] = 'onepos_mean_return'
     settings['allow_shorting'] = True
     settings['lr_mult_base'] = 1.
     settings['restart_variables'] = True
+    settings['current_positions'] = None
     ''' Pick data types to feed into neural net. 
     If empty, only CLOSE will be used. 
     Circle dates added automatically if any setting is provided.
@@ -131,14 +142,13 @@ def mySettings():
                                             end_date=settings['endInSample'],
                                             lookback=0,
                                             postipo=0)
-    settings['markets'] = settings['markets'][-20:] + ['CASH']
+    settings['markets'] = settings['markets'][:100] + ['CASH']
     print settings['markets']
     return settings
 
 if __name__ == '__main__':
     import quantiacsToolbox
-    results = quantiacsToolbox.runts(__file__)
-    # joblib.dump(results, 'saved_data/results.pkl')
+    results = quantiacsToolbox.runts(__file__, fname='100_nyse_stocks.pkl')
     print results['stats']
 
 
@@ -368,12 +378,15 @@ def training(settings, all_data, market_data):
         # Calculate sharpes for the epoch
         tr_sharpe /= batches_per_epoch
         if settings['val_period'] > 0:
-            val_sharpe = loss_calc(settings, all_batch=all_val, market_batch=market_val)
+            val_sharpe = loss_calc(settings, all_batch=all_val, 
+                                   market_batch=market_val)
         # Update neural net, and attendant values if NN is better than previous.
         if settings['val_period'] > 0:
-            settings, best_val_sharpe = update_nn(settings, best_val_sharpe, val_sharpe)
+            settings, best_val_sharpe = update_nn(
+                settings, best_val_sharpe, val_sharpe)
         else:
-            settings, best_tr_sharpe = update_nn(settings, best_tr_sharpe, tr_sharpe)
+            settings, best_tr_sharpe = update_nn(
+                settings, best_tr_sharpe, tr_sharpe)
 
         # Write out data for epoch.
         sys.stdout.write('\nEpoch {}, val/tr Sharpe {:.4}/{:.4g}.'.format(

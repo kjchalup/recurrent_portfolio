@@ -2,7 +2,7 @@
 import numpy as np
 import tensorflow as tf
 
-from costs import sharpe_tf
+from costs import sharpe_tf, sharpe_onepos_tf
 
 def define_nn(batch_in_tf, n_sharpe,
               n_time, n_ftrs, W, b, allow_shorting):
@@ -34,7 +34,7 @@ def define_nn(batch_in_tf, n_sharpe,
     positions = []
     for t_id in range(n_sharpe):
         positions.append(apply_net(tf.reshape(
-            batch_in_tf[:, t_id:t_id+horizon, :], 
+            batch_in_tf[:, t_id:t_id+horizon, :],
             (-1, n_ftrs * horizon))))
 
     return tf.transpose(positions, [1, 0, 2])
@@ -108,16 +108,22 @@ class Linear(object):
 
         # Define the L1 penalty, taking causality into account.
         if causality_matrix is None:
-            #self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(self.W))
-            self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.pow(self.W, 2))
+            self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(self.W))
+
         else:
             self.causality_matrix = np.tile(causality_matrix, [self.horizon, 1])
             self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(
                 tf.boolean_mask(self.W, self.causality_matrix == 0)))
 
         # Define the unnormalized loss function.
-        self.loss_tf = -sharpe_tf(self.positions_tf, self.batch_out_tf, n_sharpe,
-                                  n_markets, cost=cost) + self.l1_penalty_tf
+        if cost.startswith('onepos'):
+            self.loss_tf = -sharpe_onepos_tf(
+                self.positions_tf, self.batch_out_tf, n_sharpe,
+                n_markets, cost=cost[7:]) + self.l1_penalty_tf
+        else:
+            self.loss_tf = -sharpe_tf(
+                self.positions_tf, self.batch_out_tf, n_sharpe,
+                n_markets, cost=cost) + self.l1_penalty_tf
         # Define the optimizer.
         self.train_op_tf = tf.train.AdamOptimizer(
             learning_rate=self.lr_tf).minimize(self.loss_tf)
@@ -201,3 +207,44 @@ class Linear(object):
     def load(self):
         """ Load the nn weights from a file. """
         self.saver.restore(self.sess, self.save_path)
+
+
+# class ConstposLinear(Linear):
+#     """ A linear, L1-regularized position predictor.
+    
+#     This predictor will scan the input batch using a shared
+#     set of linear weights. It will then output a vector of
+#     positions whose absolute values sum to one.
+#     """
+    
+#     def __init__(self, n_ftrs, n_markets, n_time,
+#                  n_sharpe, W_init=None, lbd=0.001,
+#                  causality_matrix=None, n_csl_ftrs=None, seed=None,
+#                  allow_shorting=True, cost='sharpe'):
+#         """ Initialize the regressor.
+
+#         Args:
+#           n_ftrs (float): Number of input features.
+#           n_markets (float): Number of markets (== number of outputs/4).
+#           n_time (float): Timesteps in batches.
+#           n_sharpe (float): Use this many timesteps to predict each
+#             position vector.
+#           W_init (n_ftrs * (n_time-n_sharpe+1), n_markets): Weight
+#             initalization.
+#           lbd (float): l1 penalty coefficient.
+#           causality_matrix (n_ftrs, n_markets): A matrix where the [ij]
+#             entry is positive if market corresponding to feature i seems
+#             to cause changes in market j. Used to decrease the L1 penalty
+#             on causally meaningful weights.
+#           seed (int): Graph-level random seed, for testing purposes.
+#           allow_shorting (bool): If True, allow negative positions.
+#           cost (str): cost to use: 'sharpe', 'min_return', 'mean_return', or 'mixed_return'
+#         """
+#         if not cost.startswith('onepos'):
+#             raise AttributeError(('For non-constant-positions ',
+#                                   'strategies, please use' ,
+#                                   'the Linear class!'))
+#         else:
+#             self.loss_tf = -sharpe_onepos_tf(
+#                 self.positions_tf, self.batch_out_tf, n_sharpe,
+#                 n_markets, cost=cost[7:]) + self.l1_penalty_tf
