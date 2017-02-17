@@ -22,7 +22,7 @@ tests/test_chunknet.py 6.89
 tests/test_nn_feedforward.py 3.71
 linear_hf/batching_splitting.py 6.21
 linear_hf/costs.py 2.93
-linear_hf/run_backtest.py 5.56
-tests/test_costs.py 2.24
 tests/test_restart_nn.py 5.26
 tests/test_runbacktest.py 5.92
+linear_hf/run_backtest.py 6.43
+tests/test_costs.py 2.24

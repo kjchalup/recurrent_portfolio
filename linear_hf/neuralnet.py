@@ -105,6 +105,12 @@ class Linear(object):
                                       n_ftrs=n_ftrs,
                                       W=self.W, b=self.b,
                                       allow_shorting=allow_shorting)
+        
+        # Regularization goes here...
+        self.penalty = regularization(lbd=self.lbd,
+                                      causality_matrix=causality_matrix
+                                      positions=self.positions_tf)
+
 
         # Define the L1 penalty, taking causality into account.
         if causality_matrix is None:
@@ -118,6 +124,9 @@ class Linear(object):
         # Define the unnormalized loss function.
         self.loss_tf = -sharpe_tf(self.positions_tf, self.batch_out_tf, n_sharpe,
                                   n_markets, cost=cost) + self.l1_penalty_tf
+        #self.loss_tf = -sharpe_tf(self.positions_tf, self.batch_out_tf, n_sharpe,
+        #                          n_markets, cost=cost) + self.penalty
+        
         # Define the optimizer.
         self.train_op_tf = tf.train.AdamOptimizer(
             learning_rate=self.lr_tf).minimize(self.loss_tf)
@@ -186,6 +195,16 @@ class Linear(object):
         return self.sess.run(self.loss_tf,
                              {self.batch_in_tf: batch_in,
                               self.batch_out_tf: batch_out})
+    def regularization_penalty():
+        """ Compute all regularization """
+        if causality_matrix is None:
+            #self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(self.W))
+            self.penalty = self.lbd * tf.reduce_sum(tf.pow(self.W, 2))
+        else:
+            self.causality_matrix = np.tile(causality_matrix, [self.horizon, 1])
+            self.penalty = self.lbd * tf.reduce_sum(tf.abs(
+                tf.boolean_mask(self.W, self.causality_matrix == 0)))
+    return self.ses.run(self.penalty)
 
     def train_step(self, batch_in, batch_out, lr):
         """ Do one gradient-descent step. """
