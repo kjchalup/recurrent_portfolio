@@ -52,7 +52,8 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
             settings['nn'].restart_variables()
 
         # Train the neural net for settings['num_epoch'] times
-        settings = training(settings=settings, all_data=all_data, market_data=market_data)
+        settings = training(settings=settings, 
+                            all_data=all_data, market_data=market_data)
 
         # After all epochs, check if the best_sharpe_val allows for trading.
         if settings['val_period'] > 0:
@@ -86,10 +87,10 @@ def mySettings():
     settings['n_sharpe'] = 30 # This many timesteps to compute Sharpes.
     settings['horizon'] = settings['n_time'] - settings['n_sharpe'] + 1
     settings['lbd'] = .01 # L1 regularizer strength.
-    settings['num_epochs'] = 30 # Number of epochs each day.
+    settings['num_epochs'] = 3 # Number of epochs each day.
     settings['batch_size'] = 128
     settings['val_period'] = 1
-    settings['lr'] = 1e-4 # Learning rate.
+    settings['lr'] = 1e-7 # Learning rate.
     settings['dont_trade'] = False # If on, don't trade.
     settings['iter'] = 0
     settings['lookback'] = 1000
@@ -187,7 +188,7 @@ def calculate_recent(iteration, retrain_interval, exposure, market_data, cost='s
     elif cost == 'mean_return':
         return recent_returns.mean()
     elif cost == 'mixed_return':
-        return recent_returns.mean() * recent_returns.min()
+        return recent_returns.mean() + recent_returns.min()
 
 def print_things(iteration, DATE, fundEquity, val_sharpe, recent_cost):
     """ Prints out things
@@ -290,6 +291,8 @@ def update_nn(settings, best_sharpe, epoch_sharpe):
     if epoch_sharpe > best_sharpe:
         best_sharpe = epoch_sharpe
         settings['nn'].save()
+        settings['best_val_sharpe'] = epoch_sharpe
+
     return settings, best_sharpe
 
 
@@ -357,7 +360,8 @@ def training(settings, all_data, market_data):
                 batch_size=settings['batch_size'],
                 randseed=seed)
             # Train.
-            settings['nn'].train_step(batch_in=all_batch, batch_out=market_batch, lr=lr_new)
+            settings['nn'].train_step(batch_in=all_batch, 
+                                      batch_out=market_batch, lr=lr_new)
             tr_sharpe += loss_calc(settings, all_batch, market_batch)
 
 
@@ -370,9 +374,6 @@ def training(settings, all_data, market_data):
             settings, best_val_sharpe = update_nn(settings, best_val_sharpe, val_sharpe)
         else:
             settings, best_tr_sharpe = update_nn(settings, best_tr_sharpe, tr_sharpe)
-
-        # Record best_val_sharpe
-        settings['best_val_sharpe'] = best_val_sharpe
 
         # Write out data for epoch.
         sys.stdout.write('\nEpoch {}, val/tr Sharpe {:.4}/{:.4g}.'.format(
