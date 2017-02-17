@@ -17,7 +17,7 @@ def make_data():
     n_markets = 11
     n_time = 33
     n_sharpe = 7
-    batch_in = np.random.rand(n_batch, n_time, n_markets * 4) + 5
+    batch_in = np.random.rand(n_batch, n_time, n_markets * 4) + 100
     batch_out = batch_in + .01
     # batch_out = np.random.rand(n_batch, n_time, n_markets * 4)
     return batch_in, batch_out

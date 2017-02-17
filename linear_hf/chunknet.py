@@ -26,9 +26,10 @@ def initialize_blockdiagonal(n_ftrs, n_time,
         raise ValueError('n_blocks must divide n_ftrs!')
     horizon = n_time - n_sharpe + 1
     blocks = [tf.cast(tf.truncated_normal((n_ftrs * horizon / n_blocks,
-                                   n_markets / n_blocks),
-                                  stddev=(float(n_blocks) /
-                                          (n_ftrs * horizon))), TF_DTYPE)
+                                           n_markets / n_blocks),
+                                          stddev=(float(n_blocks) /
+                                                  (n_ftrs * horizon))),
+                      TF_DTYPE)
               for _ in range(n_blocks)]
     return blocks
 
@@ -138,7 +139,8 @@ class ChunkLinear(object):
                 self.n_ftrs, self.n_time, self.n_sharpe,
                 self.n_markets, self.n_chunks)
         self.Ws = [tf.Variable(W_block, name='weights_block{}'.format(
-            block_id), dtype=TF_DTYPE) for block_id, W_block in enumerate(W_init)]
+            block_id), dtype=TF_DTYPE)
+                   for block_id, W_block in enumerate(W_init)]
         self.b = tf.Variable(tf.zeros(n_markets, dtype=TF_DTYPE),
                              name='nn_biases')
 
@@ -160,8 +162,9 @@ class ChunkLinear(object):
                 tf.boolean_mask(self.Ws, self.causality_matrix == 0)))
 
         # Define the unnormalized loss function.
-        self.loss_tf = -sharpe_tf(self.positions_tf, self.batch_out_tf,
-                                  n_sharpe, n_markets, cost=cost) + self.l1_penalty_tf
+        self.loss_tf = (-sharpe_tf(self.positions_tf, self.batch_out_tf,
+                                   n_sharpe, n_markets, cost=cost) +
+                        self.l1_penalty_tf)
         # Define the optimizer.
         self.train_op_tf = tf.train.AdamOptimizer(
             learning_rate=self.lr_tf).minimize(self.loss_tf)

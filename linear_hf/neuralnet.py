@@ -125,6 +125,7 @@ class Linear(object):
             self.loss_tf = -sharpe_tf(
                 self.positions_tf, self.batch_out_tf, n_sharpe,
                 n_markets, cost=cost) + self.l1_penalty_tf
+
         # Define the optimizer.
         self.train_op_tf = tf.train.AdamOptimizer(
             learning_rate=self.lr_tf).minimize(self.loss_tf)
