@@ -18,7 +18,6 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
                     CLOSE_ASK, CLOSE_BID, RETURN, SHARE, DIVIDEND,
                     TOTALCAP, exposure, equity, settings, fundEquity):
     """ Trading system code"""
-    import pdb;pdb.set_trace()
     # Checks if we should end the backtest run.
     kill_backtest_run(fundEquity)
     # Preprocess the data
@@ -42,7 +41,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
     # Initialize neural net.
     if settings['iter'] == 0:
         settings = init_nn(settings, all_data.shape[1], 'chunk_linear')
-        settings = restart_nn_till_good(settings, num_restart=10, all_data=all_data,
+        settings = restart_nn_till_good(settings, num_times=10, all_data=all_data,
                                         market_data=market_data)
     # Train the neural net on current data.
     if settings['iter'] % settings['retrain_interval'] == 0:
