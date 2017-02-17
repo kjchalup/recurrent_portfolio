@@ -46,7 +46,8 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
     # Train the neural net on current data.
     if settings['iter'] % settings['retrain_interval'] == 0:
         if settings['restart_variables']:
-            settings = restart_nn_till_good(settings, num_times=10)
+            settings = restart_nn_till_good(settings, num_times=10, all_data=all_data,
+                                            market_data=market_data)
             #settings['nn'].restart_variables()
 
         # Train the neural net for settings['num_epoch'] times
