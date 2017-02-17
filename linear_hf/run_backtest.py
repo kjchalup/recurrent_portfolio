@@ -1,3 +1,4 @@
+""" Backtester for QC"""
 import sys
 import joblib
 import random
@@ -10,7 +11,6 @@ import chunknet
 from preprocessing import non_nan_markets
 from preprocessing import nan_markets
 from preprocessing import returns_check
-
 from preprocessing import load_nyse_markets
 from preprocessing import preprocess
 from batching_splitting import split_validation_training
@@ -22,14 +22,13 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
 
     # Checks if we should end the backtest run.
     kill_backtest_run(fundEquity)
-
     # Preprocess the data
     market_data, all_data, should_retrain = preprocess(
         settings['markets'], OPEN, CLOSE, HIGH, LOW, VOL, DATE,
         CLOSE_LASTTRADE, CLOSE_ASK, CLOSE_BID, RETURN, SHARE,
-        DIVIDEND, TOTALCAP, postipo = 100, filler = 0.123456789,
-        data_types = settings['data_types'])
-    
+        DIVIDEND, TOTALCAP, postipo=100, filler=0.123456789,
+        data_types=settings['data_types'])
+
     # NEED TO INCLUDE THIS AS A HYPERPARAMETER!
     # Calculate Sharpe between training intervals
 
@@ -43,12 +42,14 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
 
     # Initialize neural net.
     if settings['iter'] == 0:
-        settings = init_nn(settings, all_data.shape[1], 'linear')
-
+        settings = init_nn(settings, all_data.shape[1], 'chunk_linear')
+        settings = restart_nn_till_good(settings, num_restart=5, all_data=all_data,
+                                        market_data=market_data) 
     # Train the neural net on current data.
     if settings['iter'] % settings['retrain_interval'] == 0:
         if settings['restart_variables']:
-            settings['nn'].restart_variables()
+            settings = restart_till_good(settings, num_restart = 5)
+            #settings['nn'].restart_variables()
 
         # Train the neural net for settings['num_epoch'] times
         settings = training(settings=settings,
@@ -92,11 +93,11 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
 def mySettings():
     settings = {}
     # Futures Contracts
-    settings['n_time'] =  100 # Use this many timesteps in one datapoint.
-    settings['n_sharpe'] = 50 # This many timesteps to compute Sharpes.
+    settings['n_time'] = 40 # Use this many timesteps in one datapoint.
+    settings['n_sharpe'] = 30 # This many timesteps to compute Sharpes.
     settings['horizon'] = settings['n_time'] - settings['n_sharpe'] + 1
-    settings['lbd'] = 10000. # L1 regularizer strength.
-    settings['num_epochs'] = 20 # Number of epochs each day.
+    settings['lbd'] = 1. # L1 regularizer strength.
+    settings['num_epochs'] = 30 # Number of epochs each day.
     settings['batch_size'] = 32
     settings['val_period'] = 1
     settings['lr'] = 1e-5 # Learning rate.
@@ -109,16 +110,18 @@ def mySettings():
     #settings['endInSample'] = '20131231'
     settings['beginInSample'] = '20000104'
     settings['endInSample'] = '20140101'
+
     settings['val_sharpe_threshold'] = -np.inf
     settings['retrain_interval'] = 20
     settings['realized_sharpe'] = []
     settings['saved_val_sharpe'] = []
     settings['best_val_sharpe'] = -np.inf
     settings['cost_type'] = 'sharpe'
+    settings['n_chunks'] = 54
     settings['allow_shorting'] = True
     settings['lr_mult_base'] = 1.
     settings['restart_variables'] = True
-    settings['current_positions'] = None
+  
     ''' Pick data types to feed into neural net. 
     If empty, only CLOSE will be used. 
     Circle dates added automatically if any setting is provided.
@@ -136,7 +139,7 @@ def mySettings():
     11 = TOTALCAPS
     12 = DATE
     '''
-    settings['data_types'] = [0]
+    settings['data_types'] = [1]
 
     settings['markets'] = load_nyse_markets(start_date=settings['beginInSample'],
                                             end_date=settings['endInSample'],
@@ -170,9 +173,9 @@ def calculate_recent(iteration, retrain_interval, exposure, market_data, cost='s
             if cost = 'mixed_return', returns mean*min of returns since last retrain
     """
 
-    # Calculate Sharpe between training intervals. 
+    # Calculate Sharpe between training intervals.
     # iteration-1 is used because we score one day back.
-    n_days_back = np.mod(iteration,retrain_interval)
+    n_days_back = np.mod(iteration, retrain_interval)
 
     # Only start scoring realized sharpes from greater than 2!
     if n_days_back > 2:
@@ -325,6 +328,17 @@ def init_nn(settings, n_ftrs, nn_type):
                                           lbd=settings['lbd'],
                                           allow_shorting=settings['allow_shorting'],
                                           cost=settings['cost_type'])
+    elif nn_type == 'chunk_linear':
+        settings['nn'] = chunknet.ChunkLinear(n_ftrs=n_ftrs,
+                                      n_markets=len(settings['markets']),
+                                      n_time=settings['n_time'],
+                                      n_sharpe=settings['n_sharpe'],
+                                      lbd=settings['lbd'],
+                                      allow_shorting=settings['allow_shorting'],
+                                      cost=settings['cost_type'],
+                                      n_chunks=settings['n_chunks'])
+
+
     print 'Done with initializing neural net!'
     return settings
 
@@ -387,6 +401,8 @@ def training(settings, all_data, market_data):
         else:
             settings, best_tr_sharpe = update_nn(
                 settings, best_tr_sharpe, tr_sharpe)
+        # Record best_val_sharpe
+        settings['best_val_sharpe'] = best_val_sharpe
 
         # Write out data for epoch.
         sys.stdout.write('\nEpoch {}, val/tr Sharpe {:.4}/{:.4g}.'.format(
@@ -394,3 +410,51 @@ def training(settings, all_data, market_data):
         sys.stdout.flush()
 
     return settings
+
+def restart_nn_till_good(settings, all_data, market_data, num_times=5, debug=False):
+    """ Restart the nn weights num_times to find highest training
+        or validation sharpe. Saves the nn inbetween.
+    
+    Args:
+        settings: contains the initialized neural net.
+        num_times: number of times to restart the nn weights
+    Returns:
+        settings: will contain the nn with the best weights.
+    """
+    # Split data into validation and training batches.
+    all_val, market_val, all_batch, market_batch = split_validation_training(
+        all_data=all_data, 
+        market_data=market_data,
+        valid_period=settings['val_period'],
+        horizon=settings['horizon'],
+        n_for_sharpe=settings['n_sharpe'],
+        batch_id=0,
+        batch_size=settings['batch_size'],
+        randseed=0)
+
+    # Initializes the best_sharpe as -np.inf.
+    best_sharpe = -np.inf 
+    
+    # Restarts the neural net.
+    for i in range(num_times): 
+        # Train one step.
+        settings['nn'].train_step(batch_in=all_batch,
+                                  batch_out=market_batch, lr=settings['lr'])
+        # Calculates the correct sharpe (or cost fn), depends on val_period.
+        if settings['val_period'] > 0:
+            sharpe = loss_calc(settings, all_batch=all_val, market_batch=market_val)
+        else:
+            sharpe = loss_calc(settings, all_batch, market_batch)
+        # Saves the better neural net.
+        if sharpe > best_sharpe:
+            best_sharpe = sharpe
+            settings['nn'].save()
+            
+        # Reset the neuralnet.
+        settings['nn'].restart_variables()
+    # Load the best neural net.
+    settings['nn'].load()
+    if debug:
+        return settings, all_val, market_val, all_batch, market_batch, best_sharpe
+    else:
+        return settings

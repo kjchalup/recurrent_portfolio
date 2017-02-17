@@ -244,6 +244,17 @@ def test_random_init_nn_sharpe():
                                       return_returns=True)
 
     # Standard deviation is: np.std on daily returns * sqrt(252) to annualize
+<<<<<<< HEAD
+    denominator = (np.std(np_returns[np_returns < 0.0])) * np.sqrt(252) + 1e-7
+    numerator = np.prod(np_returns+1)**(252. / (n_sharpe-2))-1
+    np_sortino_return = numerator / denominator
+    rat_np_nn = np_sortino_return / nn_sortino_return
+    assert rat_np_nn < 1.05 and rat_np_nn > 0.95, "Sortino cost function is broken!"
+
+
+
+
+=======
     pos_rets = np.array(np_returns)
     pos_rets[pos_rets > 0] = 0.
     denominator = np.sqrt(252 * (np.sum(pos_rets**2, axis=1) /
@@ -253,3 +264,4 @@ def test_random_init_nn_sharpe():
     np_sortino_return = numerator / denominator
     rat_np_nn = np_sortino_return / nn_sortino_return
     assert rat_np_nn < 1.15 and rat_np_nn > 0.85, "Sortino cost function is broken!"
+>>>>>>> 400dea6bc4eb23f286b757e02c26b191a75b3990

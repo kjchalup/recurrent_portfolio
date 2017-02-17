@@ -1,3 +1,4 @@
+""" Testing the run_backtest.py file"""
 import pytest
 import numpy as np
 
@@ -216,4 +217,3 @@ def run_only_when_bored_test_training_fakedata():
                                         prices=data_all[None, horizon:, :])
 
     assert sharpe_b4 < sharpe_after, "Possible it needs to be re-run to confirm failure..."
-
