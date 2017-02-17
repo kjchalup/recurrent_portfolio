@@ -24,9 +24,9 @@ tests/test_nn_feedforward.py 3.81
 tests/test_nn_l1.py 4.00
 tests/test_nn_onepos.py 6.67
 tests/test_nn_save_load.py 6.47
+linear_hf/compute_causality_matrix.py -4.62
+linear_hf/costs.py 3.85
 linear_hf/__init__.py 7.50
 linear_hf/batching_splitting.py 6.55
 linear_hf/chunknet.py 8.33
 linear_hf/clean_data.py 5.38
-linear_hf/compute_causality_matrix.py -4.62
-linear_hf/costs.py 3.85

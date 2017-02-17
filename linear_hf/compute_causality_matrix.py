@@ -8,11 +8,11 @@ from linear_hf.preprocessing import preprocess
 def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE, 
     CLOSE_ASK, CLOSE_BID, RETURN, SHARE, DIVIDEND, TOTALCAP, exposure, equity, settings, fundEquity):
     market_data, all_data, should_retrain = preprocess(
-        settings['markets'], OPEN, CLOSE, HIGH, LOW, VOL, DATE, 
-        CLOSE_LASTTRADE, CLOSE_ASK, CLOSE_BID, RETURN, SHARE, 
+        settings['markets'], OPEN, CLOSE, HIGH, LOW, VOL, DATE,
+        CLOSE_LASTTRADE, CLOSE_ASK, CLOSE_BID, RETURN, SHARE,
         DIVIDEND, TOTALCAP, postipo=100, filler=0.123456789)
     opens = market_data[:, :len(settings['markets'])-1]
-    cm = causal_matrix(opens, verbose=False, method='nearest', 
+    cm = causal_matrix(opens, verbose=False, method='nearest',
                        n_neighbors=30, nruns=100, max_data=1000)
     # Add cash
     cm_withcash = np.zeros((cm.shape[0]+1, cm.shape[1]+1))
@@ -38,5 +38,4 @@ def mySettings():
 if __name__ == '__main__':
     import quantiacsToolbox
     results = quantiacsToolbox.runts(__file__)
-    # joblib.dump(results, 'saved_data/results.pkl')
-    print(results['stats'])
+    print results['stats']
