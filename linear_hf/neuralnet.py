@@ -3,6 +3,7 @@ import numpy as np
 import tensorflow as tf
 
 from costs import sharpe_tf, sharpe_onepos_tf
+from . import TF_DTYPE
 
 def define_nn(batch_in_tf, n_sharpe,
               n_time, n_ftrs, W, b, allow_shorting):
@@ -79,15 +80,15 @@ class Linear(object):
 
         # Doefine symbolic placeholders for data batches.
         self.batch_in_tf = tf.placeholder(
-            tf.float32, shape=[None, n_time, n_ftrs], 
+            TF_DTYPE, shape=[None, n_time, n_ftrs], 
             name='input_batch')
         self.batch_out_tf = tf.placeholder(
-            tf.float32, shape=[None, n_sharpe, n_markets * 4],
+            TF_DTYPE, shape=[None, n_sharpe, n_markets * 4],
             name='output_batch')
 
         # Neural net training-related placeholders.
         self.lr_tf = tf.placeholder(
-            tf.float32, name='learning_rate')
+            TF_DTYPE, name='learning_rate')
 
         # Define nn weights and biases.
         if W_init is None:

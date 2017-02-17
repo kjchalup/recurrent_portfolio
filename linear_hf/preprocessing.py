@@ -2,6 +2,7 @@ import glob
 import random
 import numpy as np
 from  datetime import datetime, timedelta
+from . import NP_DTYPE
 
 """ Preprocessing figures out which data to load, and also
     cleans the loaded data of NaNs, 0s, and other oddities.
@@ -258,7 +259,7 @@ def preprocess(markets, opens, closes, highs, lows, vols, dates,
     all_data = np.hstack((opens, closes, highs, lows, vols, close_lasttrade,
                           close_ask, close_bid, returns, shares, dividends,
                           totalcaps, x_date[:, None], y_date[:, None]))
-    all_data = all_data.astype(np.float32)
+    all_data = all_data.astype(NP_DTYPE)
     all_data[np.isnan(all_data)] = 0
 
     # Run backtester with preprocessing

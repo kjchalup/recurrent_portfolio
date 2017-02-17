@@ -4,6 +4,7 @@ from numpy.testing import assert_array_almost_equal
 
 from context import linear_hf
 from linear_hf import chunknet
+from linear_hf import NP_DTYPE
 
 @pytest.fixture
 def make_data():
@@ -12,7 +13,7 @@ def make_data():
     n_time = 33
     n_sharpe = 7
     batch_in = np.ones((n_batch, n_time, n_markets * 4),
-                       dtype=np.float32)
+                       dtype=NP_DTYPE)
     return batch_in, n_sharpe
 
 def test_w_init():
@@ -60,5 +61,5 @@ def test_nn_all_inputs_ones(make_data):
     nn = chunknet.ChunkLinear(n_ftrs, n_markets, n_time,
                               n_sharpe, n_chunks, W_init)
     assert_array_almost_equal(nn.predict(batch_in[0, -horizon:]),
-                              np.ones(n_markets, dtype=np.float32) /
+                              np.ones(n_markets, dtype=NP_DTYPE) /
                               float(n_markets))

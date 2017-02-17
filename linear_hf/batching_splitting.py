@@ -1,5 +1,6 @@
 import numpy as np
 from preprocessing import non_nan_markets
+from . import NP_DTYPE
 
 def draw_timeseries_batch(all_data, market_data, horizon, batch_size, batch_id, randseed=1):
     """ Make batches of data.
@@ -22,8 +23,8 @@ def draw_timeseries_batch(all_data, market_data, horizon, batch_size, batch_id, 
     np.random.seed(next_seed)
     if (batch_id + 1) * batch_size > perm_ids.size:
         raise IndexError('Cant make this many batches, not enough data!')
-    all_batch = np.zeros((batch_size, horizon, all_data.shape[1])).astype(np.float32)
-    market_batch = np.zeros((batch_size, horizon, market_data.shape[1])).astype(np.float32)
+    all_batch = np.zeros((batch_size, horizon, all_data.shape[1])).astype(NP_DTYPE)
+    market_batch = np.zeros((batch_size, horizon, market_data.shape[1])).astype(NP_DTYPE)
     start_ids = perm_ids[batch_id * batch_size : (batch_id + 1) * batch_size]
     for point_id, start_id in enumerate(start_ids):
         all_batch[point_id, :, :] = all_data[start_id: start_id+horizon]

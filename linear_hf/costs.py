@@ -4,7 +4,7 @@ import joblib
 
 import numpy as np
 import tensorflow as tf
-
+from . import TF_DTYPE
 
 def compute_numpy_onepos_sharpe(positions, prices, slippage=0.05, return_returns = False, n_ignore=2):
     """ Compute average Sharpe ratio of a strategy using Numpy. ONLY USE
@@ -234,10 +234,10 @@ def compute_sharpe_tf(batch_in, batch_out):
     
     sess = tf.Session()
     batch_in_tf = tf.placeholder(
-        tf.float32, shape=[None, n_time, n_ftrs],
+        TF_DTYPE, shape=[None, n_time, n_ftrs],
         name='input_batch')
     batch_out_tf = tf.placeholder(
-        tf.float32, shape=[None, n_sharpe, n_markets * 4],
+        TF_DTYPE, shape=[None, n_sharpe, n_markets * 4],
         name='output_batch')
 
     return sess.run(sharpe_tf(batch_in_tf, batch_out_tf, n_sharpe, n_markets),
