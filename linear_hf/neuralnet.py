@@ -108,7 +108,8 @@ class Linear(object):
 
         # Define the L1 penalty, taking causality into account.
         if causality_matrix is None:
-            self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(self.W))
+            #self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(self.W))
+            self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.pow(self.W, 2))
         else:
             self.causality_matrix = np.tile(causality_matrix, [self.horizon, 1])
             self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(
@@ -122,7 +123,9 @@ class Linear(object):
             learning_rate=self.lr_tf).minimize(self.loss_tf)
 
         # Define the saver that will serialize the weights/biases.
-        self.saver = tf.train.Saver(max_to_keep=1)
+        self.saver = tf.train.Saver(max_to_keep=1, 
+                                    var_list={'nn_weights': self.W,
+                                              'nn_biases': self.b})
         # Create a Tf session and initialize the variables.
         self.sess = tf.Session()
         self.init_op = tf.global_variables_initializer()
@@ -185,13 +188,16 @@ class Linear(object):
                               self.batch_out_tf: batch_out})
 
     def train_step(self, batch_in, batch_out, lr):
+        """ Do one gradient-descent step. """
         self.sess.run(self.train_op_tf,
                       {self.batch_in_tf: batch_in,
                        self.batch_out_tf: batch_out,
                        self.lr_tf: lr})
 
     def save(self, fname='saved_data/model'):
+        """ Save the nn weights to a file. """
         self.save_path = self.saver.save(self.sess, fname)
 
     def load(self):
+        """ Load the nn weights from a file. """
         self.saver.restore(self.sess, self.save_path)

@@ -119,11 +119,6 @@ def test_tf_sharpe_using_premade_positions(position=positions_rand,
     assert qc_np_ratio > 0.95 and qc_np_ratio < 1.05, "Quantiacs Sharpe / NP Sharpe don't agree to 5%"
     assert np_tf_ratio > 0.95 and np_tf_ratio < 1.05, "Numpy Sharpe and TF Sharpe don't agree to 5%"
 
-'''
-    ret_np = compute_numpy_sharpe(positions=pos, prices=prices, slippage=0.05, return_returns = True)
-    rs_np = ret_np[0,:]
-    rs_qc = return_qc['returns'].sum(axis=1)
-'''
 
 def test_random_init_nn_sharpe():
     beginInSample = '20141201'
@@ -150,7 +145,6 @@ def test_random_init_nn_sharpe():
     positions_all1 = np.ones([n_timesteps, n_markets])/float(n_markets)
     np.random.seed(0)
     positions_rand = np.random.rand(n_timesteps, n_markets)-0.5
-
 
     np.random.rand(1)
     n_timesteps, n_ftrs = market_data.shape
@@ -204,11 +198,13 @@ def test_random_init_nn_sharpe():
     # Multiplly the output min_return by -1 to account for -1 inside the nn.
     nn_min_return = -1 * (nn_loss - nn_l1)
 
-    np_returns = compute_numpy_sharpe(positions=nn_pos, prices=batch_out, slippage=0.05,
-                                      return_returns=True)
+    np_returns = np.prod(1 + compute_numpy_sharpe(
+        positions=nn_pos, prices=batch_out,
+        slippage=0.05, return_returns=True), axis=1)
     np_min_return = np_returns.min()
     rat_np_nn = np_min_return / nn_min_return
     assert rat_np_nn < 1.01 and rat_np_nn > 0.99, "Min return cost function is broken!"
+
     # Re-initialize network with cost argument to get mean_return back out from loss.
     nn = neuralnet.Linear(n_ftrs, n_markets, n_time, n_sharpe, lbd=11,
                           allow_shorting=False, cost='mean_return')
@@ -216,22 +212,22 @@ def test_random_init_nn_sharpe():
     nn_loss = nn.loss_np(batch_in=batch_in, batch_out=batch_out)
     nn_l1 = nn.l1_penalty_np()
     nn_mean_return = -1 * (nn_loss - nn_l1)
-    np_returns = compute_numpy_sharpe(positions=nn_pos, prices=batch_out, slippage=0.05,
-                                      return_returns=True)
+    np_returns = np.prod(1 + compute_numpy_sharpe(positions=nn_pos,
+        prices=batch_out, slippage=0.05, return_returns=True), axis=1)
     np_mean_return = np_returns.mean()
     rat_np_nn = np_mean_return / nn_mean_return
     assert rat_np_nn < 1.01 and rat_np_nn > 0.99, "Mean return cost function is broken!"
 
-    # Re-initialize network with cost argument to get mean_return back out from loss.
+    # Re-initialize network with cost argument to get mixed_return back out from loss.
     nn = neuralnet.Linear(n_ftrs, n_markets, n_time, n_sharpe, lbd=11,
                           allow_shorting=False, cost='mixed_return')
     nn_pos = nn._positions_np(batch_in=batch_in)
     nn_loss = nn.loss_np(batch_in=batch_in, batch_out=batch_out)
     nn_l1 = nn.l1_penalty_np()
     nn_mixed_return = -1 * (nn_loss - nn_l1)
-    np_returns = compute_numpy_sharpe(
+    np_returns = np.prod(1 + compute_numpy_sharpe(
         positions=nn_pos, prices=batch_out, slippage=0.05,
-                                      return_returns=True)
+                                      return_returns=True), axis=1)
     np_mixed_return = np_returns.mean() +  np_returns.min()
     rat_np_nn = np_mixed_return / nn_mixed_return
     assert rat_np_nn < 1.05 and rat_np_nn > 0.95, "Mixed return cost function is broken!"
@@ -243,10 +239,12 @@ def test_random_init_nn_sharpe():
     nn_loss = nn.loss_np(batch_in=batch_in, batch_out=batch_out)
     nn_l1 = nn.l1_penalty_np()
     nn_sortino_return = -1 * (nn_loss - nn_l1)
-    np_returns = compute_numpy_sharpe(positions=nn_pos, prices=batch_out, slippage=0.05,
+    np_returns = compute_numpy_sharpe(positions=nn_pos, 
+                                      prices=batch_out, slippage=0.05,
                                       return_returns=True)
 
     # Standard deviation is: np.std on daily returns * sqrt(252) to annualize
+<<<<<<< HEAD
     denominator = (np.std(np_returns[np_returns < 0.0])) * np.sqrt(252) + 1e-7
     numerator = np.prod(np_returns+1)**(252. / (n_sharpe-2))-1
     np_sortino_return = numerator / denominator
@@ -256,3 +254,14 @@ def test_random_init_nn_sharpe():
 
 
 
+=======
+    pos_rets = np.array(np_returns)
+    pos_rets[pos_rets > 0] = 0.
+    denominator = np.sqrt(252 * (np.sum(pos_rets**2, axis=1) /
+        (n_sharpe-2) - np.sum(pos_rets, axis=1)**2 / (n_sharpe-2)**2))
+
+    numerator = np.prod(np_returns+1)**(252. / (n_sharpe-2))-1
+    np_sortino_return = numerator / denominator
+    rat_np_nn = np_sortino_return / nn_sortino_return
+    assert rat_np_nn < 1.15 and rat_np_nn > 0.85, "Sortino cost function is broken!"
+>>>>>>> 400dea6bc4eb23f286b757e02c26b191a75b3990

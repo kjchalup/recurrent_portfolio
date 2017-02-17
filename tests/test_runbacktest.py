@@ -12,6 +12,7 @@ from linear_hf.run_backtest import loss_calc
 from linear_hf import  neuralnet
 from linear_hf.costs import compute_numpy_sharpe
 from linear_hf.run_backtest import training
+
 def test_donttradepositions():
     """ Test donttradeposition function returns 0 if not trading"""
     positions = np.array([1, 1, 1])
@@ -165,12 +166,11 @@ def run_only_when_bored_test_training_fakedata():
     n_sharpe = 32
 
     data1 = np.random.rand(n_time, 1) + 1
-
     data2 = np.random.rand(n_time, 1) + 3
 
     data3 = np.random.rand(n_time, 1) + 10
 
-    data_all = np.hstack([data1, data2, data3] *4)
+    data_all = np.hstack([data1, data2, data3] * 4)
     data_in = np.hstack([data1, data2, data3])
     assert data_all.shape == (n_time, n_markets * 4)
     n_ftrs = data_in.shape[1]
