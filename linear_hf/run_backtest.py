@@ -2,6 +2,7 @@
 import sys
 
 import numpy as np
+from sklearn.preprocessing import StandardScaler
 
 from linear_hf import neuralnet
 from linear_hf import chunknet
@@ -22,10 +23,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
         CLOSE_LASTTRADE, CLOSE_ASK, CLOSE_BID, RETURN, SHARE,
         DIVIDEND, TOTALCAP, postipo=100, filler=0.123456789,
         data_types=settings['data_types'])
-
-    # NEED TO INCLUDE THIS AS A HYPERPARAMETER!
-    # Calculate Sharpe between training intervals
-
+    all_data = StandardScaler().fit_transform(all_data)
     recent_cost = calculate_recent(iteration=settings['iter'],
                                    retrain_interval=settings['retrain_interval'],
                                    exposure=exposure,
@@ -334,7 +332,6 @@ def init_nn(settings, n_ftrs, nn_type):
                                               allow_shorting=settings['allow_shorting'],
                                               cost=settings['cost_type'],
                                               n_chunks=settings['n_chunks'])
-
 
     print 'Done with initializing neural net!'
     return settings

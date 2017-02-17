@@ -121,7 +121,8 @@ def sharpe_tf(positions, prices, n_sharpe, n_markets,
     """
 
     n_batch = tf.shape(positions)[0]
-    rs_list = [tf.zeros((n_batch, 1)), tf.zeros((n_batch, 1))]
+    rs_list = [tf.zeros((n_batch, 1), dtype=TF_DTYPE), 
+               tf.zeros((n_batch, 1), dtype=TF_DTYPE)]
     os = prices[:, :, :n_markets]
     cs = prices[:, :, n_markets:2*n_markets]
     hs = prices[:, :, 2*n_markets:3*n_markets]
@@ -189,7 +190,8 @@ def sharpe_onepos_tf(positions, prices, n_sharpe, n_markets,
     """
 
     n_batch = tf.shape(positions)[0]
-    rs_list = [tf.zeros((n_batch, 1)), tf.zeros((n_batch, 1))]
+    rs_list = [tf.zeros((n_batch, 1), dtype=TF_DTYPE), 
+               tf.zeros((n_batch, 1), dtype=TF_DTYPE)]
     os = prices[:, :, :n_markets]
     cs = prices[:, :, n_markets:2*n_markets]
     hs = prices[:, :, 2*n_markets:3*n_markets]

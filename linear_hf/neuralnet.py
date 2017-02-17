@@ -94,10 +94,9 @@ class Linear(object):
         if W_init is None:
             W_init = tf.truncated_normal(
                 [n_ftrs * self.horizon, n_markets],
-                stddev=1. / (n_ftrs * self.horizon))
-        self.W = tf.Variable(W_init, name='nn_weights', dtype=TF_DTYPE)
-        self.b = tf.Variable(tf.zeros(n_markets),
-                             name='nn_biases', dtype=TF_DTYPE)
+                stddev=1. / (n_ftrs * self.horizon), dtype=TF_DTYPE)
+        self.W = tf.Variable(W_init, name='nn_weights')
+        self.b = tf.Variable(tf.zeros(n_markets, dtype=TF_DTYPE), name='nn_biases')
 
         # Define the position outputs on a batch of timeseries.
         self.positions_tf = define_nn(self.batch_in_tf,

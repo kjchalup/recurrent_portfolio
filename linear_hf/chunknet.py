@@ -25,11 +25,9 @@ def initialize_blockdiagonal(n_ftrs, n_time,
     if n_ftrs % n_blocks != 0:
         raise ValueError('n_blocks must divide n_ftrs!')
     horizon = n_time - n_sharpe + 1
-    blocks = [tf.cast(tf.truncated_normal((n_ftrs * horizon / n_blocks,
-                                           n_markets / n_blocks),
-                                          stddev=(float(n_blocks) /
-                                                  (n_ftrs * horizon))),
-                      TF_DTYPE)
+    blocks = [tf.truncated_normal(
+        (n_ftrs * horizon / n_blocks, n_markets / n_blocks),
+        stddev=(float(n_blocks) / (n_ftrs * horizon)), dtype=TF_DTYPE)
               for _ in range(n_blocks)]
     return blocks
 
