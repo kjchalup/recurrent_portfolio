@@ -46,9 +46,9 @@ class Linear(object):
     set of linear weights. It will then output a vector of
     positions whose absolute values sum to one.
     """
-    
+
     def __init__(self, n_ftrs, n_markets, n_time, 
-                 n_sharpe, W_init=None, lbd=0.001, 
+                 n_sharpe, W_init=None, lbd=0.001,
                  causality_matrix=None, n_csl_ftrs=None, seed=None,
                  allow_shorting=True, cost='sharpe'):
         """ Initialize the regressor.
@@ -129,7 +129,7 @@ class Linear(object):
             learning_rate=self.lr_tf).minimize(self.loss_tf)
 
         # Define the saver that will serialize the weights/biases.
-        self.saver = tf.train.Saver(max_to_keep=1, 
+        self.saver = tf.train.Saver(max_to_keep=1,
                                     var_list={'nn_weights': self.W,
                                               'nn_biases': self.b})
         # Create a Tf session and initialize the variables.
@@ -152,7 +152,7 @@ class Linear(object):
         Returns:
           positions (n_batch, n_markets): Positions.
         """
-        return self.sess.run(self.positions_tf, 
+        return self.sess.run(self.positions_tf,
                              {self.batch_in_tf: batch_in})
 
     def predict(self, data_in):
@@ -207,44 +207,3 @@ class Linear(object):
     def load(self):
         """ Load the nn weights from a file. """
         self.saver.restore(self.sess, self.save_path)
-
-
-# class ConstposLinear(Linear):
-#     """ A linear, L1-regularized position predictor.
-    
-#     This predictor will scan the input batch using a shared
-#     set of linear weights. It will then output a vector of
-#     positions whose absolute values sum to one.
-#     """
-    
-#     def __init__(self, n_ftrs, n_markets, n_time,
-#                  n_sharpe, W_init=None, lbd=0.001,
-#                  causality_matrix=None, n_csl_ftrs=None, seed=None,
-#                  allow_shorting=True, cost='sharpe'):
-#         """ Initialize the regressor.
-
-#         Args:
-#           n_ftrs (float): Number of input features.
-#           n_markets (float): Number of markets (== number of outputs/4).
-#           n_time (float): Timesteps in batches.
-#           n_sharpe (float): Use this many timesteps to predict each
-#             position vector.
-#           W_init (n_ftrs * (n_time-n_sharpe+1), n_markets): Weight
-#             initalization.
-#           lbd (float): l1 penalty coefficient.
-#           causality_matrix (n_ftrs, n_markets): A matrix where the [ij]
-#             entry is positive if market corresponding to feature i seems
-#             to cause changes in market j. Used to decrease the L1 penalty
-#             on causally meaningful weights.
-#           seed (int): Graph-level random seed, for testing purposes.
-#           allow_shorting (bool): If True, allow negative positions.
-#           cost (str): cost to use: 'sharpe', 'min_return', 'mean_return', or 'mixed_return'
-#         """
-#         if not cost.startswith('onepos'):
-#             raise AttributeError(('For non-constant-positions ',
-#                                   'strategies, please use' ,
-#                                   'the Linear class!'))
-#         else:
-#             self.loss_tf = -sharpe_onepos_tf(
-#                 self.positions_tf, self.batch_out_tf, n_sharpe,
-#                 n_markets, cost=cost[7:]) + self.l1_penalty_tf
