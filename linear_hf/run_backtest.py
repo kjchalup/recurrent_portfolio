@@ -82,17 +82,17 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
 def mySettings():
     settings = {}
     # Futures Contracts
-    settings['n_time'] = 40 # Use this many timesteps in one datapoint.
+    settings['n_time'] = 60 # Use this many timesteps in one datapoint.
     settings['n_sharpe'] = 30 # This many timesteps to compute Sharpes.
     settings['horizon'] = settings['n_time'] - settings['n_sharpe'] + 1
     settings['lbd'] = 1. # L1 regularizer strength.
     settings['num_epochs'] = 30 # Number of epochs each day.
     settings['batch_size'] = 128
-    settings['val_period'] = 32
-    settings['lr'] = 1e-5 # Learning rate.
+    settings['val_period'] = 1
+    settings['lr'] = 1e-7 # Learning rate.
     settings['dont_trade'] = False # If on, don't trade.
     settings['iter'] = 0
-    settings['lookback'] = 252 * 6
+    settings['lookback'] = 1000
     settings['budget'] = 10**6
     settings['slippage'] = 0.05
     #settings['beginInSample'] = '20090102'
@@ -107,7 +107,7 @@ def mySettings():
     settings['cost_type'] = 'sortino'
     settings['allow_shorting'] = True
     settings['lr_mult_base'] = 1.
-    settings['restart_variables'] = False
+    settings['restart_variables'] = True
     ''' Pick data types to feed into neural net. 
     If empty, only CLOSE will be used. 
     Circle dates added automatically if any setting is provided.

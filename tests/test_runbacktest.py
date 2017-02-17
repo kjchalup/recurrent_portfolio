@@ -165,15 +165,9 @@ def run_only_when_bored_test_training_fakedata():
     n_sharpe = 32
 
     data1 = np.random.rand(n_time, 1) + 1
-<<<<<<< HEAD
-    data2 = np.random.rand(n_time, 1) + 2
-    data3 = np.random.rand(n_time, 1) + 3
-=======
-
     data2 = np.random.rand(n_time, 1) + 3
 
     data3 = np.random.rand(n_time, 1) + 10
->>>>>>> bde2fd56e34e737c1a93c1bc9fd06de58b880545
 
     data_all = np.hstack([data1, data2, data3] * 4)
     data_in = np.hstack([data1, data2, data3])
