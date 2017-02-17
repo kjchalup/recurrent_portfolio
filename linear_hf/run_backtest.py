@@ -17,7 +17,7 @@ from batching_splitting import split_validation_training
 from costs import compute_numpy_sharpe
 
 def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
-                    CLOSE_ASK, CLOSE_BID, RETURN, SHARE, DIVIDEND, 
+                    CLOSE_ASK, CLOSE_BID, RETURN, SHARE, DIVIDEND,
                     TOTALCAP, exposure, equity, settings, fundEquity):
 
     # Checks if we should end the backtest run.
@@ -38,7 +38,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
                                    exposure=exposure,
                                    market_data=market_data,
                                    cost=settings['cost_type'])
-    print_things(settings['iter'], DATE[-1], 
+    print_things(settings['iter'], DATE[-1],
                  fundEquity[-1], settings['best_val_sharpe'], recent_cost)
 
     # Initialize neural net.
@@ -51,7 +51,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
             settings['nn'].restart_variables()
 
         # Train the neural net for settings['num_epoch'] times
-        settings = training(settings=settings, 
+        settings = training(settings=settings,
                             all_data=all_data, market_data=market_data)
 
         # After all epochs, check if the best_sharpe_val allows for trading.
@@ -104,11 +104,12 @@ def mySettings():
     settings['realized_sharpe'] = []
     settings['saved_val_sharpe'] = []
     settings['best_val_sharpe'] = -np.inf
-    settings['cost_type'] = 'sharpe'
+    settings['cost_type'] = 'sortino'
     settings['allow_shorting'] = True
     settings['lr_mult_base'] = 1.
     settings['restart_variables'] = True
-    ''' Pick data types to feed into neural net. If empty, only CLOSE will be used. 
+    ''' Pick data types to feed into neural net. 
+    If empty, only CLOSE will be used. 
     Circle dates added automatically if any setting is provided.
     0 = OPEN
     1 = CLOSE
@@ -159,9 +160,10 @@ def calculate_recent(iteration, retrain_interval, exposure, market_data, cost='s
             if cost = 'mixed_return', returns mean*min of returns since last retrain
     """
 
-    # Calculate Sharpe between training intervals. iteration-1 is used because we score one day back.
+    # Calculate Sharpe between training intervals. 
+    # iteration-1 is used because we score one day back.
     n_days_back = np.mod(iteration,retrain_interval)
-     
+
     # Only start scoring realized sharpes from greater than 2!
     if n_days_back > 2:
         recent_sharpe = compute_numpy_sharpe(positions=exposure[None, -n_days_back-3:-1, :],
@@ -224,7 +226,7 @@ def dont_trade_positions(positions, settings):
 
 def calc_batches(n_timesteps, settings):
     """ Calculates the total groups of batch_size that are one epoch.
-    
+
     Args:
         n_timesteps: total number of timesteps
         settings: takes horizon, val_period, n_sharpe, and batch_size
@@ -234,15 +236,15 @@ def calc_batches(n_timesteps, settings):
     """
     if settings['val_period'] > 0:
         batches_per_epoch = int(np.floor((n_timesteps -
-                                        settings['horizon'] -
-                                        settings['val_period'] -
-                                        2 * settings['n_sharpe'] + 1)
-                                        / float(settings['batch_size'])))
+                                          settings['horizon'] -
+                                          settings['val_period'] -
+                                          2 * settings['n_sharpe'] + 1)
+                                         / float(settings['batch_size'])))
     else:
         batches_per_epoch = int(np.floor((n_timesteps -
                                           settings['horizon'] -
                                           settings['n_sharpe'] + 1)
-                                          / float(settings['batch_size'])))
+                                         / float(settings['batch_size'])))
     return batches_per_epoch
 
 
@@ -316,9 +318,9 @@ def init_nn(settings, n_ftrs, nn_type):
     print 'Done with initializing neural net!'
     return settings
 
-def kill_backtest_run(fundEquity):
+def kill_backtest_run(fund_equity):
     """ Raises an exception to kill the backtest."""
-    if fundEquity[-1] < .75:
+    if fund_equity[-1] < .75:
         raise ValueError('Strategy lost too much money')
 
 def training(settings, all_data, market_data):
@@ -358,7 +360,7 @@ def training(settings, all_data, market_data):
                 batch_size=settings['batch_size'],
                 randseed=seed)
             # Train.
-            settings['nn'].train_step(batch_in=all_batch, 
+            settings['nn'].train_step(batch_in=all_batch,
                                       batch_out=market_batch, lr=lr_new)
             tr_sharpe += loss_calc(settings, all_batch, market_batch)
 
