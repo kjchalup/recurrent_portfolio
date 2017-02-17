@@ -132,12 +132,12 @@ def test_training_fakedata():
     n_time = data_all.shape[0]-20
     neural = neuralnet.Linear(n_ftrs, n_markets, n_time, n_sharpe)
     settings = {'nn': neural,
-                'num_epochs': 20,
+                'num_epochs': 50,
                 'n_time': n_time,
                 'n_sharpe': n_sharpe,
                 'horizon': n_time - n_sharpe + 1,
                 'val_period': 0,
-                'lr': 1e-3,
+                'lr': 1e-2,
                 'lr_mult_base': 0.1,
                 'batch_size': 5,
                 'iter': 0,
@@ -152,35 +152,44 @@ def test_training_fakedata():
     nn_pos = settings['nn']._positions_np(batch_in=data_in[None, :n_time, :])
     sharpe = compute_numpy_sharpe(positions=nn_pos, prices=data_all[None, :n_time, :])
 
-    assert sharpe > 1000
+    assert sharpe > 20, "Possible it didn't learn well... retry the test, sorry!"
 
-def temp_test_training_fakedata_2():
-    """ Overfit on random data, should increase sharpe significantly"""
+def run_only_when_bored_test_training_fakedata():
+    """ Overfit on random data, should increase sharpe significantly
+        if it figures out how to overfit the random data. Needs to be run
+        a lot of times, and make sure that the sharpe grows hugely. """
     np.random.rand(1)
     n_time = 50
     n_markets = 3
     n_batch = 1
-    n_sharpe = 10
+    n_sharpe = 32
 
     data1 = np.random.rand(n_time, 1) + 1
+<<<<<<< HEAD
     data2 = np.random.rand(n_time, 1) + 2
     data3 = np.random.rand(n_time, 1) + 3
+=======
+
+    data2 = np.random.rand(n_time, 1) + 3
+
+    data3 = np.random.rand(n_time, 1) + 10
+>>>>>>> bde2fd56e34e737c1a93c1bc9fd06de58b880545
 
     data_all = np.hstack([data1, data2, data3] * 4)
     data_in = np.hstack([data1, data2, data3])
     assert data_all.shape == (n_time, n_markets * 4)
     n_ftrs = data_in.shape[1]
-    n_time = data_all.shape[0] - 25
+    n_time = data_all.shape[0] - 17
     neural = neuralnet.Linear(n_ftrs, n_markets, n_time, n_sharpe)
     settings = {'nn': neural,
-                'num_epochs': 100,
+                'num_epochs': 70,
                 'n_time': n_time,
                 'n_sharpe': n_sharpe,
                 'horizon': n_time - n_sharpe + 1,
                 'val_period': 0,
-                'lr': 1e-1,
+                'lr': 1e-3,
                 'lr_mult_base': 0.1,
-                'batch_size': 25,
+                'batch_size': 17,
                 'iter': 0,
                 'lbd': 0,
                 'realized_sharpe': [],
@@ -192,10 +201,11 @@ def temp_test_training_fakedata_2():
     horizon = settings['horizon']
     # Predict prices at time = horizon+1
     nn_pos_b4 = np.vstack([settings['nn'].predict(data_in[i:horizon+i, :])
-                           for i in range(data_in.shape[0]-horizon - 2)])
+                           for i in range(data_in.shape[0]-horizon)])
     poscheck = nn_pos_b4[None, :, :]
-    pricecheck = data_all[None, horizon+1:, :]
+    pricecheck = data_all[None, horizon:, :]
 
+    assert poscheck.shape[1] == pricecheck.shape[1]
 
     sharpe_b4 = compute_numpy_sharpe(positions=poscheck, prices=pricecheck)
     print sharpe_b4
@@ -203,8 +213,13 @@ def temp_test_training_fakedata_2():
     settings['nn'].load()
 
     nn_pos_after = np.vstack([settings['nn'].predict(data_in[i:horizon+i, :])
-                              for i in range(data_in.shape[0]-horizon - 2)])
+                              for i in range(data_in.shape[0]-horizon)])
 
     nn_pos_after = np.vstack(nn_pos_after)
+
+
     sharpe_after = compute_numpy_sharpe(positions=nn_pos_after[None, :, :],
                                         prices=data_all[None, horizon:, :])
+
+    assert sharpe_b4 < sharpe_after, "Possible it needs to be re-run to confirm failure..."
+

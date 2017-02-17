@@ -31,7 +31,6 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
         data_types = settings['data_types'])
     
     # NEED TO INCLUDE THIS AS A HYPERPARAMETER!
-    all_data = StandardScaler().fit_transform(all_data)
     # Calculate Sharpe between training intervals
 
     recent_cost = calculate_recent(iteration=settings['iter'],
@@ -105,7 +104,7 @@ def mySettings():
     settings['realized_sharpe'] = []
     settings['saved_val_sharpe'] = []
     settings['best_val_sharpe'] = -np.inf
-    settings['cost_type'] = 'sortino'
+    settings['cost_type'] = 'sharpe'
     settings['allow_shorting'] = False
     settings['lr_mult_base'] = 1.
     settings['restart_variables'] = True
