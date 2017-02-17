@@ -139,7 +139,6 @@ def test_random_init_nn_sharpe():
     settings = {'markets':names_with_no_nans,
                 'lookback': 2,
                 'slippage': 0.05}
-
     n_timesteps, n_markets = market_data.shape
     n_markets = n_markets/4
     positions_all1 = np.ones([n_timesteps, n_markets])/float(n_markets)
