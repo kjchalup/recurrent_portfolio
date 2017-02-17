@@ -105,7 +105,7 @@ def mySettings():
     settings['saved_val_sharpe'] = []
     settings['best_val_sharpe'] = -np.inf
     settings['cost_type'] = 'sharpe'
-    settings['allow_shorting'] = False
+    settings['allow_shorting'] = True
     settings['lr_mult_base'] = 1.
     settings['restart_variables'] = True
     ''' Pick data types to feed into neural net. If empty, only CLOSE will be used. 
