@@ -46,16 +46,3 @@ def test_nn_l1_mixed_weights():
     nn = neuralnet.Linear(n_markets * 4, n_markets, 
                           n_time, n_sharpe, W_init, lbd=1.)
     assert nn.l1_penalty_np() == np.abs(W_init).sum()
-
-def test_nn_l1_fractional_weights():
-    n_markets = 10
-    n_time = 7
-    n_sharpe = 3
-    horizon = n_time - n_sharpe + 1
-
-    W_init = np.ones((n_markets * 4 *  horizon, n_markets), 
-                     dtype=np.float32) 
-    W_init *= 1e-10
-    nn = neuralnet.Linear(n_markets * 4, n_markets, 
-                          n_time, n_sharpe, W_init, lbd=1.)
-    assert_almost_equal(nn.l1_penalty_np(), np.abs(W_init).sum())
