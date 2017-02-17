@@ -83,11 +83,11 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
 def mySettings():
     settings = {}
     # Futures Contracts
-    settings['n_time'] = 60 # Use this many timesteps in one datapoint.
-    settings['n_sharpe'] = 30 # This many timesteps to compute Sharpes.
+    settings['n_time'] = 400 # Use this many timesteps in one datapoint.
+    settings['n_sharpe'] = 252 # This many timesteps to compute Sharpes.
     settings['horizon'] = settings['n_time'] - settings['n_sharpe'] + 1
-    settings['lbd'] = .01 # L1 regularizer strength.
-    settings['num_epochs'] = 3 # Number of epochs each day.
+    settings['lbd'] = 1. # L1 regularizer strength.
+    settings['num_epochs'] = 30 # Number of epochs each day.
     settings['batch_size'] = 128
     settings['val_period'] = 1
     settings['lr'] = 1e-7 # Learning rate.
@@ -101,7 +101,7 @@ def mySettings():
     settings['beginInSample'] = '20000601'
     settings['endInSample'] = '20140101'
     settings['val_sharpe_threshold'] = -np.inf
-    settings['retrain_interval'] = 30
+    settings['retrain_interval'] = 252
     settings['realized_sharpe'] = []
     settings['saved_val_sharpe'] = []
     settings['best_val_sharpe'] = -np.inf
@@ -184,7 +184,6 @@ def calculate_recent(iteration, retrain_interval, exposure, market_data, cost='s
         return recent_sharpe
     elif cost == 'min_return':
         return recent_returns.min()
-        return returns.mean() * returns.min()
     elif cost == 'mean_return':
         return recent_returns.mean()
     elif cost == 'mixed_return':
