@@ -1,3 +1,4 @@
+""" Backtester for QC"""
 import sys
 import joblib
 import random
@@ -10,14 +11,13 @@ import chunknet
 from preprocessing import non_nan_markets
 from preprocessing import nan_markets
 from preprocessing import returns_check
-
 from preprocessing import load_nyse_markets
 from preprocessing import preprocess
 from batching_splitting import split_validation_training
-from costs import compute_numpy_sharpe
+from costs import compute_numpysharpe
 
 def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
-                    CLOSE_ASK, CLOSE_BID, RETURN, SHARE, DIVIDEND, 
+                    CLOSE_ASK, CLOSE_BID, RETURN, SHARE, DIVIDEND,
                     TOTALCAP, exposure, equity, settings, fundEquity):
 
     # Checks if we should end the backtest run.
@@ -28,8 +28,8 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
         settings['markets'], OPEN, CLOSE, HIGH, LOW, VOL, DATE,
         CLOSE_LASTTRADE, CLOSE_ASK, CLOSE_BID, RETURN, SHARE,
         DIVIDEND, TOTALCAP, postipo=100, filler=0.123456789,
-        data_types = settings['data_types'])
-    
+        data_types=settings['data_types'])
+
     # NEED TO INCLUDE THIS AS A HYPERPARAMETER!
     # Calculate Sharpe between training intervals
 
@@ -38,7 +38,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
                                    exposure=exposure,
                                    market_data=market_data,
                                    cost=settings['cost_type'])
-    print_things(settings['iter'], DATE[-1], 
+    print_things(settings['iter'], DATE[-1],
                  fundEquity[-1], settings['best_val_sharpe'], recent_cost)
 
     # Initialize neural net.
@@ -108,7 +108,7 @@ def mySettings():
     settings['allow_shorting'] = False
     settings['lr_mult_base'] = .1
     settings['restart_variables'] = True
-    ''' Pick data types to feed into neural net. If empty, only CLOSE will be used. 
+    ''' Pick data types to feed into neural net. If empty, only CLOSE will be used.
     Circle dates added automatically if any setting is provided.
     0 = OPEN
     1 = CLOSE
@@ -130,7 +130,7 @@ def mySettings():
                                             end_date=settings['endInSample'],
                                             lookback=0,
                                             postipo=0)
-    settings['markets'] = settings['markets'][-10:] + ['CASH']
+    settings['markets'] = settings['markets'][-20:] + ['CASH']
     print settings['markets']
     return settings
 
@@ -159,9 +159,10 @@ def calculate_recent(iteration, retrain_interval, exposure, market_data, cost='s
             if cost = 'mixed_return', returns mean*min of returns since last retrain
     """
 
-    # Calculate Sharpe between training intervals. iteration-1 is used because we score one day back.
-    n_days_back = np.mod(iteration,retrain_interval)
-     
+    # Calculate Sharpe between training intervals.
+    # iteration-1 is used because we score one day back.
+    n_days_back = np.mod(iteration, retrain_interval)
+
     # Only start scoring realized sharpes from greater than 2!
     if n_days_back > 2:
         recent_sharpe = compute_numpy_sharpe(positions=exposure[None, -n_days_back-3:-1, :],
@@ -225,7 +226,7 @@ def dont_trade_positions(positions, settings):
 
 def calc_batches(n_timesteps, settings):
     """ Calculates the total groups of batch_size that are one epoch.
-    
+
     Args:
         n_timesteps: total number of timesteps
         settings: takes horizon, val_period, n_sharpe, and batch_size
@@ -235,15 +236,15 @@ def calc_batches(n_timesteps, settings):
     """
     if settings['val_period'] > 0:
         batches_per_epoch = int(np.floor((n_timesteps -
-                                        settings['horizon'] -
-                                        settings['val_period'] -
-                                        2 * settings['n_sharpe'] + 1)
-                                        / float(settings['batch_size'])))
+                                          settings['horizon'] -
+                                          settings['val_period'] -
+                                          2 * settings['n_sharpe'] + 1)
+                                         / float(settings['batch_size'])))
     else:
         batches_per_epoch = int(np.floor((n_timesteps -
                                           settings['horizon'] -
                                           settings['n_sharpe'] + 1)
-                                          / float(settings['batch_size'])))
+                                         / float(settings['batch_size'])))
     return batches_per_epoch
 
 
@@ -370,7 +371,7 @@ def training(settings, all_data, market_data):
             settings, best_val_sharpe = update_nn(settings, best_val_sharpe, val_sharpe)
         else:
             settings, best_tr_sharpe = update_nn(settings, best_tr_sharpe, tr_sharpe)
-        
+
         # Record best_val_sharpe
         settings['best_val_sharpe'] = best_val_sharpe
 
