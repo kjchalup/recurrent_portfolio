@@ -1,8 +1,8 @@
 import numpy as np
-from preprocessing import non_nan_markets
 from . import NP_DTYPE
 
-def draw_timeseries_batch(all_data, market_data, horizon, batch_size, batch_id, randseed=1):
+def draw_timeseries_batch(all_data, market_data, horizon,
+                          batch_size, batch_id, randseed=1):
     """ Make batches of data.
 
     Args:
@@ -37,22 +37,29 @@ def split_validation_training(all_data, market_data, valid_period, horizon,
 
     Args:
         all_data: the data which the neural net uses to output a portfolio.
-        market_data: the data the neural net uses to score a portfolio. open,close,high,low
-        valid_period: number of batches of validation data; taken from newest times in all_data.
+        market_data: the data the neural net uses
+          to score a portfolio. open,close,high,low
+        valid_period: number of batches of validation data;
+          taken from newest times in all_data.
         horizon: size of total horizon used to predict n_for_sharpe
-        n_for_sharpe: the amount of portfolios output to use for gradient calculation.
+        n_for_sharpe: the amount of portfolios output
+          to use for gradient calculation.
         batch_size: the number of batches per epoch.
-        batch_id: the batch id per batch. should be for batch_id in range(batches_per_epoch)
-        randseed: the epoch number, randomize between epochs. 
-        should be for epoch_id in range(num_epochs)
+        batch_id: the batch id per batch. should be for
+          batch_id in range(batches_per_epoch)
+        randseed: the epoch number, randomize between epochs.
+          should be for epoch_id in range(num_epochs)
 
         This argument is called for every batch_id.
-        batches_per_epoch calculated as follows:
-        int(np.floor((all_data.shape[0]-horizon-2*n_ofr_sharpe-valid_period+1)/float(batch_size)))
+          batches_per_epoch calculated as follows:
+          int(np.floor((all_data.shape[0]-horizon-2*n_ofr_sharpe-
+          valid_period+1)/float(batch_size)))
         For validation data, the batch_id is set to 0,
-        and the randseed is set to 1, so it will always return the same validation data.
+          and the randseed is set to 1, so it will
+          always return the same validation data.
         For time indexing, all_data is indexed -1 from market_data
-        so that the positions are predicted from all_data, and scored against market_data.
+          so that the positions are predicted from
+          all_data, and scored against market_data.
     """
 
     all_val = None
