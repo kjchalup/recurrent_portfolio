@@ -12,7 +12,7 @@ def draw_timeseries_batch(all_data, market_data, horizon, batch_size, batch_id, 
         batch_size: the number of batches per epoch.
         batch_id: the batch id per batch.
         randseed: the epoch number, helps randomize between epochs.
- 
+
     Returns:
         all_batch (n_batchsize, n_timesteps, data): batches for input data to neural net.
         market_batch (n_batchsize, n_timesteps, market_data): batches for scoring for neural net.
@@ -34,7 +34,7 @@ def draw_timeseries_batch(all_data, market_data, horizon, batch_size, batch_id, 
 def split_validation_training(all_data, market_data, valid_period, horizon, 
                               n_for_sharpe, batch_id, batch_size, randseed):
     """ Splits validation and training, returns new batches for every epoch.
- 
+
     Args:
         all_data: the data which the neural net uses to output a portfolio.
         market_data: the data the neural net uses to score a portfolio. open,close,high,low
@@ -43,10 +43,11 @@ def split_validation_training(all_data, market_data, valid_period, horizon,
         n_for_sharpe: the amount of portfolios output to use for gradient calculation.
         batch_size: the number of batches per epoch.
         batch_id: the batch id per batch. should be for batch_id in range(batches_per_epoch)
-        randseed: the epoch number, randomize between epochs. should be for epoch_id in range(num_epochs)
+        randseed: the epoch number, randomize between epochs. 
+        should be for epoch_id in range(num_epochs)
 
         This argument is called for every batch_id.
-        batches_per_epoch calculated as follows: 
+        batches_per_epoch calculated as follows:
         int(np.floor((all_data.shape[0]-horizon-2*n_ofr_sharpe-valid_period+1)/float(batch_size)))
         For validation data, the batch_id is set to 0,
         and the randseed is set to 1, so it will always return the same validation data.
@@ -71,8 +72,10 @@ def split_validation_training(all_data, market_data, valid_period, horizon,
         market_val = np.tile(market_val, [batch_size/valid_period, 1, 1])
 
     all_batch, market_batch = draw_timeseries_batch(
-        all_data=all_data[:-valid_period-n_for_sharpe-1] if valid_period > 0 else all_data[:-1],
-        market_data=market_data[1:-valid_period-n_for_sharpe] if valid_period > 0 else market_data[1:],
+        all_data=all_data[:-valid_period-n_for_sharpe-1]
+        if valid_period > 0 else all_data[:-1],
+        market_data=market_data[1:-valid_period-n_for_sharpe]
+        if valid_period > 0 else market_data[1:],
         horizon=horizon+n_for_sharpe-1,
         batch_size=batch_size,
         batch_id=batch_id, randseed=randseed)

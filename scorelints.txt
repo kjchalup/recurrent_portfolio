@@ -29,3 +29,4 @@ linear_hf/costs.py 2.93
 tests/test_costs.py 2.12
 linear_hf/run_backtest.py 5.13
 tests/test_runbacktest.py 5.92
+linear_hf/__init__.py 7.50
