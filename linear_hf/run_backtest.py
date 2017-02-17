@@ -14,7 +14,7 @@ from preprocessing import returns_check
 from preprocessing import load_nyse_markets
 from preprocessing import preprocess
 from batching_splitting import split_validation_training
-from costs import compute_numpysharpe
+from costs import compute_numpy_sharpe
 
 def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
                     CLOSE_ASK, CLOSE_BID, RETURN, SHARE, DIVIDEND,
@@ -43,7 +43,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
 
     # Initialize neural net.
     if settings['iter'] == 0:
-        settings = init_nn(settings, all_data.shape[1], 'linear')
+        settings = init_nn(settings, all_data.shape[1], 'chunk_linear')
 
     # Train the neural net on current data.
     if settings['iter'] % settings['retrain_interval'] == 0:
@@ -104,10 +104,11 @@ def mySettings():
     settings['realized_sharpe'] = []
     settings['saved_val_sharpe'] = []
     settings['best_val_sharpe'] = -np.inf
-    settings['cost_type'] = 'sharpe'
+    settings['cost_type'] = 'sortino'
     settings['allow_shorting'] = False
     settings['lr_mult_base'] = .1
     settings['restart_variables'] = True
+    settings['n_chunks'] = 27
     ''' Pick data types to feed into neural net. If empty, only CLOSE will be used.
     Circle dates added automatically if any setting is provided.
     0 = OPEN
@@ -130,8 +131,9 @@ def mySettings():
                                             end_date=settings['endInSample'],
                                             lookback=0,
                                             postipo=0)
-    settings['markets'] = settings['markets'][-20:] + ['CASH']
+    settings['markets'] = settings['markets'][:2699] + ['CASH'] # Exactly 2700 stocks, so chunk
     print settings['markets']
+    assert np.mod(len(settings['markets']),settings['n_chunks'])==0, "Make nmarkets divisible by nchunks"
     return settings
 
 if __name__ == '__main__':
@@ -313,6 +315,17 @@ def init_nn(settings, n_ftrs, nn_type):
                                           lbd=settings['lbd'],
                                           allow_shorting=settings['allow_shorting'],
                                           cost=settings['cost_type'])
+    elif nn_type == 'chunk_linear':
+        settings['nn'] = chunknet.ChunkLinear(n_ftrs=n_ftrs,
+                                      n_markets=len(settings['markkets']),
+                                      n_time=settings['n_time'],
+                                      n_sharpe=settings['n_sharpe'],
+                                      lbd=settings['lbd'],
+                                      allow_shorting=settings['allow_shorting'],
+                                      cost=settings['cost_type'],
+                                      n_chunks=settings['n_chunks'])
+
+
     print 'Done with initializing neural net!'
     return settings
 
@@ -358,6 +371,7 @@ def training(settings, all_data, market_data):
                 batch_size=settings['batch_size'],
                 randseed=seed)
             # Train.
+            import pdb;pdb.set_trace()
             settings['nn'].train_step(batch_in=all_batch, batch_out=market_batch, lr=lr_new)
             tr_sharpe += loss_calc(settings, all_batch, market_batch)
 
