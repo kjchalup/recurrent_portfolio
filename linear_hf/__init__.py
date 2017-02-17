@@ -1,5 +1,5 @@
 import tensorflow as tf
 import numpy as np
 
-TF_DTYPE = tf.float16
-NP_DTYPE = np.float16
+TF_DTYPE = tf.float32
+NP_DTYPE = np.float32

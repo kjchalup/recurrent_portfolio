@@ -1,12 +1,8 @@
-import sys
-import random
-
-from sklearn.preprocessing import StandardScaler
 import numpy as np
 import joblib
 
-from causality import causal_matrix
-from preprocessing import preprocess
+from linear_hf.causality import causal_matrix
+from linear_hf.preprocessing import preprocess
 
 
 def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,CLOSE_LASTTRADE, 

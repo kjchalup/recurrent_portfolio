@@ -2,7 +2,7 @@
 import numpy as np
 import tensorflow as tf
 
-from costs import sharpe_tf
+from linear_hf.costs import sharpe_tf
 from . import TF_DTYPE
 
 def initialize_blockdiagonal(n_ftrs, n_time,
@@ -25,11 +25,10 @@ def initialize_blockdiagonal(n_ftrs, n_time,
     if n_ftrs % n_blocks != 0:
         raise ValueError('n_blocks must divide n_ftrs!')
     horizon = n_time - n_sharpe + 1
-    blocks = [tf.truncated_normal((n_ftrs * horizon / n_blocks,
+    blocks = [tf.cast(tf.truncated_normal((n_ftrs * horizon / n_blocks,
                                    n_markets / n_blocks),
                                   stddev=(float(n_blocks) /
-                                          (n_ftrs * horizon)),
-                                  dtype=TF_DTYPE)
+                                          (n_ftrs * horizon))), TF_DTYPE)
               for _ in range(n_blocks)]
     return blocks
 
@@ -139,8 +138,8 @@ class ChunkLinear(object):
                 self.n_ftrs, self.n_time, self.n_sharpe,
                 self.n_markets, self.n_chunks)
         self.Ws = [tf.Variable(W_block, name='weights_block{}'.format(
-            block_id)) for block_id, W_block in enumerate(W_init)]
-        self.b = tf.Variable(tf.zeros(n_markets),
+            block_id), dtype=TF_DTYPE) for block_id, W_block in enumerate(W_init)]
+        self.b = tf.Variable(tf.zeros(n_markets, dtype=TF_DTYPE),
                              name='nn_biases')
 
         # Define the position outputs on a batch of timeseries.

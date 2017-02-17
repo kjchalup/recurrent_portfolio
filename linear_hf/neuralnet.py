@@ -2,7 +2,7 @@
 import numpy as np
 import tensorflow as tf
 
-from costs import sharpe_tf, sharpe_onepos_tf
+from linear_hf.costs import sharpe_tf, sharpe_onepos_tf
 from . import TF_DTYPE
 
 def define_nn(batch_in_tf, n_sharpe,
@@ -80,7 +80,7 @@ class Linear(object):
 
         # Doefine symbolic placeholders for data batches.
         self.batch_in_tf = tf.placeholder(
-            TF_DTYPE, shape=[None, n_time, n_ftrs], 
+            TF_DTYPE, shape=[None, n_time, n_ftrs],
             name='input_batch')
         self.batch_out_tf = tf.placeholder(
             TF_DTYPE, shape=[None, n_sharpe, n_markets * 4],
@@ -95,9 +95,9 @@ class Linear(object):
             W_init = tf.truncated_normal(
                 [n_ftrs * self.horizon, n_markets],
                 stddev=1. / (n_ftrs * self.horizon))
-        self.W = tf.Variable(W_init, name='nn_weights')
+        self.W = tf.Variable(W_init, name='nn_weights', dtype=TF_DTYPE)
         self.b = tf.Variable(tf.zeros(n_markets),
-                             name='nn_biases')
+                             name='nn_biases', dtype=TF_DTYPE)
 
         # Define the position outputs on a batch of timeseries.
         self.positions_tf = define_nn(self.batch_in_tf,

@@ -1,7 +1,7 @@
 import glob
-import random
 import numpy as np
 from  datetime import datetime, timedelta
+
 from . import NP_DTYPE
 
 """ Preprocessing figures out which data to load, and also

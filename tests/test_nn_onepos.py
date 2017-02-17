@@ -43,7 +43,6 @@ def test_only_first_position_influences_sharpe(make_data):
     sharpe3 = compute_numpy_onepos_sharpe(
         positions3, batch_out[:, -n_sharpe:])
 
-    import pdb; pdb.set_trace()
     assert sharpe1 != sharpe2
     assert sharpe2 != sharpe3
     assert sharpe1 == sharpe3

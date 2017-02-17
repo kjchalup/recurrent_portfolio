@@ -4,6 +4,7 @@ import joblib
 
 import numpy as np
 import tensorflow as tf
+
 from . import TF_DTYPE
 
 def compute_numpy_onepos_sharpe(positions, prices, slippage=0.05, return_returns = False, n_ignore=2):
