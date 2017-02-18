@@ -2,7 +2,8 @@
 import numpy as np
 import tensorflow as tf
 
-from costs import sharpe_tf
+from linear_hf.costs import sharpe_tf, sharpe_onepos_tf
+from . import TF_DTYPE
 
 def define_nn(batch_in_tf, n_sharpe,
               n_time, n_ftrs, W, b, allow_shorting):
@@ -34,7 +35,7 @@ def define_nn(batch_in_tf, n_sharpe,
     positions = []
     for t_id in range(n_sharpe):
         positions.append(apply_net(tf.reshape(
-            batch_in_tf[:, t_id:t_id+horizon, :], 
+            batch_in_tf[:, t_id:t_id+horizon, :],
             (-1, n_ftrs * horizon))))
 
     return tf.transpose(positions, [1, 0, 2])
@@ -46,9 +47,9 @@ class Linear(object):
     set of linear weights. It will then output a vector of
     positions whose absolute values sum to one.
     """
-    
+
     def __init__(self, n_ftrs, n_markets, n_time, 
-                 n_sharpe, W_init=None, lbd=0.001, 
+                 n_sharpe, W_init=None, lbd=0.001,
                  causality_matrix=None, n_csl_ftrs=None, seed=None,
                  allow_shorting=True, cost='sharpe'):
         """ Initialize the regressor.
@@ -79,24 +80,24 @@ class Linear(object):
 
         # Doefine symbolic placeholders for data batches.
         self.batch_in_tf = tf.placeholder(
-            tf.float32, shape=[None, n_time, n_ftrs], 
+            TF_DTYPE, shape=[None, n_time, n_ftrs],
             name='input_batch')
         self.batch_out_tf = tf.placeholder(
-            tf.float32, shape=[None, n_sharpe, n_markets * 4],
+            TF_DTYPE, shape=[None, n_sharpe, n_markets * 4],
             name='output_batch')
 
         # Neural net training-related placeholders.
         self.lr_tf = tf.placeholder(
-            tf.float32, name='learning_rate')
+            TF_DTYPE, name='learning_rate')
 
         # Define nn weights and biases.
         if W_init is None:
             W_init = tf.truncated_normal(
                 [n_ftrs * self.horizon, n_markets],
                 stddev=1. / (n_ftrs * self.horizon))
-        self.W = tf.Variable(W_init, name='nn_weights')
+        self.W = tf.Variable(W_init, name='nn_weights', dtype=TF_DTYPE)
         self.b = tf.Variable(tf.zeros(n_markets),
-                             name='nn_biases')
+                             name='nn_biases', dtype=TF_DTYPE)
 
         # Define the position outputs on a batch of timeseries.
         self.positions_tf = define_nn(self.batch_in_tf,
@@ -105,34 +106,38 @@ class Linear(object):
                                       n_ftrs=n_ftrs,
                                       W=self.W, b=self.b,
                                       allow_shorting=allow_shorting)
-        
+        '''
         # Regularization goes here...
         self.penalty = regularization(lbd=self.lbd,
                                       causality_matrix=causality_matrix
                                       positions=self.positions_tf)
-
+        '''
 
         # Define the L1 penalty, taking causality into account.
         if causality_matrix is None:
-            #self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(self.W))
-            self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.pow(self.W, 2))
+            self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(self.W))
+
         else:
             self.causality_matrix = np.tile(causality_matrix, [self.horizon, 1])
             self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(
                 tf.boolean_mask(self.W, self.causality_matrix == 0)))
 
         # Define the unnormalized loss function.
-        self.loss_tf = -sharpe_tf(self.positions_tf, self.batch_out_tf, n_sharpe,
-                                  n_markets, cost=cost) + self.l1_penalty_tf
-        #self.loss_tf = -sharpe_tf(self.positions_tf, self.batch_out_tf, n_sharpe,
-        #                          n_markets, cost=cost) + self.penalty
-        
+        if cost.startswith('onepos'):
+            self.loss_tf = -sharpe_onepos_tf(
+                self.positions_tf, self.batch_out_tf, n_sharpe,
+                n_markets, cost=cost[7:]) + self.l1_penalty_tf
+        else:
+            self.loss_tf = -sharpe_tf(
+                self.positions_tf, self.batch_out_tf, n_sharpe,
+                n_markets, cost=cost) + self.l1_penalty_tf
+
         # Define the optimizer.
         self.train_op_tf = tf.train.AdamOptimizer(
             learning_rate=self.lr_tf).minimize(self.loss_tf)
 
         # Define the saver that will serialize the weights/biases.
-        self.saver = tf.train.Saver(max_to_keep=1, 
+        self.saver = tf.train.Saver(max_to_keep=1,
                                     var_list={'nn_weights': self.W,
                                               'nn_biases': self.b})
         # Create a Tf session and initialize the variables.
@@ -155,7 +160,7 @@ class Linear(object):
         Returns:
           positions (n_batch, n_markets): Positions.
         """
-        return self.sess.run(self.positions_tf, 
+        return self.sess.run(self.positions_tf,
                              {self.batch_in_tf: batch_in})
 
     def predict(self, data_in):
@@ -195,6 +200,7 @@ class Linear(object):
         return self.sess.run(self.loss_tf,
                              {self.batch_in_tf: batch_in,
                               self.batch_out_tf: batch_out})
+    '''
     def regularization_penalty():
         """ Compute all regularization """
         if causality_matrix is None:
@@ -204,8 +210,10 @@ class Linear(object):
             self.causality_matrix = np.tile(causality_matrix, [self.horizon, 1])
             self.penalty = self.lbd * tf.reduce_sum(tf.abs(
                 tf.boolean_mask(self.W, self.causality_matrix == 0)))
-    return self.ses.run(self.penalty)
 
+        short_long_penalty = tf.reduce_mean(positions_tf)
+    return self.ses.run(self.penalty)
+    '''
     def train_step(self, batch_in, batch_out, lr):
         """ Do one gradient-descent step. """
         self.sess.run(self.train_op_tf,

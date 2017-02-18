@@ -1,14 +1,14 @@
 """Determine the optimal hyperparameters for the neural net."""
-import joblib
+import random
 import itertools
 import os
+import joblib
 
-import random
 import numpy as np
 
 import quantiacsToolbox
-from preprocessing import load_nyse_markets
-from run_backtest import myTradingSystem
+
+from linear_hf.run_backtest import myTradingSystem
 
 def powerset(iterable):
     """ Returns the set of all subsets of the iterable.

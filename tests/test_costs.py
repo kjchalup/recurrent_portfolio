@@ -13,7 +13,7 @@ from linear_hf.costs import compute_sharpe_tf
 from linear_hf import neuralnet
 
 beginInSample = '20090101'
-endInSample = '20141231'
+endInSample = '20130101'
 names_with_no_nans = non_nan_markets(start_date=beginInSample,
                                      end_date=endInSample, postipo=100, lookback=0)
 names_with_no_nans = names_with_no_nans[200:250]

@@ -2,7 +2,8 @@
 import numpy as np
 import tensorflow as tf
 
-from costs import sharpe_tf
+from linear_hf.costs import sharpe_tf
+from . import TF_DTYPE
 
 def initialize_blockdiagonal(n_ftrs, n_time,
                              n_sharpe, n_markets, n_blocks):
@@ -24,11 +25,11 @@ def initialize_blockdiagonal(n_ftrs, n_time,
     if n_ftrs % n_blocks != 0:
         raise ValueError('n_blocks must divide n_ftrs!')
     horizon = n_time - n_sharpe + 1
-    blocks = [tf.truncated_normal((n_ftrs * horizon / n_blocks,
-                                   n_markets / n_blocks),
-                                  stddev=(float(n_blocks) /
-                                          (n_ftrs * horizon)),
-                                  dtype=tf.float32)
+    blocks = [tf.cast(tf.truncated_normal((n_ftrs * horizon / n_blocks,
+                                           n_markets / n_blocks),
+                                          stddev=(float(n_blocks) /
+                                                  (n_ftrs * horizon))),
+                      TF_DTYPE)
               for _ in range(n_blocks)]
     return blocks
 
@@ -119,15 +120,15 @@ class ChunkLinear(object):
 
         # Define symbolic placeholders for data batches.
         self.batch_in_tf = tf.placeholder(
-            tf.float32, shape=[None, n_time, n_ftrs],
+            TF_DTYPE, shape=[None, n_time, n_ftrs],
             name='input_batch')
         self.batch_out_tf = tf.placeholder(
-            tf.float32, shape=[None, n_sharpe, n_markets * 4],
+            TF_DTYPE, shape=[None, n_sharpe, n_markets * 4],
             name='output_batch')
 
         # Neural net training-related placeholders.
         self.lr_tf = tf.placeholder(
-            tf.float32, name='learning_rate')
+            TF_DTYPE, name='learning_rate')
 
         # Define nn weights and biases.
         self.data_permutation = np.random.permutation(
@@ -138,8 +139,9 @@ class ChunkLinear(object):
                 self.n_ftrs, self.n_time, self.n_sharpe,
                 self.n_markets, self.n_chunks)
         self.Ws = [tf.Variable(W_block, name='weights_block{}'.format(
-            block_id)) for block_id, W_block in enumerate(W_init)]
-        self.b = tf.Variable(tf.zeros(n_markets),
+            block_id), dtype=TF_DTYPE)
+                   for block_id, W_block in enumerate(W_init)]
+        self.b = tf.Variable(tf.zeros(n_markets, dtype=TF_DTYPE),
                              name='nn_biases')
 
         # Define the position outputs on a batch of timeseries.
@@ -160,8 +162,9 @@ class ChunkLinear(object):
                 tf.boolean_mask(self.Ws, self.causality_matrix == 0)))
 
         # Define the unnormalized loss function.
-        self.loss_tf = -sharpe_tf(self.positions_tf, self.batch_out_tf,
-                                  n_sharpe, n_markets, cost=cost) + self.l1_penalty_tf
+        self.loss_tf = (-sharpe_tf(self.positions_tf, self.batch_out_tf,
+                                   n_sharpe, n_markets, cost=cost) +
+                        self.l1_penalty_tf)
         # Define the optimizer.
         self.train_op_tf = tf.train.AdamOptimizer(
             learning_rate=self.lr_tf).minimize(self.loss_tf)

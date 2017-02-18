@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 tests/context.py 2.50
 tests/test_batching.py -23.65
 tests/test_causal_regularization_anm.py 3.45
@@ -26,3 +27,9 @@ tests/test_restart_nn.py 5.26
 tests/test_runbacktest.py 5.92
 linear_hf/run_backtest.py 6.43
 tests/test_costs.py 2.24
+=======
+linear_hf/__init__.py 7.50
+linear_hf/batching_splitting.py 6.55
+linear_hf/chunknet.py 8.33
+linear_hf/clean_data.py 5.38
+>>>>>>> 3299a8625739b069ee644eb4e02a8fb6fd2d271c
