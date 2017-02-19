@@ -141,6 +141,7 @@ class Linear(object):
         self.b = tf.Variable(tf.zeros(n_markets, dtype=TF_DTYPE), name='nn_biases')
 
         # Define the position outputs on a batch of timeseries.
+
         if cost.startswith('smart'):
             self.positions_tf = define_smart_nn(
                 self.batch_in_tf, n_sharpe=n_sharpe, n_time=n_time,
@@ -242,7 +243,20 @@ class Linear(object):
         return self.sess.run(self.loss_tf,
                              {self.batch_in_tf: batch_in,
                               self.batch_out_tf: batch_out})
+    '''
+    def regularization_penalty():
+        """ Compute all regularization """
+        if causality_matrix is None:
+            #self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(self.W))
+            self.penalty = self.lbd * tf.reduce_sum(tf.pow(self.W, 2))
+        else:
+            self.causality_matrix = np.tile(causality_matrix, [self.horizon, 1])
+            self.penalty = self.lbd * tf.reduce_sum(tf.abs(
+                tf.boolean_mask(self.W, self.causality_matrix == 0)))
 
+        short_long_penalty = tf.reduce_mean(positions_tf)
+    return self.ses.run(self.penalty)
+    '''
     def train_step(self, batch_in, batch_out, lr):
         """ Do one gradient-descent step. """
         self.sess.run(self.train_op_tf,

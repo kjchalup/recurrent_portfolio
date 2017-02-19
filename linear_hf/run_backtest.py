@@ -2,8 +2,8 @@
 import sys
 
 import numpy as np
-from sklearn.preprocessing import StandardScaler
 
+import joblib
 from linear_hf import neuralnet
 from linear_hf import chunknet
 from linear_hf.preprocessing import load_nyse_markets
@@ -23,7 +23,12 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
         CLOSE_LASTTRADE, CLOSE_ASK, CLOSE_BID, RETURN, SHARE,
         DIVIDEND, TOTALCAP, postipo=100, filler=0.123456789,
         data_types=settings['data_types'])
-    all_data = StandardScaler().fit_transform(all_data)
+    
+    # Feed NN only 1+returns...
+    #all_data = np.divide(all_data, all_data[-1,:]) 
+    # NEED TO INCLUDE THIS AS A HYPERPARAMETER!
+    # Calculate Sharpe between training intervals
+
     recent_cost = calculate_recent(iteration=settings['iter'],
                                    retrain_interval=settings['retrain_interval'],
                                    exposure=exposure,
@@ -34,8 +39,8 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
 
     # Initialize neural net.
     if settings['iter'] == 0:
-        settings = init_nn(settings, all_data.shape[1], 'linear')
-        settings = restart_nn_till_good(settings, num_times=10, all_data=all_data,
+        settings = init_nn(settings, all_data.shape[1], settings['nn_type'])
+        settings = restart_nn_till_good(settings, num_times=20, all_data=all_data,
                                         market_data=market_data)
     # Train the neural net on current data.
     if settings['iter'] % settings['retrain_interval'] == 0:
@@ -87,14 +92,14 @@ def mySettings():
     """ Settings for the backtester"""
     settings = {}
     # Futures Contracts
-    settings['n_time'] = 60 # Use this many timesteps in one datapoint.
-    settings['n_sharpe'] = 30 # This many timesteps to compute Sharpes.
+    settings['n_time'] = 40 # Use this many timesteps in one datapoint.
+    settings['n_sharpe'] = 20 # This many timesteps to compute Sharpes.
     settings['horizon'] = settings['n_time'] - settings['n_sharpe'] + 1
-    settings['lbd'] = 1. # L1 regularizer strength.
-    settings['num_epochs'] = 100 # Number of epochs each day.
-    settings['batch_size'] = 128
-    settings['val_period'] = 1
-    settings['lr'] = 1e-3 # Learning rate.
+    settings['lbd'] = 1 # L1 regularizer strength.
+    settings['num_epochs'] = 15 # Number of epochs each day.
+    settings['batch_size'] = 16
+    settings['val_period'] = 16
+    settings['lr'] = 1e-7 # Learning rate.
     settings['dont_trade'] = False # If on, don't trade.
     settings['iter'] = 0
     settings['lookback'] = 1000
@@ -106,16 +111,16 @@ def mySettings():
     settings['endInSample'] = '20131231'
 
     settings['val_sharpe_threshold'] = -np.inf
-    settings['retrain_interval'] = 20
+    settings['retrain_interval'] = 10
     settings['realized_sharpe'] = []
     settings['saved_val_sharpe'] = []
     settings['best_val_sharpe'] = -np.inf
-    settings['cost_type'] = 'smart_min_return'
-    settings['n_chunks'] = 10
+    settings['cost_type'] = 'sharpe'
+    settings['n_chunks'] = 1
     settings['allow_shorting'] = True
     settings['lr_mult_base'] = 1.
-    settings['restart_variables'] = True
-
+    settings['restart_variables'] = False
+    settings['nn_type'] = 'linear'
     ''' Pick data types to feed into neural net.
     If empty, only CLOSE will be used.
     Circle dates added automatically if any setting is provided.
@@ -134,21 +139,16 @@ def mySettings():
     12 = DATE
     '''
     settings['data_types'] = [1]
+    settings['markets'] = joblib.load('linear_hf/1000_stock_names.pkl')
 
-    settings['markets'] = load_nyse_markets(start_date=settings['beginInSample'],
-                                            end_date=settings['endInSample'],
-                                            lookback=0,
-                                            postipo=0)
-    settings['markets'] = settings['markets'][:19] + ['CASH']
-    print len(settings['markets'])
     assert np.mod(len(settings['markets']),settings['n_chunks']) == 0, "Nmarkets/Nchunks"
     return settings
 
 if __name__ == '__main__':
     import quantiacsToolbox
-    results = quantiacsToolbox.runts(__file__, fname='100_nyse_stocks.pkl')
+    results = quantiacsToolbox.runts(__file__, fname='linear_hf/1000_nyse_stocks.pkl')
     print results['stats']
-
+    joblib.dump(results, 'results_of_this_run.pkl')
 
 def calculate_recent(iteration, retrain_interval, exposure, market_data, cost='sharpe'):
     """ Calculate the realized sharpe ratios from the output of the neural net
@@ -381,7 +381,6 @@ def training(settings, all_data, market_data):
             settings['nn'].train_step(batch_in=all_batch,
                                       batch_out=market_batch, lr=lr_new)
             tr_sharpe += loss_calc(settings, all_batch, market_batch)
-
 
         # Calculate sharpes for the epoch
         tr_sharpe /= batches_per_epoch

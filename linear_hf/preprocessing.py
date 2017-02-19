@@ -381,10 +381,12 @@ def returns_check(OPEN, CLOSE, HIGH, LOW, DATE, markets):
     SLIPPAGE = np.nan_to_num(fillnans(slippageTemp))
 
     flag1 = (abs(SLIPPAGE) > 0.7).sum() > 0
-    flag3 = (abs(sessionReturn) > 3).sum() > 0
+    flag3 = (abs(sessionReturn) > 5).sum() > 0
     flag5 = (abs(gaps) == np.inf).sum() > 0
     flag6 = (abs(sessionReturn) == np.inf).sum() > 0
     flag7 = (abs(SLIPPAGE) == np.inf).sum() > 0
 
     if flag1 or flag3 or flag5 or flag6 or flag7:
-       print '*****Crazy returns! ******* Check data validity!' 
+        print '*****Crazy returns! ******* Check data validity!' 
+        for j in np.where(abs(sessionReturn) > 5)[1]:
+            print markets[j]
