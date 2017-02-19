@@ -92,7 +92,7 @@ if __name__ == '__main__':
     SETTINGS['iter'] = 0
     SETTINGS['budget'] = 10**6
     SETTINGS['slippage'] = 0.05
-    SETTINGS['beginInSample'] = '20020102'
+    SETTINGS['beginInSample'] = '20000104'
     SETTINGS['endInSample'] = '20131201'
     SETTINGS['realized_sharpe'] = []
     SETTINGSp'saved_val_sharpe'] = []
@@ -109,7 +109,7 @@ if __name__ == '__main__':
            for hyper in SETTINGS and CHOICES]
     print ['n_time: ' + str(SETTINGS['n_time'])]
     try:
-        RESULTS = quantiacsToolbox.runts(__file__, plotEquity=False, fname='linear_hf/2700_nyse_stocks.pkl')
+        RESULTS = quantiacsToolbox.runts(__file__, plotEquity=False, fname='linear_hf/1000_nyse_stocks.pkl')
         # Show the results.
         RESULTS['settings']['nn'] = None
         print RESULTS['stats']
