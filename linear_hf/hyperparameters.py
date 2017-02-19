@@ -31,8 +31,8 @@ def powerset(iterable):
 LBDS = 10.**np.arange(-5, 3) + [0.]
 CHOICES = {'n_time': range(21, 50), # Timesteps in one datapoint.
            'lbd': LBDS,              # L1 regularizer strength.
-           'num_epochs': [100],   # Number of epochs each day.
-           'batch_size': [32, 64],  # Batch size.
+           'num_epochs': [1, 5, 10, 20, 100],   # Number of epochs each day.
+           'batch_size': [32, 64, 128],  # Batch size.
            'lr': 10.**np.arange(-7, -1),  # Learning rate.
            'allow_shorting': [False],
            'lookback' : [2000],
@@ -77,8 +77,9 @@ def supply_hypers():
     return settings
 
 if __name__ == '__main__':
-    if os.path.isfile('saved_data/hyper_new_results_local.pkl'):
-        HYPER_RESULTS = joblib.load('saved_data/hyper_2700_results_local.pkl')
+    results_fname = 'saved_data/hyper_1000_results.pkl'
+    if os.path.isfile(results_fname):
+        HYPER_RESULTS = joblib.load(results_fname)
     else:
         HYPER_RESULTS = []
 
@@ -121,4 +122,4 @@ if __name__ == '__main__':
     HYPER_RESULTS.append(RESULTS)
 
     # Save the results
-    joblib.dump(HYPER_RESULTS, 'saved_data/hyper_2700_results_local.pkl')
+    joblib.dump(HYPER_RESULTS, results_fname)
