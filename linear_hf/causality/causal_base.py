@@ -31,7 +31,7 @@ def compute_independence(x, y, ind_method='correlation', **kwargs):
                                      num_nullsims=1000)
         pval = test_object.compute_pvalue(x, y)
     elif ind_method=='correlation':
-        _, pval = distcorr(x.flatten(), y.flatten(), pval=True, **kwargs)
+        _, pval = distcorr(x.flatten(), y.flatten(), **kwargs)
     return pval
 
 def iscause_anm(x, y, fig=None, method='poly', **kwargs):

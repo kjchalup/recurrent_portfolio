@@ -163,7 +163,7 @@ class Linear(object):
         else:
             self.causality_matrix = np.tile(causality_matrix, [self.horizon, 1])
             self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(
-                tf.boolean_mask(self.W, self.causality_matrix == 0)))
+                tf.multiply(self.W, 1 / self.causality_matrix)))
 
         # Define the unnormalized loss function.
         if cost.startswith('onepos'):
