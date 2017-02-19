@@ -8,6 +8,7 @@ import numpy as np
 
 import quantiacsToolbox
 
+from linear_hf.preprocessing import load_nyse_markets
 from linear_hf.run_backtest import myTradingSystem
 
 def powerset(iterable):
@@ -31,7 +32,7 @@ LBDS = 10.**np.arange(-5, 3) + [0.]
 CHOICES = {'n_time': range(21, 50), # Timesteps in one datapoint.
            'lbd': LBDS,              # L1 regularizer strength.
            'num_epochs': [100],   # Number of epochs each day.
-           'batch_size': [32, 64, 128],  # Batch size.
+           'batch_size': [32, 64],  # Batch size.
            'lr': 10.**np.arange(-7, -1),  # Learning rate.
            'allow_shorting': [False],
            'lookback' : [2000],
@@ -54,9 +55,10 @@ def mySettings(): # pylint: disable=invalid-name,too-many-arguments
 
     # Only keep markets that have not died out by beginInSample.
     random.seed(1)
-    all_nyse = load_nyse_markets('20000601', None)
-    np.random.seed(1)
-    settings['markets'] = np.random.choice(all_nyse, 1000).tolist() + ['CASH']
+    all_nyse = load_nyse_markets(start_date='20000104', 
+                                 end_date='20131231', postipo=0,
+                                 lookback=0)
+    settings['markets'] = all_nyse[:2699] + ['CASH']
     return settings
 
 def supply_hypers():
@@ -74,7 +76,7 @@ def supply_hypers():
 
 if __name__ == '__main__':
     if os.path.isfile('saved_data/hyper_new_results_local.pkl'):
-        HYPER_RESULTS = joblib.load('saved_data/hyper_new_results_local.pkl')
+        HYPER_RESULTS = joblib.load('saved_data/hyper_2700_results_local.pkl')
     else:
         HYPER_RESULTS = []
 
@@ -91,10 +93,10 @@ if __name__ == '__main__':
     SETTINGS['beginInSample'] = '20020102'
     SETTINGS['endInSample'] = '20131201'
     SETTINGS['realized_sharpe'] = []
-    SETTINGS['saved_val_sharpe'] = []
+    SETTINGS['best_val_sharpe'] = []
     SETTINGS['val_sharpe'] = -np.inf
     SETTINGS['dont_trade'] = False
-
+    SETTINGS['n_chunks'] = 54
     # Save settings for use in test.
     joblib.dump(SETTINGS, 'saved_data/hypers.pkl')
 
@@ -103,7 +105,7 @@ if __name__ == '__main__':
            for hyper in SETTINGS and CHOICES]
     print ['n_time: ' + str(SETTINGS['n_time'])]
     try:
-        RESULTS = quantiacsToolbox.runts(__file__, plotEquity=False)
+        RESULTS = quantiacsToolbox.runts(__file__, plotEquity=False, fname='linear_hf/2700_nyse_stocks.pkl')
         # Show the results.
         RESULTS['settings']['nn'] = None
         print RESULTS['stats']
@@ -115,4 +117,4 @@ if __name__ == '__main__':
     HYPER_RESULTS.append(RESULTS)
 
     # Save the results
-    joblib.dump(HYPER_RESULTS, 'saved_data/hyper_new_results_local.pkl')
+    joblib.dump(HYPER_RESULTS, 'saved_data/hyper_2700_results_local.pkl')
