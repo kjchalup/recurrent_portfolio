@@ -43,6 +43,42 @@ def define_nn(batch_in_tf, n_sharpe,
 
     return tf.transpose(positions, [1, 0, 2])
 
+def define_equality_nn(batch_in_tf, n_sharpe,
+              n_time, n_ftrs, W, b):
+    """ Define a neural net for the Linear regressor.
+
+    Args:
+      batch_in_tf (n_batch, n_time, n_ftrs): Input data.
+      n_sharpe (float): How many position-outputs to compute.
+      n_time (float): Number of timesteps for input data.
+      n_ftrs (float): Number of input features.
+      W (n_ftrs * (n_time-n_sharpe+1), n_markets): Weight matrix.
+      b (n_markets): Biases.
+      zero_thr (scalar): Set smaller weights to zero.
+
+    Returns:
+      positions (n_batch, n_sharpe, n_markets): Positions for each market.
+    """
+    horizon = n_time - n_sharpe + 1
+    def apply_net(x):
+        """ Feed-forward x through the net. """
+        out = tf.add(tf.matmul(x, W), b)
+        out_pos = tf.sigmoid(3*out)
+        out_neg = tf.sigmoid(-3*out)
+        out_pos_sum = tf.reduce_sum(out_pos, axis=1, keep_dims=True)
+        out_neg_sum = tf.reduce_sum(-out_neg, axis=1, keep_dims=True)
+        out = out_pos * out_neg_sum / out_pos_sum + out_neg
+        out /= tf.reduce_sum(tf.abs(out), axis=1, keep_dims=True)
+        return out
+
+    positions = []
+    for t_id in range(n_sharpe):
+        positions.append(apply_net(tf.reshape(
+            batch_in_tf[:, t_id:t_id+horizon, :],
+            (-1, n_ftrs * horizon))))
+
+    return tf.transpose(positions, [1, 0, 2])
+
 def define_smart_nn(batch_in_tf, n_sharpe, n_time, n_ftrs, 
                     W, b, allow_shorting, strategy):
     """ Define a neural net for the Linear regressor.
@@ -136,7 +172,7 @@ class Linear(object):
         if W_init is None:
             W_init = tf.truncated_normal(
                 [n_ftrs * self.horizon, n_markets],
-                stddev=.01 / (n_ftrs * self.horizon), dtype=TF_DTYPE)
+                stddev=1. / (n_ftrs * self.horizon), dtype=TF_DTYPE)
         self.W = tf.Variable(W_init, name='nn_weights')
         self.b = tf.Variable(tf.zeros(n_markets, dtype=TF_DTYPE), name='nn_biases')
 
@@ -148,6 +184,10 @@ class Linear(object):
                 n_ftrs=n_ftrs, W=self.W, b=self.b,
                 allow_shorting=allow_shorting,
                 strategy='cumulative_returns')
+        elif cost.startswith('equality'):
+            self.positions_tf = define_equality_nn(
+                self.batch_in_tf, n_sharpe=n_sharpe, n_time=n_time,
+                n_ftrs=n_ftrs, W=self.W, b=self.b)
         else:
             self.positions_tf = define_nn(self.batch_in_tf,
                                           n_sharpe=n_sharpe,
@@ -163,7 +203,7 @@ class Linear(object):
         else:
             self.causality_matrix = np.tile(causality_matrix, [self.horizon, 1])
             self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(
-                tf.multiply(self.W, 1 / self.causality_matrix)))
+                tf.div(self.W, self.causality_matrix + 1e-3)))
 
         # Define the unnormalized loss function.
         if cost.startswith('onepos'):

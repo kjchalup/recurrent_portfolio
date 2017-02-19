@@ -80,8 +80,11 @@ def causal_matrix_ratios(all_data, thr=0, verbose=False, method='nearest', **kwa
         elif x_id < y_id:
             fig = plt.figure(figsize=(10,5)) if verbose else None
             xy_pval, yx_pval = iscause_anm(
-                all_data[:, x_id:x_id+1], all_data[:, y_id:y_id+1], 
+                all_data[:, x_id:x_id+1], all_data[:, y_id:y_id+1],
                 fig=fig, method=method, pval=False, **kwargs)
+            if np.isnan(xy_pvals) or np.isnan(xy_pvals):
+                xy_pval = 1.
+                yx_pval = 1.
             causal_coeffs[x_id, y_id] = xy_pval / yx_pval
             causal_coeffs[y_id, x_id] = yx_pval / xy_pval
             print(('Computed causality {}/{} [xid={}, yid={}]. '

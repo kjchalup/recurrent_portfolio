@@ -333,7 +333,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
         data_types=settings['data_types'])
 
     # Compute the causality matrix.
-    if (settings['causal_interval'] > 0 and 
+    if (settings['causal_interval'] > 0 and
         settings['iter'] % settings['causal_interval'] == 0):
         cm = causal_matrix_ratios(market_data[:, :n_markets-1],
                                   verbose=False, n_neighbors=30,
@@ -410,32 +410,30 @@ def mySettings():
     """ Settings for the backtester"""
     settings = {}
     # Futures Contracts
-    settings['n_time'] = 272 # Use this many timesteps in one datapoint.
-    settings['n_sharpe'] = 252 # This many timesteps to compute Sharpes.
+    settings['n_time'] = 60 # Use this many timesteps in one datapoint.
+    settings['n_sharpe'] = 30 # This many timesteps to compute Sharpes.
     settings['horizon'] = settings['n_time'] - settings['n_sharpe'] + 1
     settings['lbd'] = 1 # L1 regularizer strength.
     settings['num_epochs'] = 15 # Number of epochs each day.
     settings['batch_size'] = 16
-    settings['val_period'] = 16
-    settings['lr'] = 1e-7 # Learning rate.
+    settings['val_period'] = 0
+    settings['lr'] = 1e-5 # Learning rate.
     settings['dont_trade'] = False # If on, don't trade.
     settings['iter'] = 0
     settings['lookback'] = 1000
     settings['budget'] = 10**6
     settings['slippage'] = 0.05
-    #settings['beginInSample'] = '20090102'
-    #settings['endInSample'] = '20131231'
     settings['beginInSample'] = '20000104'
     settings['endInSample'] = '20131231'
     # How often to recompute the causal matrix. If 0, no causal matrix.
-    settings['causal_interval'] = 100 
+    settings['causal_interval'] = 0
     settings['causal_matrix'] = None
     settings['val_sharpe_threshold'] = -np.inf
-    settings['retrain_interval'] = 10
+    settings['retrain_interval'] = 252
     settings['realized_sharpe'] = []
     settings['saved_val_sharpe'] = []
     settings['best_val_sharpe'] = -np.inf
-    settings['cost_type'] = 'sharpe'
+    settings['cost_type'] = 'equality_sharpe'
     settings['n_chunks'] = 1
     settings['allow_shorting'] = True
     settings['lr_mult_base'] = 1.

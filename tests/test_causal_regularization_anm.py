@@ -42,9 +42,9 @@ def make_causal_data():
 def test_causal_matrix(make_causal_data):
     cm = causal_matrix(make_causal_data, method='nearest', n_neighbors=30, ind_method='hsic', thr=1e-2)
     should_be_causal = np.array([cm[0, 4], cm[1, 5], cm[2, 6], cm[3, 7],
-                                 cm[0,0], cm[5,5], cm[3,3]]) 
+                                 cm[0,0], cm[5,5], cm[3,3]])
     assert (should_be_causal < 1e-2).sum() == 0, 'Some of the causal relationships were not detected.'
-    shouldnt_be_causal = np.array([cm[0,1], cm[1, 2], cm[2, 3], cm[3, 4], 
+    shouldnt_be_causal = np.array([cm[0,1], cm[1, 2], cm[2, 3], cm[3, 4],
                                   cm[4, 5], cm[5, 6], cm[6, 7], cm[0, 5],
                                   cm[1, 7], cm[2, 5], cm[5, 1], cm[6, 2]])
     assert (shouldnt_be_causal > 1e-2).sum() == 0, 'Some of the causal relationships were not detected.'
@@ -66,9 +66,7 @@ def test_gradient_decreases_loss_100steps(make_nn_data):
     # Create a fake causality matrix that says, "the first market
     # causes the second market, at 0-timestep delay".
     cm = np.zeros((n_markets, n_markets))
-    cm[0, 0] = 0
-    cm[1, 1] = 0
-    cm[0, 1] = 1
+    cm[0, 1] = 2.
     cm = np.tile(cm, [4, 1])
 
     # Compile a neural net that uses the causality matrix.
@@ -79,7 +77,7 @@ def test_gradient_decreases_loss_100steps(make_nn_data):
 
     l1s = []
     for step_id in range(1000):
-        nn.train_step(lr=1e-4, batch_in=batch_in, batch_out=batch_out)
+        nn.train_step(lr=1e-7, batch_in=batch_in, batch_out=batch_out)
         l1s.append(nn.l1_penalty_np())
     nn_l1_after = nn.l1_penalty_np()
 
