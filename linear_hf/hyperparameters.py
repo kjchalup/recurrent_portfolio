@@ -52,13 +52,15 @@ def mySettings(): # pylint: disable=invalid-name,too-many-arguments
     """ Settings for strategy. """
     settings = {}
     settings = joblib.load('saved_data/hypers.pkl')
-
+    '''
     # Only keep markets that have not died out by beginInSample.
     random.seed(1)
     all_nyse = load_nyse_markets(start_date='20000104', 
                                  end_date='20131231', postipo=0,
                                  lookback=0)
     settings['markets'] = all_nyse[:2699] + ['CASH']
+    '''
+    settings['markets'] = joblib.load('linear_hf/1000_stock_names.pkl')
     return settings
 
 def supply_hypers():
@@ -93,10 +95,12 @@ if __name__ == '__main__':
     SETTINGS['beginInSample'] = '20020102'
     SETTINGS['endInSample'] = '20131201'
     SETTINGS['realized_sharpe'] = []
+    SETTINGSp'saved_val_sharpe'] = []
     SETTINGS['best_val_sharpe'] = []
     SETTINGS['val_sharpe'] = -np.inf
     SETTINGS['dont_trade'] = False
     SETTINGS['n_chunks'] = 54
+    SETTINGS['nn_type'] = 'linear'
     # Save settings for use in test.
     joblib.dump(SETTINGS, 'saved_data/hypers.pkl')
 

@@ -38,7 +38,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
 
     # Initialize neural net.
     if settings['iter'] == 0:
-        settings = init_nn(settings, all_data.shape[1], 'chunk_linear')
+        settings = init_nn(settings, all_data.shape[1], settings['nn_type'])
         settings = restart_nn_till_good(settings, num_times=20, all_data=all_data,
                                         market_data=market_data)
     # Train the neural net on current data.
@@ -115,11 +115,11 @@ def mySettings():
     settings['saved_val_sharpe'] = []
     settings['best_val_sharpe'] = -np.inf
     settings['cost_type'] = 'sharpe'
-    settings['n_chunks'] = 27
+    settings['n_chunks'] = 1
     settings['allow_shorting'] = True
     settings['lr_mult_base'] = 1.
     settings['restart_variables'] = False
-
+    settings['nn_type'] = 'linear'
     ''' Pick data types to feed into neural net.
     If empty, only CLOSE will be used.
     Circle dates added automatically if any setting is provided.
@@ -138,19 +138,26 @@ def mySettings():
     12 = DATE
     '''
     settings['data_types'] = [1]
-
+    '''
     settings['markets'] = load_nyse_markets(start_date=settings['beginInSample'],
                                             end_date=settings['endInSample'],
                                             lookback=0,
                                             postipo=0)
-    settings['markets'] = settings['markets'][:2699] + ['CASH']
+    seed = np.random.seed(0)
+    np.random.shuffle(settings['markets'])
+    settings['markets'] = settings['markets'][:999] + ['CASH']
+    #settings['markets'] = settings['markets'][:2699] + ['CASH']
     print len(settings['markets'])
+    joblib.dump(settings['markets'], '1000_stock_names.pkl')
+    '''
+    settings['markets'] = joblib.load('linear_hf/1000_stock_names.pkl')
+
     assert np.mod(len(settings['markets']),settings['n_chunks']) == 0, "Nmarkets/Nchunks"
     return settings
 
 if __name__ == '__main__':
     import quantiacsToolbox
-    results = quantiacsToolbox.runts(__file__, fname='linear_hf/2700_nyse_stocks.pkl')
+    results = quantiacsToolbox.runts(__file__, fname='linear_hf/1000_nyse_stocks.pkl')
     print results['stats']
     joblib.dump(results, 'results_of_this_run.pkl')
 
