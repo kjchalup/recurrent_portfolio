@@ -95,7 +95,7 @@ if __name__ == '__main__':
     SETTINGS['beginInSample'] = '20000104'
     SETTINGS['endInSample'] = '20131201'
     SETTINGS['realized_sharpe'] = []
-    SETTINGSp'saved_val_sharpe'] = []
+    SETTINGS['saved_val_sharpe'] = []
     SETTINGS['best_val_sharpe'] = []
     SETTINGS['val_sharpe'] = -np.inf
     SETTINGS['dont_trade'] = False
