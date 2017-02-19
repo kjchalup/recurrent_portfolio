@@ -18,30 +18,10 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
     kill_backtest_run(fundEquity)
     # Preprocess the data
     market_data, all_data, should_retrain = preprocess(
-<<<<<<< HEAD
-        settings['markets'], OPEN, CLOSE, HIGH, LOW, VOL, DATE, 
-        CLOSE_LASTTRADE, CLOSE_ASK, CLOSE_BID, RETURN, SHARE, 
-        DIVIDEND, TOTALCAP, postipo=100, filler=0.123456789, 
-        data_types = settings['data_types'])
-    # Calculate Sharpe between training intervals
-    n_days_back = np.mod(settings['iter']-1,settings['retrain_interval'])
-    
-    if n_days_back > 2:
-        recent_sharpe=compute_numpy_sharpe(positions=exposure[None, -n_days_back-4:-1, :],
-                             prices=market_data[None, -n_days_back-3:, :],
-                             slippage=0.05,
-                             n_ignore=2)
-        if np.isnan(recent_sharpe):
-            # NaNs out when all positions are cash, therefore std.dev(ret) = 0
-            recent_sharpe = 0
-    else:
-        recent_sharpe = np.nan
-=======
         settings['markets'], OPEN, CLOSE, HIGH, LOW, VOL, DATE,
         CLOSE_LASTTRADE, CLOSE_ASK, CLOSE_BID, RETURN, SHARE,
         DIVIDEND, TOTALCAP, postipo=100, filler=0.123456789,
         data_types=settings['data_types'])
->>>>>>> 0f15f0e1f19ea3a8c3a274e00041549103296b82
     
     # Feed NN only 1+returns...
     #all_data = np.divide(all_data, all_data[-1,:]) 
