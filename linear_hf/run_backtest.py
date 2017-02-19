@@ -34,13 +34,13 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
 
     # Initialize neural net.
     if settings['iter'] == 0:
-        settings = init_nn(settings, all_data.shape[1], 'chunk_linear')
+        settings = init_nn(settings, all_data.shape[1], 'linear')
         settings = restart_nn_till_good(settings, num_times=10, all_data=all_data,
                                         market_data=market_data)
     # Train the neural net on current data.
     if settings['iter'] % settings['retrain_interval'] == 0:
         if settings['restart_variables']:
-            settings = restart_nn_till_good(settings, num_times=10, 
+            settings = restart_nn_till_good(settings, num_times=10,
                                             all_data=all_data,
                                             market_data=market_data)
 
@@ -87,17 +87,17 @@ def mySettings():
     """ Settings for the backtester"""
     settings = {}
     # Futures Contracts
-    settings['n_time'] = 40 # Use this many timesteps in one datapoint.
+    settings['n_time'] = 60 # Use this many timesteps in one datapoint.
     settings['n_sharpe'] = 30 # This many timesteps to compute Sharpes.
     settings['horizon'] = settings['n_time'] - settings['n_sharpe'] + 1
-    settings['lbd'] = 1000. # L1 regularizer strength.
-    settings['num_epochs'] = 30 # Number of epochs each day.
-    settings['batch_size'] = 32
+    settings['lbd'] = 1. # L1 regularizer strength.
+    settings['num_epochs'] = 100 # Number of epochs each day.
+    settings['batch_size'] = 128
     settings['val_period'] = 1
-    settings['lr'] = 1e-5 # Learning rate.
+    settings['lr'] = 1e-3 # Learning rate.
     settings['dont_trade'] = False # If on, don't trade.
     settings['iter'] = 0
-    settings['lookback'] = 400
+    settings['lookback'] = 1000
     settings['budget'] = 10**6
     settings['slippage'] = 0.05
     #settings['beginInSample'] = '20090102'
@@ -110,7 +110,7 @@ def mySettings():
     settings['realized_sharpe'] = []
     settings['saved_val_sharpe'] = []
     settings['best_val_sharpe'] = -np.inf
-    settings['cost_type'] = 'sharpe'
+    settings['cost_type'] = 'smart_min_return'
     settings['n_chunks'] = 10
     settings['allow_shorting'] = True
     settings['lr_mult_base'] = 1.
@@ -139,7 +139,7 @@ def mySettings():
                                             end_date=settings['endInSample'],
                                             lookback=0,
                                             postipo=0)
-    settings['markets'] = settings['markets'][:99] + ['CASH']
+    settings['markets'] = settings['markets'][:19] + ['CASH']
     print len(settings['markets'])
     assert np.mod(len(settings['markets']),settings['n_chunks']) == 0, "Nmarkets/Nchunks"
     return settings
@@ -429,10 +429,11 @@ def restart_nn_till_good(settings, all_data, market_data, num_times=5, debug=Fal
     best_sharpe = -np.inf
 
     # Restarts the neural net.
-    for _ in range(num_times): 
+    for _ in range(num_times):
         # Train one step.
         settings['nn'].train_step(batch_in=all_batch,
-                                  batch_out=market_batch, lr=settings['lr'])
+                                  batch_out=market_batch,
+                                  lr=settings['lr'])
         # Calculates the correct sharpe (or cost fn), depends on val_period.
         if settings['val_period'] > 0:
             sharpe = loss_calc(settings, all_batch=all_val, market_batch=market_val)

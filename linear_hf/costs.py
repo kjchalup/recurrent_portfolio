@@ -7,94 +7,6 @@ import tensorflow as tf
 
 from . import TF_DTYPE
 
-def compute_numpy_onepos_sharpe(positions, prices, slippage=0.05, return_returns = False, n_ignore=2):
-    """ Compute average Sharpe ratio of a strategy using Numpy. ONLY USE
-    THE FIRST POSITIONS VECTOR, applied to each timestep.
-
-    Args:
-      positions (n_batch, n_sharpe, n_markets): Portfolio over
-        n_sharpe timesteps over n_batch batches.
-      price (n_batch, n_sharpe, n_markets * 4): Stock prices
-        corresponding to portfolio positions over the same time.
-        Should contain (in order) open, close, high and low prices.
-      slippage (float): slippage coefficient.
-      n_ignore (int): ignore this many of the first returns
-        (to avoid boundary effects breaking training).
-
-    Returns:
-      sharpe (float): Sharpe ratio that positions achieve, averaged
-        over all the batches.
-    """
-    n_batch, n_sharpe, n_markets = positions.shape
-    rs = np.zeros((n_batch, n_sharpe))
-    os = prices[:, :, :n_markets]
-    cs = prices[:, :, n_markets:2*n_markets]
-    hs = prices[:, :, 2*n_markets:3*n_markets]
-    ls = prices[:, :, 3*n_markets:4*n_markets]
-
-    for i in range(2, n_sharpe):
-        elem1 = (((os[:, i, :] - cs[:, i-1, :]) * positions[:, 0, :])/
-                 (cs[:, i-2, :] * (1 + rs[:, i-1:i])))
-        elem2 = ((cs[:, i, :] - os[:, i, :]) *
-                 positions[:, 0, :]/cs[:, i-1, :])
-        elem3 = hs[:, i, :] - ls[:, i, :]
-        elem4 = (positions[:, 0, :]/cs[:, i-1, :] -
-                  positions[:, 0, :]/
-                 (cs[:, i-2, :] * (1 + rs[:, i-1:i])))
-        rs[:, i] = (elem1 + elem2 -
-                    slippage*np.abs(elem3 * elem4)).sum(axis=1)
-    rs = rs[:, n_ignore:]
-    n_sharpe -= n_ignore
-
-    return ((np.prod(rs+1, axis=1)**(252./n_sharpe)-1) /
-            (np.sqrt(252 * ((rs**2).sum(axis=1) / n_sharpe -
-            np.sum(rs, axis=1)**2 / n_sharpe**2)))).mean()
-
-
-def compute_numpy_sharpe(positions, prices, slippage=0.05, return_returns = False, n_ignore=2):
-    """ Compute average Sharpe ratio of a strategy using Numpy.
-
-    Args:
-      positions (n_batch, n_sharpe, n_markets): Portfolio over
-        n_sharpe timesteps over n_batch batches.
-      price (n_batch, n_sharpe, n_markets * 4): Stock prices
-        corresponding to portfolio positions over the same time.
-        Should contain (in order) open, close, high and low prices.
-      slippage (float): slippage coefficient.
-      n_ignore (int): ignore this many of the first returns
-        (to avoid boundary effects breaking training).
-
-    Returns:
-      sharpe (float): Sharpe ratio that positions achieve, averaged
-        over all the batches.
-    """
-    n_batch, n_sharpe, n_markets = positions.shape
-    rs = np.zeros((n_batch, n_sharpe))
-    os = prices[:, :, :n_markets]
-    cs = prices[:, :, n_markets:2*n_markets]
-    hs = prices[:, :, 2*n_markets:3*n_markets]
-    ls = prices[:, :, 3*n_markets:4*n_markets]
-
-    for i in range(2, n_sharpe):
-        elem1 = (((os[:, i, :] - cs[:, i-1, :]) * positions[:, i-1, :])/
-                 (cs[:, i-2, :] * (1 + rs[:, i-1:i])))
-        elem2 = ((cs[:, i, :] - os[:, i, :]) *
-                 positions[:, i, :]/cs[:, i-1, :])
-        elem3 = hs[:, i, :] - ls[:, i, :]
-        elem4 = (positions[:, i, :]/cs[:, i-1, :] -
-                  positions[:, i-1, :]/
-                 (cs[:, i-2, :] * (1 + rs[:, i-1:i])))
-        rs[:, i] = (elem1 + elem2 -
-                    slippage*np.abs(elem3 * elem4)).sum(axis=1)
-    rs = rs[:, n_ignore:]
-    n_sharpe -= n_ignore
-    if return_returns:
-        return rs
-
-    return ((np.prod(rs+1, axis=1)**(252./n_sharpe)-1) /
-            (np.sqrt(252 * ((rs**2).sum(axis=1) / n_sharpe -
-            np.sum(rs, axis=1)**2 / n_sharpe**2)))).mean()
-
 def sharpe_tf(positions, prices, n_sharpe, n_markets, 
               slippage=.05, n_ignore=2, cost='sharpe'):
     """ Compute average Sharpe ratio of a strategy using Tensorflow.
@@ -123,10 +35,7 @@ def sharpe_tf(positions, prices, n_sharpe, n_markets,
     n_batch = tf.shape(positions)[0]
     rs_list = [tf.zeros((n_batch, 1), dtype=TF_DTYPE), 
                tf.zeros((n_batch, 1), dtype=TF_DTYPE)]
-    os = prices[:, :, :n_markets]
-    cs = prices[:, :, n_markets:2*n_markets]
-    hs = prices[:, :, 2*n_markets:3*n_markets]
-    ls = prices[:, :, 3*n_markets:4*n_markets]
+    os, cs, hs, ls = extract_data(prices, n_markets)
 
     for i in range(2, n_sharpe):
         elem1 = (((os[:, i, :] - cs[:, i-1, :]) * positions[:, i-1, :])/
@@ -144,22 +53,7 @@ def sharpe_tf(positions, prices, n_sharpe, n_markets,
     n_sharpe -= n_ignore
 
     prod_rs = tf.reduce_prod(rs + 1, axis=1)
-    if cost == 'sharpe':
-        return tf.reduce_mean((tf.pow(prod_rs, (252./n_sharpe))-1) /
-                (tf.sqrt(252 * (tf.reduce_sum(tf.pow(rs, 2), axis=1) / n_sharpe -
-                tf.pow(tf.reduce_sum(rs, axis=1), 2) / n_sharpe**2))))
-    elif cost == 'sortino':
-        pos_rets = tf.minimum(rs, 0)
-        pos_std = (tf.sqrt(252 * (tf.reduce_sum(
-            tf.pow(pos_rets, 2), axis=1) / n_sharpe -
-            tf.pow(tf.reduce_sum(pos_rets, axis=1), 2) / n_sharpe**2)))
-        return tf.reduce_mean((tf.pow(prod_rs, (252./n_sharpe))-1) / (pos_std + 1e-7))
-    elif cost == 'min_return':
-        return tf.reduce_min(prod_rs)
-    elif cost == 'mean_return':
-        return tf.reduce_mean(prod_rs)
-    elif cost == 'mixed_return':
-        return tf.reduce_min(prod_rs) + tf.reduce_mean(prod_rs)
+    return cost_alternative(rs, prod_rs, cost, n_sharpe, n_markets)
 
 def sharpe_onepos_tf(positions, prices, n_sharpe, n_markets, 
               slippage=.05, n_ignore=2, cost='sharpe'):
@@ -192,10 +86,7 @@ def sharpe_onepos_tf(positions, prices, n_sharpe, n_markets,
     n_batch = tf.shape(positions)[0]
     rs_list = [tf.zeros((n_batch, 1), dtype=TF_DTYPE), 
                tf.zeros((n_batch, 1), dtype=TF_DTYPE)]
-    os = prices[:, :, :n_markets]
-    cs = prices[:, :, n_markets:2*n_markets]
-    hs = prices[:, :, 2*n_markets:3*n_markets]
-    ls = prices[:, :, 3*n_markets:4*n_markets]
+    os, cs, hs, ls = extract_data(prices, n_markets)
 
     for i in range(2, n_sharpe):
         elem1 = (((os[:, i, :] - cs[:, i-1, :]) * positions[:, 0, :])/
@@ -213,28 +104,13 @@ def sharpe_onepos_tf(positions, prices, n_sharpe, n_markets,
     n_sharpe -= n_ignore
 
     prod_rs = tf.reduce_prod(rs + 1, axis=1)
-    if cost == 'sharpe':
-        return tf.reduce_mean((tf.pow(prod_rs, (252./n_sharpe))-1) /
-                (tf.sqrt(252 * (tf.reduce_sum(tf.pow(rs, 2), axis=1) / n_sharpe -
-                tf.pow(tf.reduce_sum(rs, axis=1), 2) / n_sharpe**2))))
-    elif cost == 'sortino':
-        pos_rets = tf.minimum(rs, 0)
-        pos_std = (tf.sqrt(252 * (tf.reduce_sum(
-            tf.pow(pos_rets, 2), axis=1) / n_sharpe -
-            tf.pow(tf.reduce_sum(pos_rets, axis=1), 2) / n_sharpe**2)))
-        return tf.reduce_mean((tf.pow(prod_rs, (252./n_sharpe))-1) / (pos_std + 1e-7))
-    elif cost == 'min_return':
-        return tf.reduce_min(prod_rs)
-    elif cost == 'mean_return':
-        return tf.reduce_mean(prod_rs)
-    elif cost == 'mixed_return':
-        return tf.reduce_min(prod_rs) + tf.reduce_mean(prod_rs)
+    return cost_alternative(rs, prod_rs, cost, n_sharpe, n_markets)
 
 def compute_sharpe_tf(batch_in, batch_out):
     n, n_time, n_ftrs = batch_in.shape
     n, n_sharpe, n_markets4 = batch_out.shape
     n_markets = n_markets4/4
-    
+
     sess = tf.Session()
     batch_in_tf = tf.placeholder(
         TF_DTYPE, shape=[None, n_time, n_ftrs],
@@ -246,3 +122,109 @@ def compute_sharpe_tf(batch_in, batch_out):
     return sess.run(sharpe_tf(batch_in_tf, batch_out_tf, n_sharpe, n_markets),
                     {batch_in_tf: batch_in, batch_out_tf: batch_out})
 
+def cost_alternative(rs, prod_rs, cost, n_sharpe, n_markets):
+    print(cost)
+    if cost.endswith('sharpe'):
+        return tf.reduce_mean((tf.pow(prod_rs, (252./n_sharpe))-1) /
+                (tf.sqrt(252 * (tf.reduce_sum(tf.pow(rs, 2), axis=1) / n_sharpe -
+                tf.pow(tf.reduce_sum(rs, axis=1), 2) / n_sharpe**2))))
+    elif cost.endswith('sortino'):
+        pos_rets = tf.minimum(rs, 0)
+        pos_std = (tf.sqrt(252 * (tf.reduce_sum(
+            tf.pow(pos_rets, 2), axis=1) / n_sharpe -
+            tf.pow(tf.reduce_sum(pos_rets, axis=1), 2) / n_sharpe**2)))
+        return tf.reduce_mean((tf.pow(prod_rs, (252./n_sharpe))-1) / (pos_std + 1e-7))
+    elif cost.endswith('min_return'):
+        return tf.reduce_min(prod_rs)
+    elif cost.endswith('mean_return'):
+        return tf.reduce_mean(prod_rs)
+    elif cost.endswith('mixed_return'):
+        return tf.reduce_min(prod_rs) + tf.reduce_mean(prod_rs)
+
+def extract_data(prices, n_markets):
+    os = prices[:, :, :n_markets]
+    cs = prices[:, :, n_markets:2*n_markets]
+    hs = prices[:, :, 2*n_markets:3*n_markets]
+    ls = prices[:, :, 3*n_markets:4*n_markets]
+    return os, cs, hs, ls
+
+def compute_numpy_onepos_sharpe(positions, prices, slippage=0.05, return_returns = False, n_ignore=2):
+    """ Compute average Sharpe ratio of a strategy using Numpy. ONLY USE
+    THE FIRST POSITIONS VECTOR, applied to each timestep.
+
+    Args:
+      positions (n_batch, n_sharpe, n_markets): Portfolio over
+        n_sharpe timesteps over n_batch batches.
+      price (n_batch, n_sharpe, n_markets * 4): Stock prices
+        corresponding to portfolio positions over the same time.
+        Should contain (in order) open, close, high and low prices.
+      slippage (float): slippage coefficient.
+      n_ignore (int): ignore this many of the first returns
+        (to avoid boundary effects breaking training).
+
+    Returns:
+      sharpe (float): Sharpe ratio that positions achieve, averaged
+        over all the batches.
+    """
+    n_batch, n_sharpe, n_markets = positions.shape
+    rs = np.zeros((n_batch, n_sharpe))
+    os, cs, hs, ls = extract_data(prices, n_markets)
+
+    for i in range(2, n_sharpe):
+        elem1 = (((os[:, i, :] - cs[:, i-1, :]) * positions[:, 0, :])/
+                 (cs[:, i-2, :] * (1 + rs[:, i-1:i])))
+        elem2 = ((cs[:, i, :] - os[:, i, :]) *
+                 positions[:, 0, :]/cs[:, i-1, :])
+        elem3 = hs[:, i, :] - ls[:, i, :]
+        elem4 = (positions[:, 0, :]/cs[:, i-1, :] -
+                  positions[:, 0, :]/
+                 (cs[:, i-2, :] * (1 + rs[:, i-1:i])))
+        rs[:, i] = (elem1 + elem2 -
+                    slippage*np.abs(elem3 * elem4)).sum(axis=1)
+    rs = rs[:, n_ignore:]
+    n_sharpe -= n_ignore
+
+    return ((np.prod(rs+1, axis=1)**(252./n_sharpe)-1) /
+            (np.sqrt(252 * ((rs**2).sum(axis=1) / n_sharpe -
+            np.sum(rs, axis=1)**2 / n_sharpe**2)))).mean()
+
+def compute_numpy_sharpe(positions, prices, slippage=0.05, return_returns = False, n_ignore=2):
+    """ Compute average Sharpe ratio of a strategy using Numpy.
+
+    Args:
+      positions (n_batch, n_sharpe, n_markets): Portfolio over
+        n_sharpe timesteps over n_batch batches.
+      price (n_batch, n_sharpe, n_markets * 4): Stock prices
+        corresponding to portfolio positions over the same time.
+        Should contain (in order) open, close, high and low prices.
+      slippage (float): slippage coefficient.
+      n_ignore (int): ignore this many of the first returns
+        (to avoid boundary effects breaking training).
+
+    Returns:
+      sharpe (float): Sharpe ratio that positions achieve, averaged
+        over all the batches.
+    """
+    n_batch, n_sharpe, n_markets = positions.shape
+    rs = np.zeros((n_batch, n_sharpe))
+    os, cs, hs, ls = extract_data(prices, n_markets)
+
+    for i in range(2, n_sharpe):
+        elem1 = (((os[:, i, :] - cs[:, i-1, :]) * positions[:, i-1, :])/
+                 (cs[:, i-2, :] * (1 + rs[:, i-1:i])))
+        elem2 = ((cs[:, i, :] - os[:, i, :]) *
+                 positions[:, i, :]/cs[:, i-1, :])
+        elem3 = hs[:, i, :] - ls[:, i, :]
+        elem4 = (positions[:, i, :]/cs[:, i-1, :] -
+                  positions[:, i-1, :]/
+                 (cs[:, i-2, :] * (1 + rs[:, i-1:i])))
+        rs[:, i] = (elem1 + elem2 -
+                    slippage*np.abs(elem3 * elem4)).sum(axis=1)
+    rs = rs[:, n_ignore:]
+    n_sharpe -= n_ignore
+    if return_returns:
+        return rs
+
+    return ((np.prod(rs+1, axis=1)**(252./n_sharpe)-1) /
+            (np.sqrt(252 * ((rs**2).sum(axis=1) / n_sharpe -
+            np.sum(rs, axis=1)**2 / n_sharpe**2)))).mean()

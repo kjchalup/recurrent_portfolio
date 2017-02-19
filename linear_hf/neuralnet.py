@@ -2,13 +2,16 @@
 import numpy as np
 import tensorflow as tf
 
-from linear_hf.costs import sharpe_tf, sharpe_onepos_tf
+from linear_hf.costs import sharpe_tf
+from linear_hf.costs import sharpe_onepos_tf
+from linear_hf import strategies
+
 from . import TF_DTYPE
 
 def define_nn(batch_in_tf, n_sharpe,
               n_time, n_ftrs, W, b, allow_shorting):
     """ Define a neural net for the Linear regressor.
-    
+
     Args:
       batch_in_tf (n_batch, n_time, n_ftrs): Input data.
       n_sharpe (float): How many position-outputs to compute.
@@ -40,9 +43,48 @@ def define_nn(batch_in_tf, n_sharpe,
 
     return tf.transpose(positions, [1, 0, 2])
 
+def define_smart_nn(batch_in_tf, n_sharpe, n_time, n_ftrs, 
+                    W, b, allow_shorting, strategy):
+    """ Define a neural net for the Linear regressor.
+
+    Args:
+      batch_in_tf (n_batch, n_time, n_ftrs): Input data.
+      n_sharpe (float): How many position-outputs to compute.
+      n_time (float): Number of timesteps for input data.
+      n_ftrs (float): Number of input features.
+      W (n_ftrs * (n_time-n_sharpe+1), n_markets): Weight matrix.
+      b (n_markets): Biases.
+      zero_thr (scalar): Set smaller weights to zero.
+      strategy (str): Name of the base strategy to use. Must be a member
+        of the `strategies` module.
+
+    Returns:
+      positions (n_batch, n_sharpe, n_markets): Positions for each market.
+    """
+    base_pos = getattr(strategies, strategy)
+    horizon = n_time - n_sharpe + 1
+    def apply_net(x):
+        """ Feed-forward x through the net. """
+        out = tf.add(tf.matmul(tf.reshape(
+            x, (-1, n_ftrs * horizon)), W), b)
+        out += base_pos(x)
+        if allow_shorting:
+            out = out / tf.reduce_sum(tf.abs(out), axis=1, keep_dims=True)
+        else:
+            out = tf.pow(out, 2)
+            out = out / tf.reduce_sum(out, axis=1, keep_dims=True)
+        return out
+
+    positions = []
+    for t_id in range(n_sharpe):
+        positions.append(apply_net(
+            batch_in_tf[:, t_id:t_id+horizon, :]))
+
+    return tf.transpose(positions, [1, 0, 2])
+
 class Linear(object):
     """ A linear, L1-regularized position predictor.
-    
+
     This predictor will scan the input batch using a shared
     set of linear weights. It will then output a vector of
     positions whose absolute values sum to one.
@@ -94,17 +136,24 @@ class Linear(object):
         if W_init is None:
             W_init = tf.truncated_normal(
                 [n_ftrs * self.horizon, n_markets],
-                stddev=1. / (n_ftrs * self.horizon), dtype=TF_DTYPE)
+                stddev=.01 / (n_ftrs * self.horizon), dtype=TF_DTYPE)
         self.W = tf.Variable(W_init, name='nn_weights')
         self.b = tf.Variable(tf.zeros(n_markets, dtype=TF_DTYPE), name='nn_biases')
 
         # Define the position outputs on a batch of timeseries.
-        self.positions_tf = define_nn(self.batch_in_tf,
-                                      n_sharpe=n_sharpe,
-                                      n_time=n_time,
-                                      n_ftrs=n_ftrs,
-                                      W=self.W, b=self.b,
-                                      allow_shorting=allow_shorting)
+        if cost.startswith('smart'):
+            self.positions_tf = define_smart_nn(
+                self.batch_in_tf, n_sharpe=n_sharpe, n_time=n_time,
+                n_ftrs=n_ftrs, W=self.W, b=self.b,
+                allow_shorting=allow_shorting,
+                strategy='cumulative_returns')
+        else:
+            self.positions_tf = define_nn(self.batch_in_tf,
+                                          n_sharpe=n_sharpe,
+                                          n_time=n_time,
+                                          n_ftrs=n_ftrs,
+                                          W=self.W, b=self.b,
+                                          allow_shorting=allow_shorting)
 
         # Define the L1 penalty, taking causality into account.
         if causality_matrix is None:
@@ -119,11 +168,11 @@ class Linear(object):
         if cost.startswith('onepos'):
             self.loss_tf = -sharpe_onepos_tf(
                 self.positions_tf, self.batch_out_tf, n_sharpe,
-                n_markets, cost=cost[7:]) + self.l1_penalty_tf
+                n_markets, cost=cost) + self.l1_penalty_tf
         else:
             self.loss_tf = -sharpe_tf(
-                self.positions_tf, self.batch_out_tf, n_sharpe,
-                n_markets, cost=cost) + self.l1_penalty_tf
+                self.positions_tf, self.batch_out_tf,
+                n_sharpe, n_markets, cost=cost) + self.l1_penalty_tf
 
         # Define the optimizer.
         self.train_op_tf = tf.train.AdamOptimizer(
