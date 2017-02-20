@@ -78,7 +78,7 @@ def supply_hypers():
     return settings
 
 if __name__ == '__main__':
-    results_fname = 'saved_data/hyper_100_noncsl_results.pkl'
+    results_fname = 'saved_data/hyper_1000_results.pkl'
     if os.path.isfile(results_fname):
         HYPER_RESULTS = joblib.load(results_fname)
     else:
