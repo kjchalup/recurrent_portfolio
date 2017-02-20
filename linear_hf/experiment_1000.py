@@ -113,7 +113,7 @@ if __name__ == '__main__':
     print ['n_time: ' + str(SETTINGS['n_time'])]
     try:
         RESULTS = quantiacsToolbox.runts(
-            __file__, plotEquity=False, fname='linear_hf/1000_nyse_stocks.pkl') + ['CASH']
+            __file__, plotEquity=False, fname='linear_hf/1000_nyse_stocks.pkl')
 
         # Show the results.
         RESULTS['settings']['nn'] = None

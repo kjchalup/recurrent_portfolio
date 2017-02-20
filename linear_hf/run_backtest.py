@@ -177,8 +177,9 @@ def init_nn(settings, n_ftrs):
         settings: a dict with ['nn'] which is the initialized neuralnet.
     """
     print 'Initializing net...\n'
-    if settings['nn'] is not None:
-        settings['nn'].sess.close()
+    if 'nn' in settings.keys():
+    	if settings['nn'] is not None:
+        	settings['nn'].sess.close()
     if settings['nn_type'] == 'linear':
         settings['nn'] = neuralnet.Linear(n_ftrs=n_ftrs,
                                           n_markets=len(settings['markets']),

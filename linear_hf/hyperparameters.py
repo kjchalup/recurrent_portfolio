@@ -7,7 +7,6 @@ import joblib
 import numpy as np
 
 import quantiacsToolbox
-
 from linear_hf.preprocessing import load_nyse_markets
 from linear_hf.run_backtest import myTradingSystem
 
@@ -34,9 +33,9 @@ CHOICES = {'n_time': range(30, 200), # Timesteps in one datapoint.
            'num_epochs': [1, 5, 10, 20, 100],   # Number of epochs each day.
            'batch_size': [32, 64, 128],  # Batch size.
            'lr': 10.**np.arange(-7, -1),  # Learning rate.
-           'allow_shorting': [False],
-           'lookback' : [2000],
-           'val_period' : [0],
+           'allow_shorting': [True, False],
+           'lookback' : range(200, 2200, 200),
+           'val_period' : [0, 1, 32],
            'val_sharpe_threshold' : [-np.inf, 0],
            'retrain_interval' : range(1, 101),
            'data_types' : [[1] + list(j) for j in powerset([4, 10, 12])],
@@ -53,6 +52,9 @@ def mySettings(): # pylint: disable=invalid-name,too-many-arguments
     settings = {}
     settings = joblib.load('saved_data/hypers.pkl')
     '''
+    all_nyse = load_nyse_markets('20000601', None)
+    np.random.seed(1)
+    settings['markets'] = np.random.choice(all_nyse, 1000).tolist() + ['CASH']
     # Only keep markets that have not died out by beginInSample.
     random.seed(1)
     all_nyse = load_nyse_markets(start_date='20000104', 
