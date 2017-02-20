@@ -78,7 +78,7 @@ def supply_hypers():
     return settings
 
 if __name__ == '__main__':
-    results_fname = 'saved_data/hyper_100_noncsl_results.pkl'
+    results_fname = 'saved_data/hyper_1000_results.pkl'
     if os.path.isfile(results_fname):
         HYPER_RESULTS = joblib.load(results_fname)
     else:
@@ -113,7 +113,7 @@ if __name__ == '__main__':
     print ['n_time: ' + str(SETTINGS['n_time'])]
     try:
         RESULTS = quantiacsToolbox.runts(
-            __file__, plotEquity=False, fname='linear_hf/1000_nyse_stocks.pkl') + ['CASH']
+            __file__, plotEquity=False, fname='linear_hf/1000_nyse_stocks.pkl')
 
         # Show the results.
         RESULTS['settings']['nn'] = None

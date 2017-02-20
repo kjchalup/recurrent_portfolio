@@ -177,8 +177,9 @@ def init_nn(settings, n_ftrs):
         settings: a dict with ['nn'] which is the initialized neuralnet.
     """
     print 'Initializing net...\n'
-    if settings['nn'] is not None:
-        settings['nn'].sess.close()
+    if 'nn' in settings.keys():
+    	if settings['nn'] is not None:
+        	settings['nn'].sess.close()
     if settings['nn_type'] == 'linear':
         settings['nn'] = neuralnet.Linear(n_ftrs=n_ftrs,
                                           n_markets=len(settings['markets']),
@@ -439,8 +440,8 @@ def mySettings():
     """ Settings for the backtester"""
     settings = {}
     # Futures Contracts
-    settings['n_time'] = 272 # Use this many timesteps in one datapoint.
-    settings['n_sharpe'] = 252 # This many timesteps to compute Sharpes.
+    settings['n_time'] = 50 # Use this many timesteps in one datapoint.
+    settings['n_sharpe'] = 30 # This many timesteps to compute Sharpes.
     settings['horizon'] = settings['n_time'] - settings['n_sharpe'] + 1
     settings['lbd'] = 0 # L1 regularizer strength.
     settings['num_epochs'] = 15 # Number of epochs each day.
@@ -462,7 +463,7 @@ def mySettings():
     settings['realized_sharpe'] = []
     settings['saved_val_sharpe'] = []
     settings['best_val_sharpe'] = -np.inf
-    settings['cost_type'] = 'onepos_sharpe'
+    settings['cost_type'] = 'equality_sharpe'
     settings['n_chunks'] = 1
     settings['allow_shorting'] = True
     settings['lr_mult_base'] = 1.
@@ -487,14 +488,14 @@ def mySettings():
     12 = DATE
     '''
     settings['data_types'] = [1]
-    settings['markets'] = joblib.load('linear_hf/1000_stock_names.pkl')[:100] + ['CASH']
+    settings['markets'] = joblib.load('linear_hf/1000_stock_names.pkl')
 
     assert np.mod(len(settings['markets']),settings['n_chunks']) == 0, "Nmarkets/Nchunks"
     return settings
 
 if __name__ == '__main__':
     import quantiacsToolbox
-    results = quantiacsToolbox.runts(__file__)#, fname='linear_hf/1000_nyse_stocks.pkl')
+    results = quantiacsToolbox.runts(__file__, fname='linear_hf/1000_nyse_stocks.pkl')
     print results['stats']
     joblib.dump(results, 'results_of_this_run.pkl')
 
