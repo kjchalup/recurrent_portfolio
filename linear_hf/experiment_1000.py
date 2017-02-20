@@ -39,7 +39,7 @@ CHOICES = {'n_time': range(30, 200), # Timesteps in one datapoint.
            'val_period' : [0, 0, 0, 0, 4, 8, 16],
            'val_sharpe_threshold' : [-np.inf, 0],
            'retrain_interval' : range(10, 252),
-           'cost_type': ['sharpe, sortino, equality_sharpe, equality_sortino', 'min_return', 'mixed_return', 'mean_return'],
+           'cost_type': ['sharpe', 'sortino', 'equality_sharpe', 'equality_sortino', 'min_return', 'mixed_return', 'mean_return'],
            'lr_mult_base': [1., .1, .01, .001],
            'causal_interval': [0],
            'restart_variables': [True, False]}
