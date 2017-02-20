@@ -426,7 +426,7 @@ def mySettings():
     settings['beginInSample'] = '20000104'
     settings['endInSample'] = '20131231'
     # How often to recompute the causal matrix. If 0, no causal matrix.
-    settings['causal_interval'] = 0
+    settings['causal_interval'] = 100
     settings['causal_matrix'] = None
     settings['val_sharpe_threshold'] = -np.inf
     settings['retrain_interval'] = 252
