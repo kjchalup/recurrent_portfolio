@@ -220,9 +220,6 @@ class Linear(object):
             learning_rate=self.lr_tf).minimize(self.loss_tf)
 
         # Define the saver that will serialize the weights/biases.
-        self.saver = tf.train.Saver(max_to_keep=1,
-                                    var_list={'nn_weights': self.W,
-                                              'nn_biases': self.b})
         # Create a Tf session and initialize the variables.
         self.sess = tf.Session()
         self.init_op = tf.global_variables_initializer()
@@ -233,6 +230,9 @@ class Linear(object):
 
     def get_weights(self):
         return self.sess.run(self.W)
+
+    def get_biases(self):
+        return self.sess.run(self.b)
 
     def _positions_np(self, batch_in):
         """ Predict a portfolio for a training batch.
@@ -306,8 +306,10 @@ class Linear(object):
 
     def save(self, fname='saved_data/model'):
         """ Save the nn weights to a file. """
-        self.save_path = self.saver.save(self.sess, fname)
+        self.nn_weights = self.get_weights()
+        self.nn_biases = self.get_biases()
 
     def load(self):
         """ Load the nn weights from a file. """
-        self.saver.restore(self.sess, self.save_path)
+        self.W.load(self.nn_weights, self.sess)
+        self.b.load(self.nn_biases, self.sess)
