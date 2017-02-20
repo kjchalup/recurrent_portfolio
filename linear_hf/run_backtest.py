@@ -281,7 +281,6 @@ def training(settings, all_data, market_data):
              
             print val_sharpe_batch
             print val_sharpe/val_sharpe_batch.std()
-            import pdb;pdb.set_trace()
         # Update neural net, and attendant values if NN is better than previous.
         if settings['val_period'] > 0:
             settings, best_val_sharpe = update_nn(
