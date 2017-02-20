@@ -30,7 +30,7 @@ def powerset(iterable):
 
 # Define constants for use in choosing hyperparameters.
 LBDS = 10.**np.arange(-5, 3) + [0.]
-CHOICES = {'n_time': range(30, 200), # Timesteps in one datapoint.
+CHOICES = {'n_time': range(30, 100), # Timesteps in one datapoint.
            'lbd': LBDS,              # L1 regularizer strength.
            'num_epochs': [1, 5, 10, 50, 100],   # Number of epochs each day.
            'batch_size': [16, 32, 64, 128],  # Batch size.
@@ -40,7 +40,6 @@ CHOICES = {'n_time': range(30, 200), # Timesteps in one datapoint.
            'val_period' : [0, 0, 0, 0, 4, 8, 16],
            'val_sharpe_threshold' : [-np.inf, 0],
            'retrain_interval' : range(10, 252),
-           'data_types' : [[1], [1, 4], [1, 10], [1, 12]],
            'cost_type': ['sharpe', 'sortino', 'equality_sharpe',
                          'equality_sortino', 'min_return',
                          'mixed_return', 'mean_return'],
@@ -108,6 +107,7 @@ if __name__ == '__main__':
     SETTINGS['n_chunks'] = 1
     SETTINGS['nn_type'] = 'linear'
     SETTINGS['causal_matrix'] = None
+    SETTINGS['data_types'] = [1]
     # Save settings for use in test.
     joblib.dump(SETTINGS, 'saved_data/hypers.pkl')
 
