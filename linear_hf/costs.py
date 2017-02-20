@@ -51,7 +51,12 @@ def compute_numpy_onepos_sharpe(positions, prices, slippage=0.05, return_returns
             np.sum(rs, axis=1)**2 / n_sharpe**2)))).mean()
 
 
-def compute_numpy_sharpe(positions, prices, slippage=0.05, return_returns = False, n_ignore=2):
+def compute_numpy_sharpe(positions,
+                         prices,
+                         slippage=0.05,
+                         return_returns=False,
+                         n_ignore=2,
+                         return_batches=False):
     """ Compute average Sharpe ratio of a strategy using Numpy.
 
     Args:
@@ -90,6 +95,10 @@ def compute_numpy_sharpe(positions, prices, slippage=0.05, return_returns = Fals
     n_sharpe -= n_ignore
     if return_returns:
         return rs
+    if return_batches:
+        return ((np.prod(rs+1, axis=1)**(252./n_sharpe)-1) /
+               (np.sqrt(252 * ((rs**2).sum(axis=1) / n_sharpe -
+               np.sum(rs, axis=1)**2 / n_sharpe**2))))
 
     return ((np.prod(rs+1, axis=1)**(252./n_sharpe)-1) /
             (np.sqrt(252 * ((rs**2).sum(axis=1) / n_sharpe -

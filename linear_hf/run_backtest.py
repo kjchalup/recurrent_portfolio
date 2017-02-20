@@ -91,17 +91,17 @@ def mySettings():
     """ Settings for the backtester"""
     settings = {}
     # Futures Contracts
-    settings['n_time'] = 40 # Use this many timesteps in one datapoint.
-    settings['n_sharpe'] = 20 # This many timesteps to compute Sharpes.
+    settings['n_time'] = 257 # Use this many timesteps in one datapoint.
+    settings['n_sharpe'] = 252 # This many timesteps to compute Sharpes.
     settings['horizon'] = settings['n_time'] - settings['n_sharpe'] + 1
     settings['lbd'] = 1 # L1 regularizer strength.
     settings['num_epochs'] = 15 # Number of epochs each day.
     settings['batch_size'] = 16
     settings['val_period'] = 16
-    settings['lr'] = 1e-7 # Learning rate.
+    settings['lr'] = 1e-5 # Learning rate.
     settings['dont_trade'] = False # If on, don't trade.
     settings['iter'] = 0
-    settings['lookback'] = 400
+    settings['lookback'] = 1000
     settings['budget'] = 10**6
     settings['slippage'] = 0.05
     #settings['beginInSample'] = '20090102'
@@ -110,7 +110,7 @@ def mySettings():
     settings['endInSample'] = '20131231'
 
     settings['val_sharpe_threshold'] = -np.inf
-    settings['retrain_interval'] = 10
+    settings['retrain_interval'] = 30
     settings['realized_sharpe'] = []
     settings['saved_val_sharpe'] = []
     settings['best_val_sharpe'] = -np.inf
@@ -138,26 +138,25 @@ def mySettings():
     12 = DATE
     '''
     settings['data_types'] = [1]
-    '''
+    
     settings['markets'] = load_nyse_markets(start_date=settings['beginInSample'],
                                             end_date=settings['endInSample'],
                                             lookback=0,
                                             postipo=0)
-    seed = np.random.seed(0)
-    np.random.shuffle(settings['markets'])
-    settings['markets'] = settings['markets'][:999] + ['CASH']
+    #np.random.shuffle(settings['markets'])
+    settings['markets'] = settings['markets'][300:399] + ['CASH']
     #settings['markets'] = settings['markets'][:2699] + ['CASH']
     print len(settings['markets'])
-    joblib.dump(settings['markets'], '1000_stock_names.pkl')
+    #joblib.dump(settings['markets'], '1000_stock_names.pkl')
     '''
     settings['markets'] = joblib.load('linear_hf/1000_stock_names.pkl')
-
+    '''
     assert np.mod(len(settings['markets']),settings['n_chunks']) == 0, "Nmarkets/Nchunks"
     return settings
 
 if __name__ == '__main__':
     import quantiacsToolbox
-    results = quantiacsToolbox.runts(__file__, fname='linear_hf/1000_nyse_stocks.pkl')
+    results = quantiacsToolbox.runts(__file__)#, fname='linear_hf/1000_nyse_stocks.pkl')
     print results['stats']
     joblib.dump(results, 'results_of_this_run.pkl')
 
@@ -399,6 +398,23 @@ def training(settings, all_data, market_data):
         if settings['val_period'] > 0:
             val_sharpe = loss_calc(settings, all_batch=all_val, 
                                    market_batch=market_val)
+            val_pos = settings['nn']._positions_np(batch_in=all_val)
+            val_sharpe_batch = compute_numpy_sharpe(positions=val_pos,
+                                                    prices=market_val,
+                                                    slippage=0.05,
+                                                    return_returns=False,
+                                                    n_ignore=2,
+                                                    return_batches=True)
+            val_rs = compute_numpy_sharpe(positions=val_pos,
+                                          prices=market_val,
+                                          slippage=0.05,
+                                          return_returns=True,
+                                          n_ignore=2,
+                                          return_batches=False)
+             
+            print val_sharpe_batch
+            print val_sharpe/val_sharpe_batch.std()
+            import pdb;pdb.set_trace()
         # Update neural net, and attendant values if NN is better than previous.
         if settings['val_period'] > 0:
             settings, best_val_sharpe = update_nn(
