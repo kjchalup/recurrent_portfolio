@@ -39,7 +39,6 @@ CHOICES = {'n_time': range(30, 200), # Timesteps in one datapoint.
            'val_period' : [0, 0, 0, 0, 4, 8, 16],
            'val_sharpe_threshold' : [-np.inf, 0],
            'retrain_interval' : range(10, 252),
-           'data_types' : [[1]],
            'cost_type': ['sharpe, sortino, equality_sharpe, equality_sortino', 'min_return', 'mixed_return', 'mean_return'],
            'lr_mult_base': [1., .1, .01, .001],
            'causal_interval': [0],
@@ -88,6 +87,7 @@ if __name__ == '__main__':
     SETTINGS = supply_hypers()
 
     # Other SETTINGS.
+    SETTINGS['data_types'] = [[1]]
     SETTINGS['horizon'] = SETTINGS['n_time'] - SETTINGS['n_sharpe'] + 1
     if SETTINGS['cost_type'] != 'sharpe':
         SETTINGS['val_sharpe_threshold'] = -np.inf
