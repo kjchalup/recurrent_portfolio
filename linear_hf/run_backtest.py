@@ -458,14 +458,14 @@ def mySettings():
     12 = DATE
     '''
     settings['data_types'] = [1]
-    settings['markets'] = joblib.load('linear_hf/1000_stock_names.pkl')[:10] + ['CASH']
+    settings['markets'] = joblib.load('linear_hf/1000_stock_names.pkl')
 
     assert np.mod(len(settings['markets']),settings['n_chunks']) == 0, "Nmarkets/Nchunks"
     return settings
 
 if __name__ == '__main__':
     import quantiacsToolbox
-    results = quantiacsToolbox.runts(__file__)#, fname='linear_hf/1000_nyse_stocks.pkl')
+    results = quantiacsToolbox.runts(__file__, fname='linear_hf/1000_nyse_stocks.pkl')
     print results['stats']
     joblib.dump(results, 'results_of_this_run.pkl')
 
