@@ -2,13 +2,16 @@
 import numpy as np
 import tensorflow as tf
 
-from linear_hf.costs import sharpe_tf, sharpe_onepos_tf
+from linear_hf.costs import sharpe_tf
+from linear_hf.costs import sharpe_onepos_tf
+from linear_hf import strategies
+
 from . import TF_DTYPE
 
 def define_nn(batch_in_tf, n_sharpe,
               n_time, n_ftrs, W, b, allow_shorting):
     """ Define a neural net for the Linear regressor.
-    
+
     Args:
       batch_in_tf (n_batch, n_time, n_ftrs): Input data.
       n_sharpe (float): How many position-outputs to compute.
@@ -40,9 +43,84 @@ def define_nn(batch_in_tf, n_sharpe,
 
     return tf.transpose(positions, [1, 0, 2])
 
+def define_equality_nn(batch_in_tf, n_sharpe,
+              n_time, n_ftrs, W, b):
+    """ Define a neural net for the Linear regressor.
+
+    Args:
+      batch_in_tf (n_batch, n_time, n_ftrs): Input data.
+      n_sharpe (float): How many position-outputs to compute.
+      n_time (float): Number of timesteps for input data.
+      n_ftrs (float): Number of input features.
+      W (n_ftrs * (n_time-n_sharpe+1), n_markets): Weight matrix.
+      b (n_markets): Biases.
+      zero_thr (scalar): Set smaller weights to zero.
+
+    Returns:
+      positions (n_batch, n_sharpe, n_markets): Positions for each market.
+    """
+    horizon = n_time - n_sharpe + 1
+    def apply_net(x):
+        """ Feed-forward x through the net. """
+        out = tf.add(tf.matmul(x, W), b)
+        out_pos = tf.sigmoid(3*out)
+        out_neg = tf.sigmoid(-3*out)
+        out_pos_sum = tf.reduce_sum(out_pos, axis=1, keep_dims=True)
+        out_neg_sum = tf.reduce_sum(-out_neg, axis=1, keep_dims=True)
+        out = out_pos * out_neg_sum / out_pos_sum + out_neg
+        out /= tf.reduce_sum(tf.abs(out), axis=1, keep_dims=True)
+        return out
+
+    positions = []
+    for t_id in range(n_sharpe):
+        positions.append(apply_net(tf.reshape(
+            batch_in_tf[:, t_id:t_id+horizon, :],
+            (-1, n_ftrs * horizon))))
+
+    return tf.transpose(positions, [1, 0, 2])
+
+def define_smart_nn(batch_in_tf, n_sharpe, n_time, n_ftrs, 
+                    W, b, allow_shorting, strategy):
+    """ Define a neural net for the Linear regressor.
+
+    Args:
+      batch_in_tf (n_batch, n_time, n_ftrs): Input data.
+      n_sharpe (float): How many position-outputs to compute.
+      n_time (float): Number of timesteps for input data.
+      n_ftrs (float): Number of input features.
+      W (n_ftrs * (n_time-n_sharpe+1), n_markets): Weight matrix.
+      b (n_markets): Biases.
+      zero_thr (scalar): Set smaller weights to zero.
+      strategy (str): Name of the base strategy to use. Must be a member
+        of the `strategies` module.
+
+    Returns:
+      positions (n_batch, n_sharpe, n_markets): Positions for each market.
+    """
+    base_pos = getattr(strategies, strategy)
+    horizon = n_time - n_sharpe + 1
+    def apply_net(x):
+        """ Feed-forward x through the net. """
+        out = tf.add(tf.matmul(tf.reshape(
+            x, (-1, n_ftrs * horizon)), W), b)
+        out += base_pos(x)
+        if allow_shorting:
+            out = out / tf.reduce_sum(tf.abs(out), axis=1, keep_dims=True)
+        else:
+            out = tf.pow(out, 2)
+            out = out / tf.reduce_sum(out, axis=1, keep_dims=True)
+        return out
+
+    positions = []
+    for t_id in range(n_sharpe):
+        positions.append(apply_net(
+            batch_in_tf[:, t_id:t_id+horizon, :]))
+
+    return tf.transpose(positions, [1, 0, 2])
+
 class Linear(object):
     """ A linear, L1-regularized position predictor.
-    
+
     This predictor will scan the input batch using a shared
     set of linear weights. It will then output a vector of
     positions whose absolute values sum to one.
@@ -94,24 +172,29 @@ class Linear(object):
         if W_init is None:
             W_init = tf.truncated_normal(
                 [n_ftrs * self.horizon, n_markets],
-                stddev=1. / (n_ftrs * self.horizon))
-        self.W = tf.Variable(W_init, name='nn_weights', dtype=TF_DTYPE)
-        self.b = tf.Variable(tf.zeros(n_markets),
-                             name='nn_biases', dtype=TF_DTYPE)
+                stddev=1. / (n_ftrs * self.horizon), dtype=TF_DTYPE)
+        self.W = tf.Variable(W_init, name='nn_weights')
+        self.b = tf.Variable(tf.zeros(n_markets, dtype=TF_DTYPE), name='nn_biases')
 
         # Define the position outputs on a batch of timeseries.
-        self.positions_tf = define_nn(self.batch_in_tf,
-                                      n_sharpe=n_sharpe,
-                                      n_time=n_time,
-                                      n_ftrs=n_ftrs,
-                                      W=self.W, b=self.b,
-                                      allow_shorting=allow_shorting)
-        '''
-        # Regularization goes here...
-        self.penalty = regularization(lbd=self.lbd,
-                                      causality_matrix=causality_matrix
-                                      positions=self.positions_tf)
-        '''
+
+        if cost.startswith('smart'):
+            self.positions_tf = define_smart_nn(
+                self.batch_in_tf, n_sharpe=n_sharpe, n_time=n_time,
+                n_ftrs=n_ftrs, W=self.W, b=self.b,
+                allow_shorting=allow_shorting,
+                strategy='cumulative_returns')
+        elif cost.startswith('equality'):
+            self.positions_tf = define_equality_nn(
+                self.batch_in_tf, n_sharpe=n_sharpe, n_time=n_time,
+                n_ftrs=n_ftrs, W=self.W, b=self.b)
+        else:
+            self.positions_tf = define_nn(self.batch_in_tf,
+                                          n_sharpe=n_sharpe,
+                                          n_time=n_time,
+                                          n_ftrs=n_ftrs,
+                                          W=self.W, b=self.b,
+                                          allow_shorting=allow_shorting)
 
         # Define the L1 penalty, taking causality into account.
         if causality_matrix is None:
@@ -120,26 +203,23 @@ class Linear(object):
         else:
             self.causality_matrix = np.tile(causality_matrix, [self.horizon, 1])
             self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(
-                tf.boolean_mask(self.W, self.causality_matrix == 0)))
+                tf.div(self.W, self.causality_matrix + 1e-3)))
 
         # Define the unnormalized loss function.
         if cost.startswith('onepos'):
             self.loss_tf = -sharpe_onepos_tf(
                 self.positions_tf, self.batch_out_tf, n_sharpe,
-                n_markets, cost=cost[7:]) + self.l1_penalty_tf
+                n_markets, cost=cost) + self.l1_penalty_tf
         else:
             self.loss_tf = -sharpe_tf(
-                self.positions_tf, self.batch_out_tf, n_sharpe,
-                n_markets, cost=cost) + self.l1_penalty_tf
+                self.positions_tf, self.batch_out_tf,
+                n_sharpe, n_markets, cost=cost) + self.l1_penalty_tf
 
         # Define the optimizer.
         self.train_op_tf = tf.train.AdamOptimizer(
             learning_rate=self.lr_tf).minimize(self.loss_tf)
 
         # Define the saver that will serialize the weights/biases.
-        self.saver = tf.train.Saver(max_to_keep=1,
-                                    var_list={'nn_weights': self.W,
-                                              'nn_biases': self.b})
         # Create a Tf session and initialize the variables.
         self.sess = tf.Session()
         self.init_op = tf.global_variables_initializer()
@@ -150,6 +230,9 @@ class Linear(object):
 
     def get_weights(self):
         return self.sess.run(self.W)
+
+    def get_biases(self):
+        return self.sess.run(self.b)
 
     def _positions_np(self, batch_in):
         """ Predict a portfolio for a training batch.
@@ -223,8 +306,10 @@ class Linear(object):
 
     def save(self, fname='saved_data/model'):
         """ Save the nn weights to a file. """
-        self.save_path = self.saver.save(self.sess, fname)
+        self.nn_weights = self.get_weights()
+        self.nn_biases = self.get_biases()
 
     def load(self):
         """ Load the nn weights from a file. """
-        self.saver.restore(self.sess, self.save_path)
+        self.W.load(self.nn_weights, self.sess)
+        self.b.load(self.nn_biases, self.sess)
