@@ -39,8 +39,8 @@ def distcorr(Xval, Yval, pval=True, nruns=100, max_data=500, **kwargs):
         for i in range(nruns):
             Y_r = copy.copy(Yval)
             random.shuffle(Y_r)
-            if distcorr(Xval, Y_r, pval=False) > dcor:
+            if distcorr(Xval, Y_r, pval=False)[0] > dcor:
                 greater += 1
         return (dcor, greater/float(n))
     else:
-        return dcor
+        return (dcor, dcor)
