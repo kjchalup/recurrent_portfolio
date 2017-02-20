@@ -31,22 +31,23 @@ def powerset(iterable):
 LBDS = 10.**np.arange(-5, 3) + [0.]
 CHOICES = {'n_time': range(30, 200), # Timesteps in one datapoint.
            'lbd': LBDS,              # L1 regularizer strength.
-           'num_epochs': [1, 5, 10, 20, 100],   # Number of epochs each day.
-           'batch_size': [32, 64, 128],  # Batch size.
+           'num_epochs': [1, 5, 10, 50, 100],   # Number of epochs each day.
+           'batch_size': [16, 32, 64, 128],  # Batch size.
            'lr': 10.**np.arange(-7, -1),  # Learning rate.
-           'allow_shorting': [False],
-           'lookback' : [2000],
-           'val_period' : [0],
+           'allow_shorting': [True, False],
+           'lookback' : [1000, 800, 600, 400],
+           'val_period' : [0, 0, 0, 0, 4, 8, 16],
            'val_sharpe_threshold' : [-np.inf, 0],
-           'retrain_interval' : range(1, 101),
-           'data_types' : [[1] + list(j) for j in powerset([4, 10, 12])],
-           'cost_type': ['mixed_return'],
+           'retrain_interval' : range(10, 252),
+           'data_types' : [[1], [1, 4], [1, 10], [1, 12]],
+           'cost_type': ['sharpe, sortino, equality_sharpe, equality_sortino', 'min_return', 'mixed_return', 'mean_return'],
            'lr_mult_base': [1., .1, .01, .001],
-           'restart_variables': [False]}#[True, False]}
+           'causal_interval': [0],
+           'restart_variables': [True, False]}
 
 N_SHARPE_MIN = 10 # Minimum value for n_sharpe.
 N_SHARPE_GAP = 10 # n_sharpe's max is this much less than n_time.
-N_RUNS = 1000 # ??? - KC
+N_RUNS = 1000
 
 def mySettings(): # pylint: disable=invalid-name,too-many-arguments
     """ Settings for strategy. """
@@ -77,7 +78,7 @@ def supply_hypers():
     return settings
 
 if __name__ == '__main__':
-    results_fname = 'saved_data/hyper_1000_results.pkl'
+    results_fname = 'saved_data/hyper_100_noncsl_results.pkl'
     if os.path.isfile(results_fname):
         HYPER_RESULTS = joblib.load(results_fname)
     else:
@@ -100,8 +101,9 @@ if __name__ == '__main__':
     SETTINGS['best_val_sharpe'] = []
     SETTINGS['val_sharpe'] = -np.inf
     SETTINGS['dont_trade'] = False
-    SETTINGS['n_chunks'] = 54
+    SETTINGS['n_chunks'] = 1
     SETTINGS['nn_type'] = 'linear'
+    SETTINGS['causal_matrix'] = None
     # Save settings for use in test.
     joblib.dump(SETTINGS, 'saved_data/hypers.pkl')
 
@@ -110,7 +112,9 @@ if __name__ == '__main__':
            for hyper in SETTINGS and CHOICES]
     print ['n_time: ' + str(SETTINGS['n_time'])]
     try:
-        RESULTS = quantiacsToolbox.runts(__file__, plotEquity=False, fname='linear_hf/1000_nyse_stocks.pkl')
+        RESULTS = quantiacsToolbox.runts(
+            __file__, plotEquity=False, fname='linear_hf/1000_nyse_stocks.pkl') + ['CASH']
+
         # Show the results.
         RESULTS['settings']['nn'] = None
         print RESULTS['stats']

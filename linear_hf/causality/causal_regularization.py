@@ -82,7 +82,7 @@ def causal_matrix_ratios(all_data, thr=0, verbose=False, method='nearest', **kwa
             xy_pval, yx_pval = iscause_anm(
                 all_data[:, x_id:x_id+1], all_data[:, y_id:y_id+1],
                 fig=fig, method=method, pval=False, **kwargs)
-            if np.isnan(xy_pvals) or np.isnan(xy_pvals):
+            if np.isnan(xy_pval) or np.isnan(xy_pval):
                 xy_pval = 1.
                 yx_pval = 1.
             causal_coeffs[x_id, y_id] = xy_pval / yx_pval
