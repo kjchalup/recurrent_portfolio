@@ -32,14 +32,14 @@ LBDS = 10.**np.arange(-5, 3) + [0.]
 CHOICES = {'n_time': range(30, 200), # Timesteps in one datapoint.
            'lbd': LBDS,              # L1 regularizer strength.
            'num_epochs': [1, 5, 10, 50, 100],   # Number of epochs each day.
-           'batch_size': [16, 32, 64, 128],  # Batch size.
+           'batch_size': [16],
            'lr': 10.**np.arange(-7, -1),  # Learning rate.
            'allow_shorting': [True, False],
            'lookback' : [1000, 800, 600, 400],
            'val_period' : [0, 0, 0, 0, 4, 8, 16],
            'val_sharpe_threshold' : [-np.inf, 0],
            'retrain_interval' : range(10, 252),
-           'data_types' : [[1], [1, 4], [1, 10], [1, 12]],
+           'data_types' : [[1]],
            'cost_type': ['sharpe, sortino, equality_sharpe, equality_sortino', 'min_return', 'mixed_return', 'mean_return'],
            'lr_mult_base': [1., .1, .01, .001],
            'causal_interval': [0],

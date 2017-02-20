@@ -411,8 +411,8 @@ def mySettings():
     """ Settings for the backtester"""
     settings = {}
     # Futures Contracts
-    settings['n_time'] = 50 # Use this many timesteps in one datapoint.
-    settings['n_sharpe'] = 30 # This many timesteps to compute Sharpes.
+    settings['n_time'] = 220 # Use this many timesteps in one datapoint.
+    settings['n_sharpe'] = 200 # This many timesteps to compute Sharpes.
     settings['horizon'] = settings['n_time'] - settings['n_sharpe'] + 1
     settings['lbd'] = 1 # L1 regularizer strength.
     settings['num_epochs'] = 15 # Number of epochs each day.
