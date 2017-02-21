@@ -11,6 +11,7 @@ import quantiacsToolbox
 
 from linear_hf.preprocessing import load_nyse_markets
 from linear_hf.run_backtest import myTradingSystem
+from linear_hf.choose_100_stocks import choose_100_stocks
 
 def powerset(iterable):
     """ Returns the set of all subsets of the iterable.
@@ -63,7 +64,8 @@ def mySettings(): # pylint: disable=invalid-name,too-many-arguments
                                  lookback=0)
     settings['markets'] = all_nyse[:2699] + ['CASH']
     '''
-    settings['markets'] = joblib.load('linear_hf/1000_stock_names.pkl')
+    #settings['markets'] = joblib.load('linear_hf/1000_stock_names.pkl')
+    # Use the markets from choose_100_stocks instead
     return settings
 
 def supply_hypers():
@@ -80,7 +82,10 @@ def supply_hypers():
     return settings
 
 if __name__ == '__main__':
-    np.random.seed(int(sys.argv[1]))
+    # Choose SEED for random numbers based on count in the script.
+    SEED = int(sys.argv[1])
+    np.random.seed(SEED)
+
     results_fname = 'saved_data/hyper_100_causal_results.pkl'
     if os.path.isfile(results_fname):
         HYPER_RESULTS = joblib.load(results_fname)
@@ -108,6 +113,10 @@ if __name__ == '__main__':
     SETTINGS['nn_type'] = 'linear'
     SETTINGS['causal_matrix'] = None
     SETTINGS['data_types'] = [1]
+
+    # Use choose_100_stocks to supply markets.
+    SETTINGS['markets'] = choose_100_stocks(SEED)
+
     # Save settings for use in test.
     joblib.dump(SETTINGS, 'saved_data/hypers.pkl')
 
@@ -117,8 +126,7 @@ if __name__ == '__main__':
     print ['n_time: ' + str(SETTINGS['n_time'])]
     try:
         RESULTS = quantiacsToolbox.runts(
-            __file__, plotEquity=False, fname='linear_hf/1000_nyse_stocks.pkl')[
-                np.random.choice(1000, 99, replace=False)] + ['CASH']
+            __file__, plotEquity=False)
         # Show the results.
         RESULTS['settings']['nn'] = None
         print RESULTS['stats']
