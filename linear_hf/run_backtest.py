@@ -6,6 +6,7 @@ import joblib
 
 from linear_hf import NP_DTYPE
 from linear_hf import neuralnet
+from linear_hf import rnn
 from linear_hf import chunknet
 from linear_hf.preprocessing import preprocess
 from linear_hf.batching_splitting import split_validation_training
@@ -189,6 +190,13 @@ def init_nn(settings, n_ftrs):
                                           allow_shorting=settings['allow_shorting'],
                                           cost=settings['cost_type'],
                                           causality_matrix=settings['causal_matrix'])
+    elif settings['nn_type'] == 'rnn':
+        settings['nn'] = rnn.RNN(n_ftrs=n_ftrs,
+                                          n_markets=len(settings['markets']),
+                                          n_time=settings['n_time'],
+                                          n_sharpe=settings['n_sharpe'],
+                                          allow_shorting=settings['allow_shorting'],
+                                          cost=settings['cost_type'])
     elif settings['nn_type'] == 'chunk_linear':
         settings['nn'] = chunknet.ChunkLinear(n_ftrs=n_ftrs,
                                               n_markets=len(settings['markets']),
@@ -357,16 +365,16 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
     # Initialize neural net.
     if settings['iter'] == 0:
         settings = init_nn(settings, all_data.shape[1])
-        settings = restart_nn_till_good(settings, num_times=20, all_data=all_data,
-                                        market_data=market_data)
+        #settings = restart_nn_till_good(settings, num_times=3, all_data=all_data,
+        #                                market_data=market_data)
 
     # Train the neural net on current data.
     if settings['iter'] % settings['retrain_interval'] == 0:
         if settings['restart_variables']:
-            settings = init_nn(settings, all_data.shape[1])
-            settings = restart_nn_till_good(settings, num_times=10,
-                                            all_data=all_data,
-                                            market_data=market_data)
+            settings['nn'].restart_variables()
+            #settings = restart_nn_till_good(settings, num_times=3,
+            #                                all_data=all_data,
+            #                                market_data=market_data)
 
         # Train the neural net for settings['num_epoch'] times
         settings = training(settings=settings,
@@ -396,7 +404,10 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
         # Similarly, compute a new position for constant-position stra-
         # tegy, but only if we're on a beginning of a retrain_interval.
         settings['nn'].load()
-        positions = settings['nn'].predict(all_data[-settings['horizon']:])
+        if settings['nn_type'] == 'rnn':
+            positions = settings['nn'].predict(all_data[-settings['n_time']:])
+        else:
+            positions = settings['nn'].predict(all_data[-settings['horizon']:])
         settings['current_positions'] = positions
     else:
         positions = settings['current_positions']
@@ -411,13 +422,13 @@ def mySettings():
     """ Settings for the backtester"""
     settings = {}
     # Futures Contracts
-    settings['n_time'] = 220 # Use this many timesteps in one datapoint.
+    settings['n_time'] = 200 # Use this many timesteps in one datapoint.
     settings['n_sharpe'] = 200 # This many timesteps to compute Sharpes.
     settings['horizon'] = settings['n_time'] - settings['n_sharpe'] + 1
     settings['lbd'] = 1 # L1 regularizer strength.
-    settings['num_epochs'] = 15 # Number of epochs each day.
+    settings['num_epochs'] = 10 # Number of epochs each day.
     settings['batch_size'] = 16
-    settings['val_period'] = 16
+    settings['val_period'] = 1
     settings['lr'] = 1e-5 # Learning rate.
     settings['dont_trade'] = False # If on, don't trade.
     settings['iter'] = 0
@@ -430,16 +441,16 @@ def mySettings():
     settings['causal_interval'] = 0
     settings['causal_matrix'] = None
     settings['val_sharpe_threshold'] = -np.inf
-    settings['retrain_interval'] = 252
+    settings['retrain_interval'] = 100
     settings['realized_sharpe'] = []
     settings['saved_val_sharpe'] = []
     settings['best_val_sharpe'] = -np.inf
-    settings['cost_type'] = 'equality_sharpe'
+    settings['cost_type'] = 'sharpe'
     settings['n_chunks'] = 1
     settings['allow_shorting'] = True
     settings['lr_mult_base'] = 1.
     settings['restart_variables'] = True
-    settings['nn_type'] = 'linear'
+    settings['nn_type'] = 'rnn'
     settings['nn'] = None
     ''' Pick data types to feed into neural net.
     If empty, only CLOSE will be used.
