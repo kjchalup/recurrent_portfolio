@@ -80,6 +80,8 @@ for setting in LRLIKE:
     plt.xlabel("log(" + setting + ")")
     plt.ylabel("Sharpe Ratio")
     plt.savefig("sharpe_vs_" + setting + ".png")
+    for sharpe in SHARPES:
+        plt.axhline(y=sharpe)
     plt.clf()
 
 GOODSETS = [good['settings'] for good in GOODS]
