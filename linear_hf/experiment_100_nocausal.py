@@ -41,7 +41,9 @@ CHOICES = {'n_time': range(30, 100), # Timesteps in one datapoint.
            'val_period' : [0, 0, 0, 0, 4, 8, 16],
            'val_sharpe_threshold' : [-np.inf, 0],
            'retrain_interval' : range(10, 252),
-           'cost_type': ['sharpe, sortino, equality_sharpe, equality_sortino', 'min_return', 'mixed_return', 'mean_return'],
+           'cost_type': ['sharpe', 'sortino', 'equality_sharpe',
+                         'equality_sortino', 'min_return',
+                         'mixed_return', 'mean_return'],
            'lr_mult_base': [1., .1, .01, .001],
            'causal_interval': [0],
            'restart_variables': [True, False]}
@@ -57,7 +59,7 @@ def mySettings(): # pylint: disable=invalid-name,too-many-arguments
     '''
     # Only keep markets that have not died out by beginInSample.
     random.seed(1)
-    all_nyse = load_nyse_markets(start_date='20000104', 
+    all_nyse = load_nyse_markets(start_date='20000104',
                                  end_date='20131231', postipo=0,
                                  lookback=0)
     settings['markets'] = all_nyse[:2699] + ['CASH']
@@ -66,11 +68,12 @@ def mySettings(): # pylint: disable=invalid-name,too-many-arguments
     # Use the markets from choose_100_stocks instead
     return settings
 
-def supply_hypers():
+def supply_hypers(seed):
     """Supply hyperparameters to optimize the neural net."""
     # Get random choices from the ranges (inclusive).
     settings = {}
     for setting in CHOICES:
+        np.random.seed(seed)
         settings[setting] = np.random.choice(CHOICES[setting])
 
     # Get n_sharpe using n_time.
@@ -91,7 +94,7 @@ if __name__ == '__main__':
         HYPER_RESULTS = []
 
     # Get hyperparameters.
-    SETTINGS = supply_hypers()
+    SETTINGS = supply_hypers(SEED)
 
     # Other SETTINGS.
     SETTINGS['horizon'] = SETTINGS['n_time'] - SETTINGS['n_sharpe'] + 1
