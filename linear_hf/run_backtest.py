@@ -8,9 +8,11 @@ from linear_hf import NP_DTYPE
 from linear_hf import neuralnet
 from linear_hf import chunknet
 from linear_hf.preprocessing import preprocess
+from linear_hf.preprocessing import non_nan_markets
 from linear_hf.batching_splitting import split_validation_training
 from linear_hf.costs import compute_numpy_sharpe
 from linear_hf.causality import causal_matrix_ratios
+
 
 def calculate_recent(iteration, retrain_interval, exposure, market_data, cost='sharpe'):
     """ Calculate the realized sharpe ratios from the output of the neural net
@@ -439,8 +441,8 @@ def mySettings():
     """ Settings for the backtester"""
     settings = {}
     # Futures Contracts
-    settings['n_time'] = 220 # Use this many timesteps in one datapoint.
-    settings['n_sharpe'] = 200 # This many timesteps to compute Sharpes.
+    settings['n_time'] = 60 # Use this many timesteps in one datapoint.
+    settings['n_sharpe'] = 30 # This many timesteps to compute Sharpes.
     settings['horizon'] = settings['n_time'] - settings['n_sharpe'] + 1
     settings['lbd'] = 0 # L1 regularizer strength.
     settings['num_epochs'] = 15 # Number of epochs each day.
@@ -487,14 +489,16 @@ def mySettings():
     12 = DATE
     '''
     settings['data_types'] = [1]
-    settings['markets'] = joblib.load('linear_hf/1000_stock_names.pkl')
+    settings['markets'] = non_nan_markets(settings['beginInSample'],
+                                          settings['endInSample'])[:127] + ['CASH']
+    #joblib.load('linear_hf/1000_stock_names.pkl')
 
     assert np.mod(len(settings['markets']),settings['n_chunks']) == 0, "Nmarkets/Nchunks"
     return settings
 
 if __name__ == '__main__':
     import quantiacsToolbox
-    results = quantiacsToolbox.runts(__file__, fname='linear_hf/1000_nyse_stocks.pkl')
+    results = quantiacsToolbox.runts(__file__, plotEquity=False)
     print results['stats']
     joblib.dump(results, 'results_of_this_run.pkl')
 

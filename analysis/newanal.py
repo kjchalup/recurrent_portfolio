@@ -97,6 +97,15 @@ plt.title('Mean: ' + str(round(np.mean(ALLSH), 2))
 plt.savefig("allsharpe.png")
 plt.clf()
 
+plt.hist(ALLSH)
+plt.xlabel('Sharpe Ratio')
+plt.ylabel('Number of Runs')
+plt.title('Mean: ' + str(round(np.mean(ALLSH), 2))
+          + ', Standard Deviation:' + str(round(np.mean(ALLSH), 2)))
+plt.savefig("allhist.png")
+plt.clf()
+
+
 MINSHR = next(run for run in ALLRES if run['stats']['sharpe'] == min(ALLSH))
 FIFTHSHR = next(
     run for run in ALLRES if run['stats']['sharpe'] == sorted(ALLSH)[-5])
@@ -136,7 +145,20 @@ plt.title('Run with Fifth to Max Sharpe: '
 plt.savefig('fifth_max_sharpe_plot.png')
 plt.clf()
 
+# Give the settings for the four interesting plots.
+SHRS = [MINSHR, MEDSHR, MAXSHR, FIFTHSHR]
+SHRNAMES = ["Min sharpe", "Median sharpe", "Max sharpe", "Fifth to max sharpe"]
+for i, shr in enumerate(SHRS):
+    print("-----------------------------------------------------------------")
+    print(SHRNAMES[i] + " settings:")
+    for setting in SETS:
+        print(setting + ": " + str(shr['settings'][setting]))
 
+for i, shr in enumerate(SHRS):
+    print("-----------------------------------------------------------------")
+    print(SHRNAMES[i] + " stats:")
+    for stat in STATS:
+        print(stat + ": " + str(shr['stats'][stat]))
 # scp -i causeai.pem ubuntu@ec2-52-38-176-13.us-west-2.compute.amazonaws.com:/home/ubuntu/data/causehf/saved_data/max_sharpe_plot.png .
 # scp -i causeai.pem ubuntu@ec2-52-38-176-13.us-west-2.compute.amazonaws.com:/home/ubuntu/data/causehf/saved_data/min_sharpe_plot.png .
 # scp -i causeai.pem ubuntu@ec2-52-38-176-13.us-west-2.compute.amazonaws.com:/home/ubuntu/data/causehf/saved_data/med_sharpe_plot.png .
