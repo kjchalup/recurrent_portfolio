@@ -81,6 +81,68 @@ for stat in STATS:
         plt.savefig("cvnc_" + stat + "_vs_" + setting + ".png")
         plt.clf()
 
+ALLRES = CRES + NRES
+ALLSH = [run['stats']['sharpe'] for run in ALLRES]
+np.mean(ALLSH)
+np.std(ALLSH)
+np.median(ALLSH)
+min(ALLSH)
+max(ALLSH)
+
+plt.scatter(range(len(ALLSH)), ALLSH, c='b')
+plt.xlabel('Run')
+plt.ylabel('Sharpe Ratio')
+plt.title('Mean: ' + str(round(np.mean(ALLSH), 2))
+          + ', Standard Deviation:' + str(round(np.mean(ALLSH), 2)))
+plt.savefig("allsharpe.png")
+plt.clf()
+
+MINSHR = next(run for run in ALLRES if run['stats']['sharpe'] == min(ALLSH))
+FIFTHSHR = next(
+    run for run in ALLRES if run['stats']['sharpe'] == sorted(ALLSH)[-5])
+MAXSHR = next(run for run in ALLRES if run['stats']['sharpe'] == max(ALLSH))
+MEDSHR = next(
+    run for run in ALLRES if run['stats']['sharpe'] == np.median(ALLSH))
+
+plt.plot(MINSHR['fundEquity'][200:])
+plt.xlabel('Days after ' + str(MINSHR['fundDate'][900]))
+plt.ylabel('Fund Equity')
+plt.title('Run with Minimum Sharpe: '
+          + str(round(MINSHR['stats']['sharpe'], 2)))
+plt.savefig('min_sharpe_plot.png')
+plt.clf()
+
+plt.plot(MEDSHR['fundEquity'][200:])
+plt.xlabel('Days after ' + str(MEDSHR['fundDate'][900]))
+plt.ylabel('Fund Equity')
+plt.title('Run with Median Sharpe: '
+          + str(round(MEDSHR['stats']['sharpe'], 2)))
+plt.savefig('med_sharpe_plot.png')
+plt.clf()
+
+plt.plot(MAXSHR['fundEquity'][200:])
+plt.xlabel('Days after ' + str(MAXSHR['fundDate'][900]))
+plt.ylabel('Fund Equity')
+plt.title('Run with Maximum Sharpe: '
+          + str(round(MAXSHR['stats']['sharpe'], 2)))
+plt.savefig('max_sharpe_plot.png')
+plt.clf()
+
+plt.plot(FIFTHSHR['fundEquity'][200:])
+plt.xlabel('Days after ' + str(FIFTHSHR['fundDate'][900]))
+plt.ylabel('Fund Equity')
+plt.title('Run with Fifth to Max Sharpe: '
+          + str(round(FIFTHSHR['stats']['sharpe'], 2)))
+plt.savefig('fifth_max_sharpe_plot.png')
+plt.clf()
+
+
+# scp -i causeai.pem ubuntu@ec2-52-38-176-13.us-west-2.compute.amazonaws.com:/home/ubuntu/data/causehf/saved_data/max_sharpe_plot.png .
+# scp -i causeai.pem ubuntu@ec2-52-38-176-13.us-west-2.compute.amazonaws.com:/home/ubuntu/data/causehf/saved_data/min_sharpe_plot.png .
+# scp -i causeai.pem ubuntu@ec2-52-38-176-13.us-west-2.compute.amazonaws.com:/home/ubuntu/data/causehf/saved_data/med_sharpe_plot.png .
+# scp -i causeai.pem ubuntu@ec2-52-38-176-13.us-west-2.compute.amazonaws.com:/home/ubuntu/data/causehf/saved_data/fifth_max_sharpe_plot.png .
+
+
 # for i, run in enumerate(ALLSETS):
 #     ares = np.array([])
 #     for setting in SETS:
