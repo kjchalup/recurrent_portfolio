@@ -6,38 +6,44 @@ import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
 
-RESFILES = ["ubuntu@ec2-52-37-223-20.us-west-2.compute.amazonaws.com.pkl",
-            "ubuntu@ec2-52-26-75-82.us-west-2.compute.amazonaws.com.pkl",
-            "ubuntu@ec2-35-165-35-72.us-west-2.compute.amazonaws.com.pkl",
-            "ubuntu@ec2-52-40-226-151.us-west-2.compute.amazonaws.com.pkl",
-            "ubuntu@ec2-52-40-234-245.us-west-2.compute.amazonaws.com.pkl",
-            "ubuntu@ec2-52-40-133-49.us-west-2.compute.amazonaws.com.pkl",
-            "ubuntu@ec2-52-36-63-29.us-west-2.compute.amazonaws.com.pkl",
-            "ubuntu@ec2-52-38-176-13.us-west-2.compute.amazonaws.com.pkl"]
+CAUSALS = [
+    "causal_here.pkl",
+    "causal_ubuntu@ec2-35-164-100-106.us-west-2.compute.amazonaws.com.pkl",
+    "causal_ubuntu@ec2-52-26-75-82.us-west-2.compute.amazonaws.com.pkl",
+    "causal_ubuntu@ec2-52-36-251-66.us-west-2.compute.amazonaws.com.pkl",
+    "causal_ubuntu@ec2-52-36-63-29.us-west-2.compute.amazonaws.com.pkl",
+    "causal_ubuntu@ec2-52-37-223-20.us-west-2.compute.amazonaws.com.pkl",
+    "causal_ubuntu@ec2-52-40-133-49.us-west-2.compute.amazonaws.com.pkl",
+    "causal_ubuntu@ec2-52-40-226-151.us-west-2.compute.amazonaws.com.pkl",
+    "causal_ubuntu@ec2-52-40-234-245.us-west-2.compute.amazonaws.com.pkl"]
 
-RES = [joblib.load(resfile) for resfile in RESFILES]
-RESULTS = [run for runs in RES for run in runs]
+NONCAUSALS = [
+    "noncausal_here.pkl",
+    "noncausal_ubuntu@ec2-35-164-100-106.us-west-2.compute.amazonaws.com.pkl",
+    "noncausal_ubuntu@ec2-52-26-75-82.us-west-2.compute.amazonaws.com.pkl",
+    "noncausal_ubuntu@ec2-52-36-251-66.us-west-2.compute.amazonaws.com.pkl",
+    "noncausal_ubuntu@ec2-52-36-63-29.us-west-2.compute.amazonaws.com.pkl",
+    "noncausal_ubuntu@ec2-52-37-223-20.us-west-2.compute.amazonaws.com.pkl",
+    "noncausal_ubuntu@ec2-52-40-133-49.us-west-2.compute.amazonaws.com.pkl",
+    "noncausal_ubuntu@ec2-52-40-226-151.us-west-2.compute.amazonaws.com.pkl",
+    "noncausal_ubuntu@ec2-52-40-234-245.us-west-2.compute.amazonaws.com.pkl"]
 
-# Add all of the successful runs to GOODS.
-GOODS = []
-BADS = []
 
-for i, run in enumerate(RESULTS):
-    worked = True
-    print("--------------------------")
-    print("Run: " + str(i))
-    try:
-        print("Yearly returns: "+str(run["stats"]["returnYearly"]))
-    except KeyError:
-        print("")
-        print("Too much drawdown.")
-        BADS.append(run)
-        worked = False
-    if worked:
-        GOODS.append(run)
-        print("Sharpe: "+str(run["stats"]["sharpe"]))
-        print("Max drawdown: "+str(run["stats"]["maxDD"]))
-        print("Time off peak: "+str(run["stats"]["maxTimeOffPeak"]))
+CAUSES = [joblib.load(resfile) for resfile in CAUSALS]
+NCAUSES = [joblib.load(resfile) for resfile in NONCAUSALS]
+
+CRES = [run for runs in CAUSES for run in runs]
+NRES = [run for runs in NCAUSES for run in runs]
+
+CNTS = [run['settings']['n_time'] for run in CRES]
+NNTS = [run['settings']['n_time'] for run in NRES]
+
+# for i, run in enumerate(CRES):
+#     print("--------------------------")
+#     print("Run: " + str(i))
+#     print("Sharpe: "+str(run["stats"]["sharpe"]))
+#     print("Max drawdown: "+str(run["stats"]["maxDD"]))
+#     print("Time off peak: "+str(run["stats"]["maxTimeOffPeak"]))
 
 STATS = ["sharpe", "returnYearly", "maxDD", "maxTimeOffPeak"]
 SETS = ["n_time", "restart_variables", "lr_mult_base", "val_sharpe_threshold",
@@ -46,46 +52,35 @@ SETS = ["n_time", "restart_variables", "lr_mult_base", "val_sharpe_threshold",
 CATS = STATS + SETS
 ONEHOT = ["cost_type"]
 
-# See the values of all the settings.
-for setting in SETS:
-    print("---------------------")
-    print("Setting: " + setting)
-    print([good['settings'][setting] for good in GOODS])
-    #print([bad[setting] for bad in BADS])
-
 # I want to just look at Sharpe vs. setting for each of the possible
 # settings.
-SHARPES = [good['stats']['sharpe'] for good in GOODS]
-#NOSHARPES = [-1.75 for bad in BADS]
 SETSNOLR = ["n_time", "restart_variables",
             "val_sharpe_threshold",
             "n_sharpe", "val_period", "lookback", "retrain_interval",
             "num_epochs", "allow_shorting"]
 LRLIKE = ["lr_mult_base", "lr", "lbd"]
-for setting in SETSNOLR:
-    #badvals = [bad[setting] for bad in BADS]
-    goodvals = [good['settings'][setting] for good in GOODS]
-    plt.scatter(goodvals, SHARPES, c='b')
-    #plt.scatter(badvals, NOSHARPES, c='r')
-    plt.xlabel(setting)
-    plt.ylabel("Sharpe Ratio")
-    plt.savefig("sharpe_vs_" + setting + ".png")
-    plt.clf()
+for stat in STATS:
+    cstatvals = [run['stats'][stat] for run in CRES]
+    nstatvals = [run['stats'][stat] for run in NRES]
+    for setting in SETSNOLR:
+        csetvals = [c['settings'][setting] for c in CRES]
+        nsetvals = [n['settings'][setting] for n in NRES]
+        plt.scatter(csetvals, cstatvals, c='b')
+        plt.scatter(nsetvals, nstatvals, c='r')
+        plt.xlabel(setting)
+        plt.ylabel(stat)
+        plt.savefig("cvnc_" + stat + "_vs_" + setting + ".png")
+        plt.clf()
+    for setting in LRLIKE:
+        cvals = [math.log10(c['settings'][setting]) for c in CRES]
+        nvals = [math.log10(n['settings'][setting]) for n in NRES]
+        plt.scatter(cvals, cstatvals, c='b')
+        plt.scatter(nvals, nstatvals, c='r')
+        plt.xlabel(setting)
+        plt.ylabel(stat)
+        plt.savefig("cvnc_" + stat + "_vs_" + setting + ".png")
+        plt.clf()
 
-for setting in LRLIKE:
-    #badvals = [math.log10(bad[setting]) for bad in BADS]
-    goodvals = [math.log10(good['settings'][setting]) for good in GOODS]
-    plt.scatter(goodvals, SHARPES, c='b')
-    #plt.scatter(badvals, NOSHARPES, c='r')
-    plt.xlabel("log(" + setting + ")")
-    plt.ylabel("Sharpe Ratio")
-    plt.savefig("sharpe_vs_" + setting + ".png")
-    for sharpe in SHARPES:
-        plt.axhline(y=sharpe)
-    plt.clf()
-
-GOODSETS = [good['settings'] for good in GOODS]
-ALLSETS = GOODSETS + BADS
 # for i, run in enumerate(ALLSETS):
 #     ares = np.array([])
 #     for setting in SETS:
