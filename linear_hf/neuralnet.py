@@ -217,7 +217,8 @@ class Linear(object):
 
         # Define the optimizer.
         self.train_op_tf = tf.train.AdamOptimizer(
-            learning_rate=self.lr_tf).minimize(self.loss_tf)
+            learning_rate=self.lr_tf).minimize(self.loss_tf, 
+            aggregation_method=tf.AggregationMethod.EXPERIMENTAL_ACCUMULATE_N)
 
         # Define the saver that will serialize the weights/biases.
         # Create a Tf session and initialize the variables.
