@@ -194,7 +194,8 @@ def preprocess(markets, opens, closes, highs, lows, vols, dates,
     # Loop throught the days in closes
     last_close = closes[0]
     day = 0
-    cashindex = markets.index('CASH')
+    if 'CASH' in markets:
+        cashindex = markets.index('CASH')
     for close in closes:
         # Replace nans with previous close in closes and closes_copy
         closes_copy[day, np.isnan(close)] = last_close[np.isnan(close)]
@@ -232,7 +233,8 @@ def preprocess(markets, opens, closes, highs, lows, vols, dates,
             enoughdays = np.zeros((len(close)), dtype=bool)
 
         # Put 1/500 in for CASH
-        close[cashindex] = 1/divide_prices_by
+        if 'CASH' in markets:
+            close[cashindex] = 1/divide_prices_by
 
         # Increment counters
         day += 1
@@ -386,7 +388,6 @@ def returns_check(OPEN, CLOSE, HIGH, LOW, DATE, markets):
     flag6 = (abs(sessionReturn) == np.inf).sum() > 0
     flag7 = (abs(SLIPPAGE) == np.inf).sum() > 0
 
-    if flag1 or flag3 or flag5 or flag6 or flag7:
-        print '*****Crazy returns! ******* Check data validity!' 
-        for j in np.where(abs(sessionReturn) > 5)[1]:
-            print markets[j]
+    #if flag1 or flag3 or flag5 or flag6 or flag7:
+    #    for j in np.where(abs(sessionReturn) > 5)[1]:
+    #        print markets[j]

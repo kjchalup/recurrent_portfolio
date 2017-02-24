@@ -38,11 +38,14 @@ def define_rnn(batch_in_tf, seq_lens_tf, n_sharpe,
     init_state = tf.contrib.rnn.LSTMStateTuple(cell_state, hidden_state)
     out, state_out_tf = tf_nn.dynamic_rnn(cell=lstm_cell, inputs=batch_in_tf, time_major=False, 
         sequence_length=seq_lens_tf, initial_state=init_state, dtype=tf.float32)
+    
+    # Use "all ones" as the default strategy to improve upon.
+    #out = out + tf.ones_like(out) / 10.
     if allow_shorting:
         out = out / tf.reduce_sum(tf.abs(out), axis=2, keep_dims=True)
     elif equality:
-        out_pos = tf.sigmoid(3*out)
-        out_neg = tf.sigmoid(-3*out)
+        out_pos = tf.maximum(out, 0)
+        out_neg = tf.minium(out, 0)
         out_pos_sum = tf.reduce_sum(out_pos, axis=2, keep_dims=True)
         out_neg_sum = tf.reduce_sum(-out_neg, axis=2, keep_dims=True)
         out = out_pos * out_neg_sum / out_pos_sum + out_neg
@@ -131,8 +134,13 @@ class RNN(object):
                 n_sharpe, n_markets, cost=cost) + self.l1_penalty_tf
 
         # Define the optimizer.
-        self.train_op_tf = tf.train.AdamOptimizer(
-            learning_rate=self.lr_tf).minimize(self.loss_tf)
+        raw_grads = tf.gradients(self.loss_tf, tf.trainable_variables())
+        grads = [tf.clip_by_value(g, -1, 1) for g in raw_grads]
+        self.train_op_tf = tf.train.RMSPropOptimizer(
+            self.lr_tf).apply_gradients(zip(grads, tf.trainable_variables()))
+
+        #self.train_op_tf = tf.train.AdamOptimizer(
+        #    learning_rate=self.lr_tf).minimize(self.loss_tf)
 
         # Define the saver that will serialize the weights/biases.
         self.saver = tf.train.Saver(max_to_keep=1)
@@ -143,6 +151,9 @@ class RNN(object):
         self.sess.run(self.init_op)
 
     def restart_variables(self):
+        c_init = np.zeros((1, self.n_markets), dtype=NP_DTYPE)
+        h_init = np.zeros((1, self.n_markets), dtype=NP_DTYPE)
+        self.last_state = (c_init, h_init)
         self.sess.run(self.init_op)
 
     def get_weights(self):
@@ -176,27 +187,14 @@ class RNN(object):
         Returns:
           positions (n_markets): Positions.
         """
-        if np.sum(self.last_state[0]) == 0:
-            # The rnn is freshly retrained. Run it through the whole batch.   
-            seq_lens = [data_in.shape[1]]
-            positions, state =  self.sess.run([self.positions_tf, self.state_out_tf],
-                                     {self.state_in_tf[0]: self.last_state[0],
-                                      self.state_in_tf[1]: self.last_state[1],
-                                      self.seq_lens_tf: seq_lens,
-                                      self.batch_in_tf: 
-                                      np.expand_dims(data_in, 0)})
-            self.last_state = state
-            return positions[0, -1]
-        else:
-            # We're inside a prediction interval. Only run the rnn on the last timestep.
-            seq_lens = [1]
-            positions, state =  self.sess.run([self.positions_tf, self.state_out_tf],
-                                     {self.state_in_tf[0]: self.last_state[0],
-                                      self.state_in_tf[1]: self.last_state[1],
-                                      self.seq_lens_tf: seq_lens,
-                                      self.batch_in_tf: np.expand_dims(data_in, 0)})
-            self.last_state = state
-            return positions[0, 0]
+        seq_lens = [1]
+        positions, state =  self.sess.run([self.positions_tf, self.state_out_tf],
+                                 {self.state_in_tf[0]: self.last_state[0],
+                                  self.state_in_tf[1]: self.last_state[1],
+                                  self.seq_lens_tf: seq_lens,
+                                  self.batch_in_tf: np.expand_dims(data_in, 0)})
+        self.last_state = state
+        return positions[0, 0]
 
     def l1_penalty_np(self):
         """ Compute the L1 penalty on the weights. """
@@ -214,9 +212,9 @@ class RNN(object):
           loss (float): the average negative Sharpe ratio of the
             current strategy.
         """
-        seq_lens = batch_in.shape[0] * [batch_in.shape[1]]
         c_init = np.zeros((batch_in.shape[0], self.n_markets), dtype=NP_DTYPE)
         h_init = np.zeros((batch_in.shape[0], self.n_markets), dtype=NP_DTYPE)
+        seq_lens = batch_in.shape[0] * [batch_in.shape[1]]
         return self.sess.run(self.loss_tf,
                              {self.batch_in_tf: batch_in,
                               self.batch_out_tf: batch_out,
@@ -226,9 +224,9 @@ class RNN(object):
     
     def train_step(self, batch_in, batch_out, lr):
         """ Do one gradient-descent step. """
-        seq_lens = batch_in.shape[0] * [batch_in.shape[1]]
         c_init = np.zeros((batch_in.shape[0], self.n_markets), dtype=NP_DTYPE)
         h_init = np.zeros((batch_in.shape[0], self.n_markets), dtype=NP_DTYPE)
+        seq_lens = batch_in.shape[0] * [batch_in.shape[1]]
         self.sess.run(self.train_op_tf,
                       {self.batch_in_tf: batch_in,
                        self.batch_out_tf: batch_out,
@@ -236,9 +234,6 @@ class RNN(object):
                        self.state_in_tf[0]: c_init,
                        self.state_in_tf[1]: h_init,
                        self.lr_tf: lr})
-        # Reset the internal rnn state!
-        self.last_state = [np.zeros((1, self.n_markets), dtype=NP_DTYPE),
-                           np.zeros((1, self.n_markets), dtype=NP_DTYPE)]
 
     def save(self, fname='saved_data/rnnmodel'):
         self.save_path = self.saver.save(self.sess, fname)
