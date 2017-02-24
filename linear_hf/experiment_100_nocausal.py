@@ -11,6 +11,7 @@ import quantiacsToolbox
 
 from linear_hf.preprocessing import load_nyse_markets
 from linear_hf.run_backtest import myTradingSystem
+from linear_hf.choose_100_stocks import choose_100_stocks
 
 def powerset(iterable):
     """ Returns the set of all subsets of the iterable.
@@ -30,7 +31,7 @@ def powerset(iterable):
 
 # Define constants for use in choosing hyperparameters.
 LBDS = 10.**np.arange(-5, 3) + [0.]
-CHOICES = {'n_time': range(30, 200), # Timesteps in one datapoint.
+CHOICES = {'n_time': range(30, 100), # Timesteps in one datapoint.
            'lbd': LBDS,              # L1 regularizer strength.
            'num_epochs': [1, 5, 10, 50, 100],   # Number of epochs each day.
            'batch_size': [16, 32, 64, 128],  # Batch size.
@@ -40,8 +41,9 @@ CHOICES = {'n_time': range(30, 200), # Timesteps in one datapoint.
            'val_period' : [0, 0, 0, 0, 4, 8, 16],
            'val_sharpe_threshold' : [-np.inf, 0],
            'retrain_interval' : range(10, 252),
-           'data_types' : [[1], [1, 4], [1, 10], [1, 12]],
-           'cost_type': ['sharpe, sortino, equality_sharpe, equality_sortino', 'min_return', 'mixed_return', 'mean_return'],
+           'cost_type': ['sharpe', 'sortino', 'equality_sharpe',
+                         'equality_sortino', 'min_return',
+                         'mixed_return', 'mean_return'],
            'lr_mult_base': [1., .1, .01, .001],
            'causal_interval': [0],
            'restart_variables': [True, False]}
@@ -57,19 +59,21 @@ def mySettings(): # pylint: disable=invalid-name,too-many-arguments
     '''
     # Only keep markets that have not died out by beginInSample.
     random.seed(1)
-    all_nyse = load_nyse_markets(start_date='20000104', 
+    all_nyse = load_nyse_markets(start_date='20000104',
                                  end_date='20131231', postipo=0,
                                  lookback=0)
     settings['markets'] = all_nyse[:2699] + ['CASH']
     '''
-    settings['markets'] = joblib.load('linear_hf/1000_stock_names.pkl')
+    #settings['markets'] = joblib.load('linear_hf/1000_stock_names.pkl')
+    # Use the markets from choose_100_stocks instead
     return settings
 
-def supply_hypers():
+def supply_hypers(seed):
     """Supply hyperparameters to optimize the neural net."""
     # Get random choices from the ranges (inclusive).
     settings = {}
     for setting in CHOICES:
+        np.random.seed(seed)
         settings[setting] = np.random.choice(CHOICES[setting])
 
     # Get n_sharpe using n_time.
@@ -79,7 +83,10 @@ def supply_hypers():
     return settings
 
 if __name__ == '__main__':
-    np.random.seed(int(sys.args[1]))
+    # Choose SEED for random numbers based on count in the script.
+    SEED = int(sys.argv[1])
+    np.random.seed(SEED)
+
     results_fname = 'saved_data/hyper_100_noncsl_results.pkl'
     if os.path.isfile(results_fname):
         HYPER_RESULTS = joblib.load(results_fname)
@@ -87,7 +94,7 @@ if __name__ == '__main__':
         HYPER_RESULTS = []
 
     # Get hyperparameters.
-    SETTINGS = supply_hypers()
+    SETTINGS = supply_hypers(SEED)
 
     # Other SETTINGS.
     SETTINGS['horizon'] = SETTINGS['n_time'] - SETTINGS['n_sharpe'] + 1
@@ -106,6 +113,11 @@ if __name__ == '__main__':
     SETTINGS['n_chunks'] = 1
     SETTINGS['nn_type'] = 'linear'
     SETTINGS['causal_matrix'] = None
+    SETTINGS['data_types'] = [1]
+
+    # Use choose_100_stocks to supply markets.
+    SETTINGS['markets'] = choose_100_stocks(SEED)
+
     # Save settings for use in test.
     joblib.dump(SETTINGS, 'saved_data/hypers.pkl')
 
@@ -115,9 +127,7 @@ if __name__ == '__main__':
     print ['n_time: ' + str(SETTINGS['n_time'])]
     try:
         RESULTS = quantiacsToolbox.runts(
-            __file__, plotEquity=False, fname='linear_hf/1000_nyse_stocks.pkl')[
-                np.random.choice(1000, 99, replace=False)] + ['CASH']
-
+            __file__, plotEquity=False)
         # Show the results.
         RESULTS['settings']['nn'] = None
         print RESULTS['stats']

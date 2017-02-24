@@ -87,6 +87,7 @@ if __name__ == '__main__':
     SETTINGS = supply_hypers()
 
     # Other SETTINGS.
+    SETTINGS['data_types'] = [1]
     SETTINGS['horizon'] = SETTINGS['n_time'] - SETTINGS['n_sharpe'] + 1
     if SETTINGS['cost_type'] != 'sharpe':
         SETTINGS['val_sharpe_threshold'] = -np.inf

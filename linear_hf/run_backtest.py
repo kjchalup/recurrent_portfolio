@@ -13,6 +13,7 @@ from linear_hf.batching_splitting import split_validation_training
 from linear_hf.costs import compute_numpy_sharpe
 from linear_hf.causality import causal_matrix_ratios
 
+
 def calculate_recent(iteration, retrain_interval, exposure, market_data, cost='sharpe'):
     """ Calculate the realized sharpe ratios from the output of the neural net
         using the latest trading positions.
@@ -255,15 +256,41 @@ def training(settings, all_data, market_data):
             # Train.
             settings['nn'].train_step(batch_in=all_batch,
                                       batch_out=market_batch, lr=lr_new)
-            tr_score = loss_calc(settings, all_batch, market_batch)
-            tr_sharpe += tr_score
-            tr_scores.append(tr_score)
-
+            tr_sharpe += loss_calc(settings, all_batch, market_batch)
+            tr_pos = settings['nn']._positions_np(batch_in=all_batch)
+            tr_sharpe_batch = compute_numpy_sharpe(positions=tr_pos,
+                                                    prices=market_batch,
+                                                    slippage=0.05,
+                                                    return_returns=False,
+                                                    n_ignore=2,
+                                                    return_batches=True)
+            tr_rs = compute_numpy_sharpe(positions=tr_pos,
+                                          prices=market_batch,
+                                          slippage=0.05,
+                                          return_returns=True,
+                                          n_ignore=2,
+                                          return_batches=False)
         # Calculate sharpes for the epoch
         tr_sharpe /= batches_per_epoch
         if settings['val_period'] > 0:
             val_sharpe = loss_calc(settings, all_batch=all_val, 
                                    market_batch=market_val)
+            val_pos = settings['nn']._positions_np(batch_in=all_val)
+            val_sharpe_batch = compute_numpy_sharpe(positions=val_pos,
+                                                    prices=market_val,
+                                                    slippage=0.05,
+                                                    return_returns=False,
+                                                    n_ignore=2,
+                                                    return_batches=True)
+            val_rs = compute_numpy_sharpe(positions=val_pos,
+                                          prices=market_val,
+                                          slippage=0.05,
+                                          return_returns=True,
+                                          n_ignore=2,
+                                          return_batches=False)
+             
+            print val_sharpe_batch
+            print val_sharpe/val_sharpe_batch.std()
         # Update neural net, and attendant values if NN is better than previous.
         if settings['val_period'] > 0:
             settings, best_val_sharpe = update_nn(
@@ -432,13 +459,13 @@ def mySettings():
     """ Settings for the backtester"""
     settings = {}
     # Futures Contracts
-    settings['n_time'] = 100 # Use this many timesteps in one datapoint.
-    settings['n_sharpe'] = 100 # This many timesteps to compute Sharpes.
+    settings['n_time'] = 60 # Use this many timesteps in one datapoint.
+    settings['n_sharpe'] = 30 # This many timesteps to compute Sharpes.
     settings['horizon'] = settings['n_time'] - settings['n_sharpe'] + 1
-    settings['lbd'] = 1 # L1 regularizer strength.
-    settings['num_epochs'] = 30 # Number of epochs each day.
-    settings['batch_size'] = 32
-    settings['val_period'] = 0
+    settings['lbd'] = 0 # L1 regularizer strength.
+    settings['num_epochs'] = 15 # Number of epochs each day.
+    settings['batch_size'] = 16
+    settings['val_period'] = 16
     settings['lr'] = 1e-5 # Learning rate.
     settings['dont_trade'] = False # If on, don't trade.
     settings['iter'] = 0
@@ -447,11 +474,12 @@ def mySettings():
     settings['slippage'] = 0.05
     settings['beginInSample'] = '20000104'
     settings['endInSample'] = '20131231'
+    settings['n_markets_to_use'] = 100
     # How often to recompute the causal matrix. If 0, no causal matrix.
     settings['causal_interval'] = 0
     settings['causal_matrix'] = None
     settings['val_sharpe_threshold'] = -np.inf
-    settings['retrain_interval'] = 100
+    settings['retrain_interval'] = 10
     settings['realized_sharpe'] = []
     settings['saved_val_sharpe'] = []
     settings['best_val_sharpe'] = -np.inf
@@ -464,17 +492,15 @@ def mySettings():
     settings['nn'] = None
     settings['data_types'] = [1]
     settings['markets'] = non_nan_markets(settings['beginInSample'],
-                                          settings['endInSample'],
-                                          postipo=0)
-    settings['n_markets_to_use'] = 100
+                                          settings['endInSample'])[:127] + ['CASH']
+    #joblib.load('linear_hf/1000_stock_names.pkl')
 
     assert np.mod(len(settings['markets']),settings['n_chunks']) == 0, "Nmarkets/Nchunks"
     return settings
 
 if __name__ == '__main__':
     import quantiacsToolbox
-    results = quantiacsToolbox.runts(__file__)#, fname='linear_hf/1000_nyse_stocks.pkl')
-    
+    results = quantiacsToolbox.runts(__file__, plotEquity=False)
     print results['stats']
     joblib.dump(results, 'results_of_this_run.pkl')
 
