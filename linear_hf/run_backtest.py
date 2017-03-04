@@ -410,7 +410,7 @@ def mySettings():
     """ Settings for the backtester"""
     settings = {}
     # Futures Contracts
-    settings['n_time'] = 272 # Use this many timesteps in one datapoint.
+    settings['n_time'] = 302 # Use this many timesteps in one datapoint.
     settings['n_sharpe'] = 252 # This many timesteps to compute Sharpes.
     settings['horizon'] = settings['n_time'] - settings['n_sharpe'] + 1
     settings['lbd'] = 1 # L1 regularizer strength.
@@ -433,7 +433,7 @@ def mySettings():
     settings['realized_sharpe'] = []
     settings['saved_val_sharpe'] = []
     settings['best_val_sharpe'] = -np.inf
-    settings['cost_type'] = 'onepos_sharpe'
+    settings['cost_type'] = 'equality_sharpe'
     settings['n_chunks'] = 1
     settings['allow_shorting'] = True
     settings['lr_mult_base'] = 1.
@@ -458,14 +458,14 @@ def mySettings():
     12 = DATE
     '''
     settings['data_types'] = [1]
-    settings['markets'] = joblib.load('linear_hf/1000_stock_names.pkl')[:10] + ['CASH']
-
+    settings['markets'] = joblib.load('linear_hf/1000_stock_names.pkl')
+    import pdb; pdb.set_trace()
     assert np.mod(len(settings['markets']),settings['n_chunks']) == 0, "Nmarkets/Nchunks"
     return settings
 
 if __name__ == '__main__':
     import quantiacsToolbox
-    results = quantiacsToolbox.runts(__file__)#, fname='linear_hf/1000_nyse_stocks.pkl')
+    results = quantiacsToolbox.runts(__file__, fname='linear_hf/1000_nyse_stocks.pkl')
     print results['stats']
     joblib.dump(results, 'results_of_this_run.pkl')
 
