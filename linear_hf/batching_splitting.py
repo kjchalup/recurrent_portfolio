@@ -1,3 +1,4 @@
+""" Functions that divide our data into batches. """
 import numpy as np
 from . import NP_DTYPE
 
