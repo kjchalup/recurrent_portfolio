@@ -29,18 +29,17 @@ def powerset(iterable):
 
 # Define constants for use in choosing hyperparameters.
 LBDS = 10.**np.arange(-5, 3) + [0.]
-CHOICES = {'n_time': range(30, 200), # Timesteps in one datapoint.
+CHOICES = {'n_time': range(30, 100), # Timesteps in one datapoint.
            'lbd': LBDS,              # L1 regularizer strength.
-           'num_epochs': [1, 5, 10, 50, 100],   # Number of epochs each day.
-           'batch_size': [16, 32, 64, 128],  # Batch size.
+           'num_epochs': [1, 5, 10, 50],   # Number of epochs each day.
+           'batch_size': [16, 128],
            'lr': 10.**np.arange(-7, -1),  # Learning rate.
            'allow_shorting': [True, False],
            'lookback' : [1000, 800, 600, 400],
            'val_period' : [0, 0, 0, 0, 4, 8, 16],
            'val_sharpe_threshold' : [-np.inf, 0],
            'retrain_interval' : range(10, 252),
-           'data_types' : [[1], [1, 4], [1, 10], [1, 12]],
-           'cost_type': ['sharpe, sortino, equality_sharpe, equality_sortino', 'min_return', 'mixed_return', 'mean_return'],
+           'cost_type': ['sharpe', 'sortino', 'equality_sharpe', 'equality_sortino', 'min_return', 'mixed_return', 'mean_return'],
            'lr_mult_base': [1., .1, .01, .001],
            'causal_interval': [0],
            'restart_variables': [True, False]}
@@ -78,7 +77,7 @@ def supply_hypers():
     return settings
 
 if __name__ == '__main__':
-    results_fname = 'saved_data/hyper_100_noncsl_results.pkl'
+    results_fname = 'saved_data/hyper_1000_results.pkl'
     if os.path.isfile(results_fname):
         HYPER_RESULTS = joblib.load(results_fname)
     else:
@@ -104,6 +103,7 @@ if __name__ == '__main__':
     SETTINGS['n_chunks'] = 1
     SETTINGS['nn_type'] = 'linear'
     SETTINGS['causal_matrix'] = None
+    SETTINGS['data_types'] = [1]
     # Save settings for use in test.
     joblib.dump(SETTINGS, 'saved_data/hypers.pkl')
 
@@ -113,7 +113,7 @@ if __name__ == '__main__':
     print ['n_time: ' + str(SETTINGS['n_time'])]
     try:
         RESULTS = quantiacsToolbox.runts(
-            __file__, plotEquity=False, fname='linear_hf/1000_nyse_stocks.pkl') + ['CASH']
+            __file__, plotEquity=False, fname='linear_hf/1000_nyse_stocks.pkl')
 
         # Show the results.
         RESULTS['settings']['nn'] = None

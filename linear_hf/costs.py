@@ -8,7 +8,7 @@ import tensorflow as tf
 from . import TF_DTYPE
 
 def sharpe_tf(positions, prices, n_sharpe, n_markets, 
-              slippage=.05, n_ignore=2, cost='sharpe'):
+              slippage=.05, n_ignore=0, cost='sharpe'):
     """ Compute average Sharpe ratio of a strategy using Tensorflow.
 
     Args:
@@ -56,7 +56,7 @@ def sharpe_tf(positions, prices, n_sharpe, n_markets,
     return cost_alternative(rs, prod_rs, cost, n_sharpe, n_markets)
 
 def sharpe_onepos_tf(positions, prices, n_sharpe, n_markets, 
-              slippage=.05, n_ignore=2, cost='sharpe'):
+              slippage=.05, n_ignore=0, cost='sharpe'):
     """ Compute average Sharpe ratio of a strategy using Tensorflow.
     In this implementation, the strategy keeps a *constant portfolio*
     over the whole n_sharpe period of time.
@@ -123,9 +123,8 @@ def compute_sharpe_tf(batch_in, batch_out):
                     {batch_in_tf: batch_in, batch_out_tf: batch_out})
 
 def cost_alternative(rs, prod_rs, cost, n_sharpe, n_markets):
-    print(cost)
     if cost.endswith('sharpe'):
-        return tf.reduce_mean((tf.pow(prod_rs, (252./n_sharpe))-1) /
+        return tf.reduce_min((tf.pow(prod_rs, (252./n_sharpe))-1) /
                 (tf.sqrt(252 * (tf.reduce_sum(tf.pow(rs, 2), axis=1) / n_sharpe -
                 tf.pow(tf.reduce_sum(rs, axis=1), 2) / n_sharpe**2))))
     elif cost.endswith('sortino'):
@@ -133,7 +132,7 @@ def cost_alternative(rs, prod_rs, cost, n_sharpe, n_markets):
         pos_std = (tf.sqrt(252 * (tf.reduce_sum(
             tf.pow(pos_rets, 2), axis=1) / n_sharpe -
             tf.pow(tf.reduce_sum(pos_rets, axis=1), 2) / n_sharpe**2)))
-        return tf.reduce_mean((tf.pow(prod_rs, (252./n_sharpe))-1) / (pos_std + 1e-7))
+        return tf.reduce_min((tf.pow(prod_rs, (252./n_sharpe))-1) / (pos_std + 1e-7))
     elif cost.endswith('min_return'):
         return tf.reduce_min(prod_rs)
     elif cost.endswith('mean_return'):
@@ -148,7 +147,7 @@ def extract_data(prices, n_markets):
     ls = prices[:, :, 3*n_markets:4*n_markets]
     return os, cs, hs, ls
 
-def compute_numpy_onepos_sharpe(positions, prices, slippage=0.05, return_returns = False, n_ignore=2):
+def compute_numpy_onepos_sharpe(positions, prices, slippage=0.05, return_returns = False, n_ignore=0):
     """ Compute average Sharpe ratio of a strategy using Numpy. ONLY USE
     THE FIRST POSITIONS VECTOR, applied to each timestep.
 
@@ -188,7 +187,7 @@ def compute_numpy_onepos_sharpe(positions, prices, slippage=0.05, return_returns
             (np.sqrt(252 * ((rs**2).sum(axis=1) / n_sharpe -
             np.sum(rs, axis=1)**2 / n_sharpe**2)))).mean()
 
-def compute_numpy_sharpe(positions, prices, slippage=0.05, return_returns = False, n_ignore=2):
+def compute_numpy_sharpe(positions, prices, slippage=0.05, return_returns = False, n_ignore=0):
     """ Compute average Sharpe ratio of a strategy using Numpy.
 
     Args:

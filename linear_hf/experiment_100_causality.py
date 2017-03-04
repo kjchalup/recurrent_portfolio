@@ -2,6 +2,7 @@
 import random
 import itertools
 import os
+import sys
 import joblib
 
 import numpy as np
@@ -80,6 +81,7 @@ def supply_hypers():
     return settings
 
 if __name__ == '__main__':
+    np.random.seed(int(sys.argv[1]))
     results_fname = 'saved_data/hyper_100_causal_results.pkl'
     if os.path.isfile(results_fname):
         HYPER_RESULTS = joblib.load(results_fname)

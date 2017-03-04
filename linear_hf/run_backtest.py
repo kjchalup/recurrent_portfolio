@@ -1,13 +1,14 @@
-""" Backtester for QC"""
+""" Quantiacs-code based backtester. """
 import sys
-
 import numpy as np
 import joblib
 
 from linear_hf import NP_DTYPE
 from linear_hf import neuralnet
+from linear_hf import rnn
 from linear_hf import chunknet
 from linear_hf.preprocessing import preprocess
+from linear_hf.preprocessing import non_nan_markets
 from linear_hf.batching_splitting import split_validation_training
 from linear_hf.costs import compute_numpy_sharpe
 from linear_hf.causality import causal_matrix_ratios
@@ -77,7 +78,6 @@ def print_things(iteration, DATE, fundEquity, val_sharpe, recent_cost):
         print('[Recent validation costfn] Recent costfn: [{}] {}'.format(val_sharpe,
                                                                          recent_cost))
 
-
 def dont_trade_positions(positions, settings):
     """ Sets positions to zero, and cash to 1
 
@@ -92,7 +92,6 @@ def dont_trade_positions(positions, settings):
     cash_index = settings['markets'].index('CASH')
     positions[cash_index] = 1
     return positions
-
 
 def calc_batches(n_timesteps, settings):
     """ Calculates the total groups of batch_size that are one epoch.
@@ -116,7 +115,6 @@ def calc_batches(n_timesteps, settings):
                                           settings['n_sharpe'] + 1)
                                          / float(settings['batch_size'])))
     return batches_per_epoch
-
 
 def lr_calc(settings, epoch_id):
     """ Learning rate update based on epoch_id
@@ -177,20 +175,28 @@ def init_nn(settings, n_ftrs):
         settings: a dict with ['nn'] which is the initialized neuralnet.
     """
     print 'Initializing net...\n'
-    if settings['nn'] is not None:
-        settings['nn'].sess.close()
+    if 'nn' in settings.keys():
+    	if settings['nn'] is not None:
+        	settings['nn'].sess.close()
     if settings['nn_type'] == 'linear':
         settings['nn'] = neuralnet.Linear(n_ftrs=n_ftrs,
-                                          n_markets=len(settings['markets']),
+                                          n_markets=settings['n_markets_to_use'],
                                           n_time=settings['n_time'],
                                           n_sharpe=settings['n_sharpe'],
                                           lbd=settings['lbd'],
                                           allow_shorting=settings['allow_shorting'],
                                           cost=settings['cost_type'],
                                           causality_matrix=settings['causal_matrix'])
+    elif settings['nn_type'] == 'rnn':
+        settings['nn'] = rnn.RNN(n_ftrs=n_ftrs,
+                                          n_markets=settings['n_markets_to_use'],
+                                          n_time=settings['n_time'],
+                                          n_sharpe=settings['n_sharpe'],
+                                          allow_shorting=settings['allow_shorting'],
+                                          cost=settings['cost_type'])
     elif settings['nn_type'] == 'chunk_linear':
         settings['nn'] = chunknet.ChunkLinear(n_ftrs=n_ftrs,
-                                              n_markets=len(settings['markets']),
+                                              n_markets=settings['n_markets_to_use'],
                                               n_time=settings['n_time'],
                                               n_sharpe=settings['n_sharpe'],
                                               lbd=settings['lbd'],
@@ -229,6 +235,7 @@ def training(settings, all_data, market_data):
     for epoch_id in range(settings['num_epochs']):
         seed = np.random.randint(10000)
         tr_sharpe = 0.
+        tr_scores = []
         val_sharpe = 0.
         lr_new = lr_calc(settings, epoch_id)
         # Train an epoch.
@@ -245,7 +252,9 @@ def training(settings, all_data, market_data):
             # Train.
             settings['nn'].train_step(batch_in=all_batch,
                                       batch_out=market_batch, lr=lr_new)
-            tr_sharpe += loss_calc(settings, all_batch, market_batch)
+            tr_score = loss_calc(settings, all_batch, market_batch)
+            tr_sharpe += tr_score
+            tr_scores.append(tr_score)
 
         # Calculate sharpes for the epoch
         tr_sharpe /= batches_per_epoch
@@ -264,7 +273,7 @@ def training(settings, all_data, market_data):
 
         # Write out data for epoch.
         sys.stdout.write('\nEpoch {}, val/tr Sharpe {:.4}/{:.4g}.'.format(
-            epoch_id, val_sharpe, tr_sharpe))
+            epoch_id, val_sharpe, min(tr_scores)))
         sys.stdout.flush()
 
     return settings
@@ -320,16 +329,18 @@ def restart_nn_till_good(settings, all_data, market_data, num_times=5, debug=Fal
 def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
                     CLOSE_ASK, CLOSE_BID, RETURN, SHARE, DIVIDEND,
                     TOTALCAP, exposure, equity, settings, fundEquity):
-    """ Trading system code"""
-    n_markets = CLOSE.shape[1]
+    """ Trading system code""" 
+    n_markets = settings['n_markets_to_use']
     # Checks if we should end the backtest run.
     kill_backtest_run(fundEquity)
 
     # Preprocess the data
     market_data, all_data, should_retrain = preprocess(
-        settings['markets'], OPEN, CLOSE, HIGH, LOW, VOL, DATE,
-        CLOSE_LASTTRADE, CLOSE_ASK, CLOSE_BID, RETURN, SHARE,
-        DIVIDEND, TOTALCAP, postipo=100, filler=0.123456789,
+        settings['markets'][:n_markets], OPEN[:, :n_markets], CLOSE[:, :n_markets], HIGH[:, :n_markets], 
+        LOW[:, :n_markets], VOL[:, :n_markets], DATE,
+        CLOSE_LASTTRADE[:, :n_markets], CLOSE_ASK[:, :n_markets], CLOSE_BID[:, :n_markets], 
+        RETURN[:, :n_markets], SHARE[:, :n_markets],
+        DIVIDEND[:, :n_markets], TOTALCAP[:, :n_markets], postipo=100, filler=0.123456789,
         data_types=settings['data_types'])
 
     # Compute the causality matrix.
@@ -345,24 +356,25 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
 
 
     # Calculate Sharpe between training intervals
-    recent_cost = calculate_recent(iteration=settings['iter'],
-                                   retrain_interval=settings['retrain_interval'],
-                                   exposure=exposure,
-                                   market_data=market_data,
-                                   cost=settings['cost_type'])
+    recent_cost = 0
+    #recent_cost = calculate_recent(iteration=settings['iter'],
+    #                               retrain_interval=settings['retrain_interval'],
+    #                               exposure=exposure,
+    #                               market_data=market_data,
+    #                               cost=settings['cost_type'])
     print_things(settings['iter'], DATE[-1],
                  fundEquity[-1], settings['best_val_sharpe'], recent_cost)
 
     # Initialize neural net.
     if settings['iter'] == 0:
         settings = init_nn(settings, all_data.shape[1])
-        settings = restart_nn_till_good(settings, num_times=20, all_data=all_data,
+        settings = restart_nn_till_good(settings, num_times=10, all_data=all_data,
                                         market_data=market_data)
 
     # Train the neural net on current data.
     if settings['iter'] % settings['retrain_interval'] == 0:
         if settings['restart_variables']:
-            settings = init_nn(settings, all_data.shape[1])
+            settings['nn'].restart_variables()
             settings = restart_nn_till_good(settings, num_times=10,
                                             all_data=all_data,
                                             market_data=market_data)
@@ -395,7 +407,14 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
         # Similarly, compute a new position for constant-position stra-
         # tegy, but only if we're on a beginning of a retrain_interval.
         settings['nn'].load()
-        positions = settings['nn'].predict(all_data[-settings['horizon']:])
+        if settings['nn_type'] == 'rnn':
+            positions = settings['nn'].predict(all_data[-settings['n_time']:])
+        else:
+            positions = settings['nn'].predict(all_data[-settings['horizon']:])
+        if settings['n_markets_to_use'] < len(settings['markets']):
+            pos_all = np.zeros(len(settings['markets']))
+            pos_all[:settings['n_markets_to_use']] = positions
+            positions = pos_all
         settings['current_positions'] = positions
     else:
         positions = settings['current_positions']
@@ -414,9 +433,9 @@ def mySettings():
     settings['n_sharpe'] = 252 # This many timesteps to compute Sharpes.
     settings['horizon'] = settings['n_time'] - settings['n_sharpe'] + 1
     settings['lbd'] = 1 # L1 regularizer strength.
-    settings['num_epochs'] = 15 # Number of epochs each day.
-    settings['batch_size'] = 16
-    settings['val_period'] = 16
+    settings['num_epochs'] = 30 # Number of epochs each day.
+    settings['batch_size'] = 32
+    settings['val_period'] = 0
     settings['lr'] = 1e-5 # Learning rate.
     settings['dont_trade'] = False # If on, don't trade.
     settings['iter'] = 0
@@ -429,7 +448,7 @@ def mySettings():
     settings['causal_interval'] = 0
     settings['causal_matrix'] = None
     settings['val_sharpe_threshold'] = -np.inf
-    settings['retrain_interval'] = 252
+    settings['retrain_interval'] = 100
     settings['realized_sharpe'] = []
     settings['saved_val_sharpe'] = []
     settings['best_val_sharpe'] = -np.inf
@@ -438,34 +457,17 @@ def mySettings():
     settings['allow_shorting'] = True
     settings['lr_mult_base'] = 1.
     settings['restart_variables'] = True
-    settings['nn_type'] = 'linear'
+    settings['nn_type'] = 'rnn'
     settings['nn'] = None
-    ''' Pick data types to feed into neural net.
-    If empty, only CLOSE will be used.
-    Circle dates added Sautomatically if any setting is provided.
-    0 = OPEN
-    1 = CLOSE
-    2 = HIGH
-    3 = LOW
-    4 = VOL
-    5 = CLOSE_LASTTRADE
-    6 = CLOSE_ASK
-    7 = CLOSE_BID
-    8 = RETURNS
-    9 = SHARES
-    10 = DIVIDENDS
-    11 = TOTALCAPS
-    12 = DATE
-    '''
     settings['data_types'] = [1]
     settings['markets'] = joblib.load('linear_hf/1000_stock_names.pkl')
-    import pdb; pdb.set_trace()
     assert np.mod(len(settings['markets']),settings['n_chunks']) == 0, "Nmarkets/Nchunks"
     return settings
 
 if __name__ == '__main__':
     import quantiacsToolbox
     results = quantiacsToolbox.runts(__file__, fname='linear_hf/1000_nyse_stocks.pkl')
+
     print results['stats']
     joblib.dump(results, 'results_of_this_run.pkl')
 
