@@ -5,6 +5,7 @@ import sys
 import os
 import pandas as pd
 import numpy as np
+from numpy.testing import assert_array_equal
 
 from context import linear_hf
 from linear_hf import preprocessing
@@ -73,4 +74,31 @@ def test_preproc_postipo_and_nan():
                                             prices, dates, prices, prices, prices,
                                             prices, prices, prices, prices, postipo=100,
                                             filler=np.pi)
-    assert np.sum(filled==np.pi).sum() == 48, 'wrong postipo behavior.'
+    assert np.sum(filled == np.pi).sum() == 48, 'wrong postipo behavior.'
+
+
+def test_batching():
+    # Make fake data that runs from 1 to 10 for each 'stock'.
+    horizon = 7
+    n_for_sharpe = 5
+    n_valid = 4
+    n_data = 128 + n_valid + 2 * (horizon + n_for_sharpe - 1)
+    all_data = np.ones((n_data, 7)) * np.arange(n_data).reshape(n_data, 1) + 1
+    market_data = np.ones((n_data, 4)) * np.arange(n_data).reshape(n_data, 1) + 1
+
+    # Split the dataset into four training batches of size 32 each and
+    # a validation batch of size 4.
+    all_batches = []
+    market_batches = []
+    for b_id in range(4):
+        all_val, market_val, all_batch, market_batch = preprocessing.split_val_tr(
+            all_data, market_data, valid_period=n_valid, batch_size=32,
+            batch_id=b_id, horizon=horizon, n_for_sharpe=n_for_sharpe, randseed=1)
+        all_batches.append(all_batch)
+        market_batches.append(market_batch)
+
+    all_batches = np.vstack(all_batches)
+    market_batches = np.vstack(market_batches)
+
+    assert_array_equal(np.sort(all_batches[:, 0, 0]), np.arange(n_data) + 1)
+    assert_array_equal(np.sort(market_batches[:, 0, 0]), np.arange(n_data) + 1)
