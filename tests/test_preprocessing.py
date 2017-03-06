@@ -82,7 +82,8 @@ def test_batching():
     horizon = 7
     n_for_sharpe = 5
     n_valid = 4
-    n_data = 128 + n_valid + 2 * (horizon + n_for_sharpe - 1)
+    # Set n_data so that number of training points is exactly 128.
+    n_data = 128 + n_valid + horizon - 1 + 2 * n_for_sharpe
     all_data = np.ones((n_data, 7)) * np.arange(n_data).reshape(n_data, 1) + 1
     market_data = np.ones((n_data, 4)) * np.arange(n_data).reshape(n_data, 1) + 1
 
@@ -100,5 +101,15 @@ def test_batching():
     all_batches = np.vstack(all_batches)
     market_batches = np.vstack(market_batches)
 
-    assert_array_equal(np.sort(all_batches[:, 0, 0]), np.arange(n_data) + 1)
-    assert_array_equal(np.sort(market_batches[:, 0, 0]), np.arange(n_data) + 1)
+    # Check that the training set covers all data.
+    assert_array_equal(np.sort(all_batches[:, 0, 0]),
+                       np.arange(128) + 1)
+    assert_array_equal(np.sort(market_batches[:, 0, 0]),
+                       np.arange(128) + 1 + horizon)
+
+    # Check that the validation set starts where it is supposed to start.
+    valid_start = n_data - n_valid - horizon - n_for_sharpe + 1
+    assert_array_equal(np.sort(np.unique(all_val[:, 0, 0])),
+                       np.arange(4) + 1 + valid_start)
+    assert_array_equal(np.sort(np.unique(market_val[:, 0, 0])),
+                       np.arange(4) + 1 + horizon + valid_start)
