@@ -113,7 +113,6 @@ def update_nn(settings, best_sharpe, epoch_sharpe):
 
     return settings, best_sharpe
 
-
 def init_nn(settings, n_ftrs):
     """ Intializes the neural net
 
@@ -133,8 +132,7 @@ def init_nn(settings, n_ftrs):
                                       n_sharpe=settings['n_sharpe'],
                                       lbd=settings['lbd'],
                                       allow_shorting=settings['allow_shorting'],
-                                      cost=settings['cost_type'],
-                                      causality_matrix=settings['causal_matrix'])
+                                      cost=settings['cost_type'])
 
     print 'Done with initializing neural net!'
     return settings
@@ -306,11 +304,6 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
             else:
                 settings['dont_trade'] = True
 
-    if settings['val_period'] == 0:
-        settings['saved_val_sharpe'].append(np.nan)
-    else:
-        settings['saved_val_sharpe'].append(settings['best_val_sharpe'])
-
     # Predict a portfolio.
     if (settings['iter'] % settings['retrain_interval'] == 0 or
         not settings['cost_type'].startswith('onepos')):
@@ -334,8 +327,8 @@ def mySettings():
     """ Settings for the backtester"""
     settings = {}
     # Futures Contracts
-    settings['n_time'] = 120 # Use this many timesteps in one datapoint.
-    settings['n_sharpe'] = 100 # This many timesteps to compute Sharpes.
+    settings['n_time'] = 60 # Use this many timesteps in one datapoint.
+    settings['n_sharpe'] = 30 # This many timesteps to compute Sharpes.
     settings['horizon'] = settings['n_time'] - settings['n_sharpe'] + 1
     settings['lbd'] = 0 # L1 regularizer strength.
     settings['num_epochs'] = 15 # Number of epochs each day.
@@ -352,8 +345,6 @@ def mySettings():
     # How often to recompute the causal matrix. If 0, no causal matrix.
     settings['val_sharpe_threshold'] = 0
     settings['retrain_interval'] = 10
-    settings['realized_sharpe'] = []
-    settings['saved_val_sharpe'] = []
     settings['best_val_sharpe'] = -np.inf
     settings['cost_type'] = 'sharpe'
     settings['allow_shorting'] = True
@@ -361,12 +352,12 @@ def mySettings():
     settings['restart_variables'] = True
     settings['nn'] = None
     settings['data_types'] = [1]
-    settings['markets'] = joblib.load('linear_hf/1000_stock_names.pkl')
+    settings['markets'] = joblib.load('linear_hf/2700_stock_names.pkl')
     return settings
 
 if __name__ == '__main__':
     import quantiacsToolbox
-    results = quantiacsToolbox.runts(__file__, plotEquity=False)
+    results = quantiacsToolbox.runts(__file__, plotEquity=False, fname='linear_hf/2700_nyse_stocks.pkl')
     print results['stats']
     joblib.dump(results, 'results_of_this_run.pkl')
 
