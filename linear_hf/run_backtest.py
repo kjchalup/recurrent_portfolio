@@ -6,7 +6,7 @@ from linear_hf import training
 def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
                     CLOSE_ASK, CLOSE_BID, RETURN, SHARE, DIVIDEND,
                     TOTALCAP, exposure, equity, settings, fundEquity):
-    n_markets = settings['n_markets_to_use']
+    n_markets = len(settings['markets'])
 
     # Preprocess the data
     market_data, all_data, _ = preprocess(
@@ -20,7 +20,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
 
     # Print progress out.
     print('Iter {} [{}], fundEquity {}.'.format(
-        settings['iter'], DATE[-1], fundEquity))
+        settings['iter'], DATE[-1], fundEquity[-1].mean()))
 
     # Initialize neural net.
     if settings['iter'] == 0:
@@ -49,8 +49,8 @@ def mySettings():
     """ Settings for the backtester"""
     settings = {}
     # Futures Contracts
-    settings['n_time'] = 302 # Use this many timesteps in one datapoint.
-    settings['n_sharpe'] = 252 # This many timesteps to compute Sharpes.
+    settings['n_time'] = 30 # Use this many timesteps in one datapoint.
+    settings['n_sharpe'] = 10 # This many timesteps to compute Sharpes.
     settings['horizon'] = settings['n_time'] - settings['n_sharpe'] + 1
     settings['lbd'] = 1 # L1 regularizer strength.
     settings['num_epochs'] = 30 # Number of epochs each day.
@@ -68,15 +68,15 @@ def mySettings():
     settings['allow_shorting'] = True
     settings['lr_mult_base'] = 1.
     settings['restart_variables'] = True
-    settings['nn_type'] = 'nn'
+    settings['nn_type'] = 'linear' # 'linear' or 'rnn'
     settings['nn'] = None
     settings['data_types'] = [1]
-    settings['markets'] = joblib.load('linear_hf/1000_stock_names.pkl')
+    settings['markets'] = joblib.load('linear_hf/tickerData/1000_stock_names.pkl')
     return settings
 
 if __name__ == '__main__':
     import quantiacsToolbox
-    RESULTS = quantiacsToolbox.runts(__file__, fname='linear_hf/1000_nyse_stocks.pkl')
+    RESULTS = quantiacsToolbox.runts(__file__, fname='linear_hf/tickerData/1000_nyse_stocks.pkl')
 
     print RESULTS['stats']
     joblib.dump(RESULTS, 'saved_data/results_of_this_run.pkl')

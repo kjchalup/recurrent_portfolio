@@ -55,26 +55,19 @@ def init_nn(settings, n_ftrs):
     Returns:
         settings: a dict with ['nn'] which is the initialized neuralnet.
     """
-    print 'Initializing net...\n'
-    if 'nn' in settings.keys():
-    	if settings['nn'] is not None:
-        	settings['nn'].sess.close()
     if settings['nn_type'] == 'linear':
         settings['nn'] = neuralnet.Linear(n_ftrs=n_ftrs,
-                                          n_markets=settings['n_markets_to_use'],
+                                          n_markets=len(settings['markets']),
                                           n_time=settings['n_time'],
                                           n_sharpe=settings['n_sharpe'],
                                           lbd=settings['lbd'],
-                                          allow_shorting=settings['allow_shorting'],
-                                          causality_matrix=settings['causal_matrix'])
+                                          allow_shorting=settings['allow_shorting'])
     elif settings['nn_type'] == 'rnn':
         settings['nn'] = rnn.RNN(n_ftrs=n_ftrs,
-                                 n_markets=settings['n_markets_to_use'],
+                                 n_markets=len(settings['markets']),
                                  n_time=settings['n_time'],
                                  n_sharpe=settings['n_sharpe'],
                                  allow_shorting=settings['allow_shorting'])
-
-    print 'Done with initializing neural net!'
     return settings
 
 def train(settings, all_data, market_data):
