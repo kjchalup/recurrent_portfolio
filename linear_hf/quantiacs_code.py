@@ -1,28 +1,46 @@
+""" Convenience functions to call various Quantiacs functions. """
 import numpy as np
-import pandas as pd
-from test_preprocessing import fillnans
 from quantiacsToolbox import stats
+
+def fillnans(data):
+    """ Fill in (column-wise) value gaps with the most recent non-nan value. 
+    Leading nan's remain in place. The gaps are filled in only after the first non-nan entry.
+
+    Args:
+      data: Input data to be un-nanned.
+
+    Returns:
+        filled: Same size as data with the nan-values 
+            replaced by the most recent non-nan entry.
+    """
+
+    data = np.array(data, dtype=float)
+    nan_row, nan_col = np.where(np.isnan(data))
+    for (row_id, col_id) in zip(nan_row, nan_col):
+        if row_id > 0:
+            data[row_id, col_id] = data[row_id - 1, col_id]
+
+    return data
+
 
 def quantiacs_calculation(dataDict, positions, settings):
     """ Evaluates trading returns using quantiacsToolbox code
 
     Args:
-        dataDict: dict from quantiacs' loadData function, needs open, close, high, low
-        positions: positions vector (n_timesteps, n_markets), doesn't need to be normalized
-        settings: dict with lookback, slippage set. minimum for lookback = 2
+        dataDict: Dict used by Quantiacs' loadData function.
+        positions (n_timesteps, n_markets): Positions vectors, unnormalized is fine.
+        settings: Dict with lookback and slippage settings. minimum for lookback is 2.
 
     Returns:
-        returns: dict with 'fundEquity'(n_timesteps, 1), 'returns' (n_timesteps, n_markets)
+        returns: dict with 'fundEquity' (n_timesteps, 1), 
+            'returns' (n_timesteps, n_markets).
     """
-
-
-    print 'Evaluating Trading System'
 
     nMarkets=len(settings['markets'])
     endLoop=len(dataDict['DATE'])
 
     if 'RINFO' in dataDict:
-        Rix= dataDict['RINFO'] != 0
+        Rix = dataDict['RINFO'] != 0
     else:
         dataDict['RINFO'] = np.zeros(np.shape(dataDict['CLOSE']))
         Rix = np.zeros(np.shape(dataDict['CLOSE']))
@@ -66,8 +84,6 @@ def quantiacs_calculation(dataDict, positions, settings):
         position = np.real(position)
         position = position/np.sum(abs(position))
         position[np.isnan(position)] = 0  # extra nan check in case the positions sum to zero
-
-        #dataDict['exposure'][t,:] = position.copy()
 
     marketRets = np.float64(dataDict['CLOSE'][1:,:] - dataDict['CLOSE'][:-1,:] - dataDict['RINFO'][1:,:])/dataDict['CLOSE'][:-1,:]
     marketRets = fillnans(marketRets)

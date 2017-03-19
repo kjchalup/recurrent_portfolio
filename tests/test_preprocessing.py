@@ -6,7 +6,6 @@ import os
 import pandas as pd
 import numpy as np
 from numpy.testing import assert_array_equal
-
 from context import linear_hf
 from linear_hf import preprocessing
 
@@ -56,6 +55,7 @@ def test_preproc_nanfill():
                                             prices, prices, prices, prices, postipo=1)
     assert np.isnan(filled).sum() == 0, 'nans were not filled.'
 
+
 def test_preproc_postipo_and_nan():
     markets = ['fake']
     dates = np.atleast_2d([20000101, 20000102, 20000103, 20000104,
@@ -82,6 +82,7 @@ def test_batching():
     horizon = 7
     n_for_sharpe = 5
     n_valid = 4
+
     # Set n_data so that number of training points is exactly 128.
     n_data = 128 + n_valid + horizon - 1 + 2 * n_for_sharpe
     all_data = np.ones((n_data, 7)) * np.arange(n_data).reshape(n_data, 1) + 1

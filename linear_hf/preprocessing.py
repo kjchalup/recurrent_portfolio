@@ -8,6 +8,16 @@ from sklearn.preprocessing import StandardScaler
 import numpy as np
 from . import NP_DTYPE
 
+def get_n_batch(n_timesteps, horizon, val_period, n_sharpe, batch_size):
+    if val_period > 0:
+        batches_per_epoch = int(np.floor((n_timesteps - horizon - val_period
+                                          -2 * n_sharpe + 1) / batch_size))
+    else:
+        batches_per_epoch = int(np.floor((
+            n_timesteps - horizon - n_sharpe + 1) / batch_size))
+    return batches_per_epoch
+
+
 def draw_timeseries_batch(all_data, market_data, horizon,
                           batch_size, batch_id, randseed=1):
     """ Make batches of data. Used by split_val_tr.

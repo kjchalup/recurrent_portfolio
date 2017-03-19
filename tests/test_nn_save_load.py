@@ -1,13 +1,10 @@
-import pytest
-import os
-import sys
-
 import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_raises
 
 from context import linear_hf
 from linear_hf import neuralnet
 from linear_hf import NP_DTYPE
+
 
 def test_nn_restart_variables():
     n_ftrs = 4
@@ -21,9 +18,8 @@ def test_nn_restart_variables():
     out1 = nn.predict(batch_in[0, -horizon:])
     nn.restart_variables()
     out2 = nn.predict(batch_in[0, -horizon:])
-    assert_raises(AssertionError,
-                  assert_array_almost_equal,
-                  out1, out2)
+    assert np.sum(out1 != out2) > 0
+
     
 def test_nn_save_and_load():
     n_ftrs = 4
