@@ -38,9 +38,6 @@ def update_nn(settings, best_sharpe, epoch_sharpe):
         settings: saved neuralnet in settings
         best_sharpe: updated new sharpe or old best sharpe
     """
-    if epoch_sharpe > best_sharpe:
-        best_sharpe = epoch_sharpe
-        settings['nn'].save()
 
     return settings, best_sharpe
 
@@ -99,7 +96,6 @@ def train(settings, all_data, market_data):
         lr_new = lr_calc(settings, epoch_id)
         # Train an epoch.
         for batch_id in range(batches_per_epoch):
-            # Split data into validation and training batches.
             all_val, market_val, all_batch, market_batch = split_val_tr(
                 all_data=all_data, market_data=market_data,
                 valid_period=settings['val_period'],
@@ -124,11 +120,13 @@ def train(settings, all_data, market_data):
 
         # Update neural net, and attendant values if NN is better than previous.
         if settings['val_period'] > 0:
-            settings, best_val_sharpe = update_nn(
-                settings, best_val_sharpe, val_sharpe)
+            if val_sharpe > best_best_sharpe:
+                best_val_sharpe = val_sharpe
+                settings['nn'].save()
         else:
-            settings, best_tr_sharpe = update_nn(
-                settings, best_tr_sharpe, tr_sharpe)
+            if tr_sharpe > best_tr_sharpe:
+                best_tr_sharpe = tr_sharpe
+                settings['nn'].save()
 
         # Write out data for epoch.
         sys.stdout.write('\nEpoch {}, val/tr Sharpe {:.4}/{:.4g}.'.format(

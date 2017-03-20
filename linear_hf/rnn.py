@@ -29,30 +29,20 @@ def define_rnn(batch_in_tf, seq_lens_tf, n_sharpe,
     Returns:
       positions (n_batch, n_sharpe, n_markets): Positions for each market.
     """
-    if equality:
-        assert allow_shorting, 'equality nets only possible with shorting!'
     lstm_cell = tf_rnn.BasicLSTMCell(num_units=n_markets, state_is_tuple=True)
     cell_state = tf.placeholder(TF_DTYPE, [None, lstm_cell.state_size[0]])
     hidden_state = tf.placeholder(TF_DTYPE, [None, lstm_cell.state_size[0]])
     init_state = tf.contrib.rnn.LSTMStateTuple(cell_state, hidden_state)
-    out, state_out_tf = tf_nn.dynamic_rnn(cell=lstm_cell, inputs=batch_in_tf, time_major=False, 
+    out, state_out_tf = tf_nn.dynamic_rnn(
+        cell=lstm_cell, inputs=batch_in_tf, time_major=False, 
         sequence_length=seq_lens_tf, initial_state=init_state, dtype=tf.float32)
     
-    # Use "all ones" as the default strategy to improve upon.
-    #out = out + tf.ones_like(out) / 10.
     if allow_shorting:
         out = out / tf.reduce_sum(tf.abs(out), axis=2, keep_dims=True)
-    elif equality:
-        out_pos = tf.maximum(out, 0)
-        out_neg = tf.minium(out, 0)
-        out_pos_sum = tf.reduce_sum(out_pos, axis=2, keep_dims=True)
-        out_neg_sum = tf.reduce_sum(-out_neg, axis=2, keep_dims=True)
-        out = out_pos * out_neg_sum / out_pos_sum + out_neg
-        out /= tf.reduce_sum(tf.abs(out), axis=2, keep_dims=True)
     else:
         out = tf.pow(out, 2)
         out = out / tf.reduce_sum(out, axis=2, keep_dims=True)
-    return out, state_out_tf, (cell_state, hidden_state)
+    return out[:, -n_sharpe:, :], state_out_tf, (cell_state, hidden_state)
 
 class RNN(object):
     """ A linear, L1-regularized position predictor.
@@ -62,10 +52,8 @@ class RNN(object):
     positions whose absolute values sum to one.
     """
 
-    def __init__(self, n_ftrs, n_markets, n_time, 
-                 n_sharpe, W_init=None, lbd=0.001,
-                 causality_matrix=None, n_csl_ftrs=None, seed=None,
-                 allow_shorting=True, cost='sharpe'):
+    def __init__(self, n_ftrs, n_markets, n_time, n_sharpe, lbd=0.001, 
+                 seed=None, allow_shorting=True):
         """ Initialize the regressor.
 
         Args:
@@ -74,16 +62,9 @@ class RNN(object):
           n_time (float): Timesteps in batches.
           n_sharpe (float): Use this many timesteps to predict each
             position vector.
-          W_init (n_ftrs * (n_time-n_sharpe+1), n_markets): Weight
-            initalization.
           lbd (float): l1 penalty coefficient.
-          causality_matrix (n_ftrs, n_markets): A matrix where the [ij]
-            entry is positive if market corresponding to feature i seems
-            to cause changes in market j. Used to decrease the L1 penalty
-            on causally meaningful weights.
           seed (int): Graph-level random seed, for testing purposes.
           allow_shorting (bool): If True, allow negative positions.
-          cost (str): cost to use: 'sharpe', 'min_return', 'mean_return', or 'mixed_return'
         """
         self.n_ftrs = n_ftrs
         self.n_markets = n_markets
@@ -111,8 +92,7 @@ class RNN(object):
         rnn_defs = define_rnn(
             self.batch_in_tf, self.seq_lens_tf, n_sharpe=n_sharpe, 
             n_time=n_time, n_ftrs=n_ftrs, n_markets=self.n_markets,
-            allow_shorting=allow_shorting,
-            equality=cost.startswith('equality'))
+            allow_shorting=allow_shorting)
         self.positions_tf = rnn_defs[0]
         self.state_out_tf = rnn_defs[1]
         self.state_in_tf = rnn_defs[2]
@@ -123,23 +103,16 @@ class RNN(object):
         self.l1_penalty_tf = tf.reduce_sum(tf.zeros([2,2]))
 
         # Define the unnormalized loss function.
-        if cost.startswith('onepos'):
-            self.loss_tf = -sharpe_onepos_tf(
-                self.positions_tf, self.batch_out_tf, n_sharpe,
-                n_markets, cost=cost) + self.l1_penalty_tf
-        else:
-            self.loss_tf = -sharpe_tf(
-                self.positions_tf, self.batch_out_tf,
-                n_sharpe, n_markets, cost=cost) + self.l1_penalty_tf
+        self.loss_tf = -sharpe_tf(
+            self.positions_tf, self.batch_out_tf) + self.l1_penalty_tf
 
         # Define the optimizer.
-        raw_grads = tf.gradients(self.loss_tf, tf.trainable_variables())
-        grads = [tf.clip_by_value(g, -1, 1) for g in raw_grads]
-        self.train_op_tf = tf.train.RMSPropOptimizer(
-            self.lr_tf).apply_gradients(zip(grads, tf.trainable_variables()))
-
-        #self.train_op_tf = tf.train.AdamOptimizer(
-        #    learning_rate=self.lr_tf).minimize(self.loss_tf)
+        # raw_grads = tf.gradients(self.loss_tf, tf.trainable_variables())
+        # grads = [tf.clip_by_value(g, -1, 1) for g in raw_grads]
+        # self.train_op_tf = tf.train.AdamOptimizer(
+        #     self.lr_tf).apply_gradients(zip(grads, tf.trainable_variables()))
+        self.train_op_tf = tf.train.AdamOptimizer(
+            learning_rate=self.lr_tf).minimize(self.loss_tf)
 
         # Define the saver that will serialize the weights/biases.
         self.saver = tf.train.Saver(max_to_keep=1)
@@ -163,20 +136,27 @@ class RNN(object):
 
     def _positions_np(self, batch_in):
         """ Predict a portfolio for a training batch.
+        NOTE: this does not update the internal state.
 
         Args:
-          batch_in (n_batch, n_time, n_ftrs): Input data.
+          data_in (n_batch, n_time, n_ftrs): Input data.
 
         Returns:
           positions (n_batch, n_markets): Positions.
         """
-        seq_lens = batch_in.shape[0] * [batch_in.shape[1]]
-        return self.sess.run(self.positions_tf,
-                             {self.batch_in_tf: batch_in, 
-                              self.seq_lens_tf: seq_lens})
+        seq_lens = [batch_in.shape[1]] * batch_in.shape[0]
+        positions, state =  self.sess.run([self.positions_tf, 
+                                           self.state_out_tf],
+                                 {self.state_in_tf[0]: self.last_state[0],
+                                  self.state_in_tf[1]: self.last_state[1],
+                                  self.seq_lens_tf: seq_lens,
+                                  self.batch_in_tf: batch_in})
+        return positions
+
 
     def predict(self, data_in):
         """ Predict a portfolio for a test batch.
+        NOTE: this updates the internal state.
 
         Args:
           data_in (horizon, n_ftrs): Input data, where

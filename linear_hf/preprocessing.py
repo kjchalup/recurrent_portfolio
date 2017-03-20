@@ -8,7 +8,8 @@ from sklearn.preprocessing import StandardScaler
 import numpy as np
 from . import NP_DTYPE
 
-def get_n_batch(n_timesteps, horizon, val_period, n_sharpe, batch_size):
+def get_n_batch(n_timesteps, horizon, val_period, 
+                n_sharpe, batch_size, type='nn'):
     if val_period > 0:
         batches_per_epoch = int(np.floor((n_timesteps - horizon - val_period
                                           -2 * n_sharpe + 1) / batch_size))
@@ -31,11 +32,14 @@ def draw_timeseries_batch(all_data, market_data, horizon,
         randseed: Can be the epoch number, helps randomize between epochs.
 
     Returns:
-        all_batch (n_batchsize, n_timesteps, data): Batches for input data to neural net.
-        market_batch (n_batchsize, n_timesteps, market_data): Batches for scoring for neural net.
+        all_batch (n_batchsize, n_timesteps, data): Batches for input 
+            data to neural net.
+        market_batch (n_batchsize, n_timesteps, market_data): Batches 
+            for scoring for neural net.
 
     Raises:
-        IndexError: If batch_id is too large for given batch_size and all_data.shape[0].
+        IndexError: If batch_id is too large for given 
+            batch_size and all_data.shape[0].
     """
     old_state = np.random.get_state()
     np.random.seed(randseed)
@@ -43,8 +47,10 @@ def draw_timeseries_batch(all_data, market_data, horizon,
     np.random.set_state(old_state)
     if (batch_id + 1) * batch_size > perm_ids.size:
         raise IndexError('Cant make this many batches, not enough data!')
-    all_batch = np.zeros((batch_size, horizon, all_data.shape[1])).astype(NP_DTYPE)
-    market_batch = np.zeros((batch_size, horizon, market_data.shape[1])).astype(NP_DTYPE)
+    all_batch = np.zeros((
+        batch_size, horizon, all_data.shape[1])).astype(NP_DTYPE)
+    market_batch = np.zeros((
+        batch_size, horizon, market_data.shape[1])).astype(NP_DTYPE)
     start_ids = perm_ids[batch_id * batch_size : (batch_id + 1) * batch_size]
     for point_id, start_id in enumerate(start_ids):
         all_batch[point_id, :, :] = all_data[start_id: start_id+horizon]
@@ -61,7 +67,8 @@ def split_val_tr(all_data, market_data, valid_period, horizon,
             of arrays of open, close, high and low prices.
         valid_period: Number of batches of validation data.
         horizon: Size of total horizon used to predict n_for_sharpe.
-        n_for_sharpe: Number of portfolios output to use for gradient calculation.
+        n_for_sharpe: Number of portfolios output to use 
+            for gradient calculation.
         batch_size: Number of data per epoch.
         batch_id: Data id in the batch.
         randseed: Can be the epoch number, helps randomize between epochs.
@@ -128,7 +135,7 @@ def load_nyse_markets(start_date, postipo=100):
         if (int(data[1].split(',')[0]) < int(start_date_minuspostipo) and
                 int(data[-1].split(',')[0]) > int(start_date)):
             alives.append(fname)
-    assert len(alives) > 0, "No stocks returned! Check start_date-postipo is OK!"
+    assert len(alives) > 0, 'No stocks returned.'
     return [symbol.split('/')[1][:-4] for symbol in alives]
 
 

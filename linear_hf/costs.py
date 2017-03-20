@@ -21,8 +21,8 @@ def sharpe_tf(positions, prices, slippage=.05, n_ignore=0):
         sharpe (tf.float): Tensor, representation of the Sharpe
           ratio that positions achieve, averaged over all the batches.
     """
-    n_batch, n_sharpe, n_markets = positions.get_shape().as_list()
-    n_batch = tf.shape(positions)[0]
+    _, n_sharpe, n_markets = positions.get_shape().as_list()
+    n_batch = tf.shape(positions)[0]  # This can be unknown at compilation time.
     rs_list = [tf.zeros((n_batch, 1), dtype=TF_DTYPE),
                tf.zeros((n_batch, 1), dtype=TF_DTYPE)]
     os, cs, hs, ls = _extract_data(prices, n_markets)

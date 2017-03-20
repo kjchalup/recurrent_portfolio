@@ -51,10 +51,8 @@ class Linear(object):
     positions whose absolute values sum to one.
     """
 
-    def __init__(self, n_ftrs, n_markets, n_time, 
-                 n_sharpe, W_init=None, lbd=0.001,
-                 causality_matrix=None, n_csl_ftrs=None, seed=None,
-                 allow_shorting=True):
+    def __init__(self, n_ftrs, n_markets, n_time, n_sharpe, W_init=None, 
+                 lbd=0.001, n_csl_ftrs=None, seed=None, allow_shorting=True):
         """ Initialize the regressor.
 
         Args:
@@ -66,10 +64,6 @@ class Linear(object):
           W_init (n_ftrs * (n_time-n_sharpe+1), n_markets): Weight
             initalization.
           lbd (float): l1 penalty coefficient.
-          causality_matrix (n_ftrs, n_markets): A matrix where the [ij]
-            entry is positive if market corresponding to feature i seems
-            to cause changes in market j. Used to decrease the L1 penalty
-            on causally meaningful weights.
           seed (int): Graph-level random seed, for testing purposes.
           allow_shorting (bool): If True, allow negative positions.
         """
@@ -107,15 +101,7 @@ class Linear(object):
                                       n_ftrs=n_ftrs,
                                       W=self.W, b=self.b,
                                       allow_shorting=allow_shorting)
-
-        # Define the L1 penalty, taking causality into account.
-        if causality_matrix is None:
-            self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(self.W))
-
-        else:
-            self.causality_matrix = np.tile(causality_matrix, [self.horizon, 1])
-            self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(
-                tf.div(self.W, self.causality_matrix + 1e-3)))
+        self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(self.W))
 
         # Define the unnormalized loss function.
         self.loss_tf = -sharpe_tf(
@@ -190,20 +176,7 @@ class Linear(object):
         return self.sess.run(self.loss_tf,
                              {self.batch_in_tf: batch_in,
                               self.batch_out_tf: batch_out})
-    '''
-    def regularization_penalty():
-        """ Compute all regularization """
-        if causality_matrix is None:
-            #self.l1_penalty_tf = self.lbd * tf.reduce_sum(tf.abs(self.W))
-            self.penalty = self.lbd * tf.reduce_sum(tf.pow(self.W, 2))
-        else:
-            self.causality_matrix = np.tile(causality_matrix, [self.horizon, 1])
-            self.penalty = self.lbd * tf.reduce_sum(tf.abs(
-                tf.boolean_mask(self.W, self.causality_matrix == 0)))
 
-        short_long_penalty = tf.reduce_mean(positions_tf)
-    return self.ses.run(self.penalty)
-    '''
     def train_step(self, batch_in, batch_out, lr):
         """ Do one gradient-descent step. """
         self.sess.run(self.train_op_tf,
