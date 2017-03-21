@@ -42,7 +42,7 @@ def define_rnn(batch_in_tf, seq_lens_tf, n_sharpe,
     else:
         out = tf.pow(out, 2)
         out = out / tf.reduce_sum(out, axis=2, keep_dims=True)
-    return out[:, -n_sharpe:, :], state_out_tf, (cell_state, hidden_state)
+    return out, state_out_tf, (cell_state, hidden_state)
 
 class RNN(object):
     """ A linear, L1-regularized position predictor.
@@ -70,7 +70,6 @@ class RNN(object):
         self.n_markets = n_markets
         self.n_time = n_time
         self.n_sharpe = n_sharpe
-        self.horizon = n_time - n_sharpe + 1
         self.lbd = lbd
         self.rnn_state = None
 
@@ -99,12 +98,9 @@ class RNN(object):
         self.last_state = [np.zeros((1, self.n_markets), dtype=NP_DTYPE),
                            np.zeros((1, self.n_markets), dtype=NP_DTYPE)]
 
-        # Define the L1 penalty, taking causality into account.
-        self.l1_penalty_tf = tf.reduce_sum(tf.zeros([2,2]))
-
         # Define the unnormalized loss function.
         self.loss_tf = -sharpe_tf(
-            self.positions_tf, self.batch_out_tf) + self.l1_penalty_tf
+            self.positions_tf[:, -self.n_sharpe:, :], self.batch_out_tf)
 
         # Define the optimizer.
         # raw_grads = tf.gradients(self.loss_tf, tf.trainable_variables())
@@ -159,25 +155,24 @@ class RNN(object):
         NOTE: this updates the internal state.
 
         Args:
-          data_in (horizon, n_ftrs): Input data, where
-            horizon = n_time - n_sharpe + 1. This corresponds
-            to data needed to predict just one portfolio.
+            data_in (n_time, n_ftrs): Input data, prices just for the last day. 
+                Since the state is copied through, each test day processes just
+                one time-point.
 
         Returns:
-          positions (n_markets): Positions.
+            positions (n_markets): Positions.
         """
         seq_lens = [1]
-        positions, state =  self.sess.run([self.positions_tf, self.state_out_tf],
-                                 {self.state_in_tf[0]: self.last_state[0],
-                                  self.state_in_tf[1]: self.last_state[1],
-                                  self.seq_lens_tf: seq_lens,
-                                  self.batch_in_tf: np.expand_dims(data_in, 0)})
+        data_in = np.tile(data_in, [self.n_time, 1])
+        feed_dict = {self.state_in_tf[0]: self.last_state[0],
+                     self.state_in_tf[1]: self.last_state[1],
+                     self.seq_lens_tf: seq_lens,
+                     self.batch_in_tf: data_in[None, :, :]}
+        positions, state =  self.sess.run([self.positions_tf, 
+                                           self.state_out_tf],
+                                          feed_dict)
         self.last_state = state
         return positions[0, 0]
-
-    def l1_penalty_np(self):
-        """ Compute the L1 penalty on the weights. """
-        return self.sess.run(self.l1_penalty_tf)
 
     def loss_np(self, batch_in, batch_out):
         """ Compute the current Sharpe loss.

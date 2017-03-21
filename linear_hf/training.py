@@ -12,6 +12,7 @@ def lr_calc(settings, epoch_id):
     lr_new = settings['lr'] * lr_mult ** epoch_id
     return lr_new
 
+
 def loss_calc(settings, all_batch, market_batch):
     """ Calculates loss from neuralnet
 
@@ -23,23 +24,11 @@ def loss_calc(settings, all_batch, market_batch):
         cost: loss - l1 penalty
     """
     loss = settings['nn'].loss_np(all_batch, market_batch)
-    l1_loss = settings['nn'].l1_penalty_np()
+    if settings['nn_type'] == 'linear':
+        l1_loss = settings['nn'].l1_penalty_np()
+    else:
+        l1_loss = 0
     return -(loss - l1_loss)
-
-def update_nn(settings, best_sharpe, epoch_sharpe):
-    """ Saves neural net and updates best_sharpe if better in this epoch.
-
-    Args:
-        settings: contains the neuralnet
-        best_sharpe: the previously highest sharpe (or cost function)
-        epoch_sharpe: the sharpe for the current epoch (either validation or avg)
-
-    Returns:
-        settings: saved neuralnet in settings
-        best_sharpe: updated new sharpe or old best sharpe
-    """
-
-    return settings, best_sharpe
 
 
 def init_nn(settings, n_ftrs):
@@ -53,12 +42,10 @@ def init_nn(settings, n_ftrs):
         settings: a dict with ['nn'] which is the initialized neuralnet.
     """
     if settings['nn_type'] == 'linear':
-        settings['nn'] = neuralnet.Linear(n_ftrs=n_ftrs,
-                                          n_markets=len(settings['markets']),
-                                          n_time=settings['n_time'],
-                                          n_sharpe=settings['n_sharpe'],
-                                          lbd=settings['lbd'],
-                                          allow_shorting=settings['allow_shorting'])
+        settings['nn'] = neuralnet.Linear(
+            n_ftrs=n_ftrs, n_markets=len(settings['markets']),
+            n_time=settings['n_time'], n_sharpe=settings['n_sharpe'],
+            lbd=settings['lbd'], allow_shorting=settings['allow_shorting'])
     elif settings['nn_type'] == 'rnn':
         settings['nn'] = rnn.RNN(n_ftrs=n_ftrs,
                                  n_markets=len(settings['markets']),
@@ -84,8 +71,10 @@ def train(settings, all_data, market_data):
     """
     best_val_sharpe = -np.inf
     best_tr_sharpe = -np.inf
-    batches_per_epoch = get_n_batch(all_data.shape[0], settings['horizon'],
-                                    settings['val_period'], settings['n_sharpe'],
+    batches_per_epoch = get_n_batch(all_data.shape[0], 
+                                    settings['horizon'],
+                                    settings['val_period'], 
+                                    settings['n_sharpe'],
                                     settings['batch_size'])
 
     for epoch_id in range(settings['num_epochs']):
