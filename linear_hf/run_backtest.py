@@ -2,23 +2,54 @@
 import joblib
 from sklearn.preprocessing import StandardScaler
 import numpy as np
-from linear_hf.preprocessing import preprocess
 from linear_hf.preprocessing import preprocess_mini
 from linear_hf import training
 
-def _make_empty_data_dict(markets, dtypes, max_time=10000):
-    """ Make a dictionary containing placeholders for data that
-    will be filled up as training continues. 
+def _make_empty_datadict(markets, max_time=10000):
+    """ Make a dictionary containing placeholders for OPEN, CLOSE,
+    HIGH, LOW and DATE data that will be filled up as training continues.
     """
     data = {}
-    data[
-np.nan * np.ones(
-        (10000, len(settings['markets']) * len(settings['data_types'])))
+    for key in ['OPEN', 'CLOSE', 'HIGH', 'LOW']:
+        data[key] = np.nan * np.ones((max_time, len(markets)))
+    data['DATE'] = np.nan * np.ones((max_time))
+    return data
+
+
+def _append_new_data(past_data, OPEN, CLOSE, HIGH, LOW, DATE):
+    """ Append the OPEN, ..., DATE data to their respective arrays
+    in the past_data dictionary, assuming this is done on each timestep.
+
+    Args:
+        past_data (dict): Dictionary containing 'OPEN', ..., 'DATE' as
+            keys and nan-padded value arrays as values.
+        OPEN, CLOSE, HIGH, LOW, DATE: Quantiacs data arrays.
+
+    Returns:
+        OPEN, ..., DATE: Data with pre-pended past entries from the dict.
+            The dictionary is also updated with the new data.
+    """
+    keys = ['OPEN', 'CLOSE', 'HIGH', 'LOW', 'DATE']
+    first_nan = np.where(np.isnan(past_data['OPEN']))[0][0]
+    lookback = OPEN.shape[0]
+    for key in keys:
+        if first_nan == 0:
+            # This is the first iteration!
+            past_data[key][:lookback] = locals()[key]
+        else:
+            past_data[key][
+                first_nan - lookback + 1 : first_nan + 1] = locals()[key]
+    if first_nan == 0:
+        return [past_data[key][:lookback] for key in keys]
+    else:
+        return [past_data[key][: first_nan + 1] for key in keys]
+
 
 def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
                     CLOSE_ASK, CLOSE_BID, RETURN, SHARE, DIVIDEND,
                     TOTALCAP, exposure, equity, settings, fundEquity):
-    n_markets = len(settings['markets'])
+    OPEN, CLOSE, HIGH, LOW, DATE = _append_new_data(
+        settings['past_data'], OPEN, CLOSE, HIGH, LOW, DATE)
 
     # Preprocess the data
     market_data, all_data, _ = preprocess_mini(
@@ -27,8 +58,9 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
         data_types=settings['data_types'])
 
     # Print progress out.
-    print('Iter {} [{}], fundEquity {}.'.format(
-        settings['iter'], DATE[-1], fundEquity[-1].mean()))
+    print('Iter {} [{}], fundEquity {}, #data {}.'.format(
+        settings['iter'], DATE[-1],
+        fundEquity[-1].mean(), all_data.shape[0]))
 
     # Initialize neural net.
     if settings['iter'] == 0:
@@ -63,16 +95,16 @@ def mySettings():
     """ Settings for the backtester"""
     settings = {}
     # Futures Contracts
-    settings['n_time'] = 100 # Use this many timesteps in one datapoint.
-    settings['n_sharpe'] = 100 # This many timesteps to compute Sharpes.
+    settings['n_time'] = 30 # Use this many timesteps in one datapoint.
+    settings['n_sharpe'] = 25 # This many timesteps to compute Sharpes.
     settings['horizon'] = settings['n_time'] - settings['n_sharpe'] + 1
     settings['lbd'] = 1 # L1 regularizer strength.
-    settings['num_epochs'] = 30 # Number of epochs each day.
+    settings['num_epochs'] = 2 # Number of epochs each day.
     settings['batch_size'] = 64
-    settings['val_period'] = 16
+    settings['val_period'] = 0
     settings['lr'] = 1e-5 # Learning rate.
     settings['iter'] = 0
-    settings['lookback'] = 2000
+    settings['lookback'] = 1000
     settings['budget'] = 10**6
     settings['slippage'] = 0.05
     settings['beginInSample'] = '20100104'
@@ -88,8 +120,8 @@ def mySettings():
         'linear_hf/tickerData/1000_stock_names.pkl')
     # settings['all_data'] holds an accumulating array 
     # with more and more data.
-    settings['past_data'] = make_empty_datadict(
-        settings['markets'], settings['data_types'])
+    settings['past_data'] = _make_empty_datadict(
+        settings['markets'])
     return settings
 
 if __name__ == '__main__':

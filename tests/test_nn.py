@@ -111,6 +111,7 @@ def test_training_longing():
                 'realized_sharpe': [],
                 'saved_val_sharpe': [],
                 'retrain_interval': 1,
+                'nn_type': 'rnn',
                 'allow_shorting': True}
 
     settings = training.train(settings, all_data=data_in, market_data=data_all)
@@ -149,6 +150,7 @@ def test_training_shorting():
                 'lbd': 0,
                 'realized_sharpe': [],
                 'saved_val_sharpe': [],
+                'nn_type': 'rnn',
                 'retrain_interval': 1,
                 'allow_shorting': True}
 
