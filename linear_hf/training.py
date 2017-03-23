@@ -7,7 +7,7 @@ from linear_hf.preprocessing import split_val_tr
 from linear_hf.preprocessing import get_n_batch
 
 def lr_calc(settings, epoch_id):
-    # Update the learning rate, exponential schedule
+    """Update the learning rate with an exponential schedule."""
     lr_mult = settings['lr_mult_base'] ** (1. / settings['num_epochs'])
     lr_new = settings['lr'] * lr_mult ** epoch_id
     return lr_new
@@ -71,9 +71,9 @@ def train(settings, all_data, market_data):
     """
     best_val_sharpe = -np.inf
     best_tr_sharpe = -np.inf
-    batches_per_epoch = get_n_batch(all_data.shape[0], 
+    batches_per_epoch = get_n_batch(all_data.shape[0],
                                     settings['horizon'],
-                                    settings['val_period'], 
+                                    settings['val_period'],
                                     settings['n_sharpe'],
                                     settings['batch_size'])
 
@@ -104,7 +104,7 @@ def train(settings, all_data, market_data):
         # Calculate sharpes for the epoch
         tr_sharpe /= batches_per_epoch
         if settings['val_period'] > 0:
-            val_sharpe = loss_calc(settings, all_batch=all_val, 
+            val_sharpe = loss_calc(settings, all_batch=all_val,
                                    market_batch=market_val)
 
         # Update neural net, and attendant values if NN is better than previous.
@@ -123,4 +123,3 @@ def train(settings, all_data, market_data):
         sys.stdout.flush()
 
     return settings
-

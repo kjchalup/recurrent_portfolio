@@ -14,6 +14,5 @@ To do:
 * Improve READMEs.
 * Remove non-recurrent neural net.
 * Put on github.
-* Remove hooks.
 * Test cleanly cloning the repository and running pip install -e .
 * Consider speeding up tests.

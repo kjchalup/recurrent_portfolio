@@ -1,5 +1,5 @@
-""" Functions that load data from txt files, as well as clean
-loaded data of NaNs, zeros and other oddities.
+"""Functions that load data from txt files, as well as clean
+loaded data of NaNs, zeros, and other oddities.
 
 """
 import glob
@@ -8,8 +8,20 @@ from sklearn.preprocessing import StandardScaler
 import numpy as np
 from . import NP_DTYPE
 
-def get_n_batch(n_timesteps, horizon, val_period, 
-                n_sharpe, batch_size, type='nn'):
+def get_n_batch(n_timesteps, horizon, val_period,
+                n_sharpe, batch_size):
+    """Calculate the number of batches per epoch of neural net training.
+
+    Args:
+        n_timesteps (int):
+        horizon (int):
+        val_period (int):
+        n_sharpe (int):
+        batch_size (Int):
+    Returns:
+        batches_per_epoch (int): The number of batches to use per epoch
+            of training for the neural net.
+    """
     if val_period > 0:
         batches_per_epoch = int(np.floor((n_timesteps - horizon - val_period
                                           -2 * n_sharpe + 1) / batch_size))
@@ -21,7 +33,7 @@ def get_n_batch(n_timesteps, horizon, val_period,
 
 def draw_timeseries_batch(all_data, market_data, horizon,
                           batch_size, batch_id, randseed=1):
-    """ Make batches of data. Used by split_val_tr.
+    """Make batches of data. Used by split_val_tr.
 
     Args:
         all_data: Data which the neural net uses to output a portfolio.
@@ -32,13 +44,13 @@ def draw_timeseries_batch(all_data, market_data, horizon,
         randseed: Can be the epoch number, helps randomize between epochs.
 
     Returns:
-        all_batch (n_batchsize, n_timesteps, data): Batches for input 
+        all_batch (n_batchsize, n_timesteps, data): Batches for input
             data to neural net.
-        market_batch (n_batchsize, n_timesteps, market_data): Batches 
+        market_batch (n_batchsize, n_timesteps, market_data): Batches
             for scoring for neural net.
 
     Raises:
-        IndexError: If batch_id is too large for given 
+        IndexError: If batch_id is too large for given
             batch_size and all_data.shape[0].
     """
     old_state = np.random.get_state()
@@ -57,7 +69,7 @@ def draw_timeseries_batch(all_data, market_data, horizon,
         market_batch[point_id, :, :] = market_data[start_id: start_id+horizon]
     return all_batch, market_batch
 
-def split_val_tr(all_data, market_data, valid_period, horizon, 
+def split_val_tr(all_data, market_data, valid_period, horizon,
                  n_for_sharpe, batch_id, batch_size, randseed):
     """ Make batches of data, splitting it into validation and training sets.
 
@@ -67,7 +79,7 @@ def split_val_tr(all_data, market_data, valid_period, horizon,
             of arrays of open, close, high and low prices.
         valid_period: Number of batches of validation data.
         horizon: Size of total horizon used to predict n_for_sharpe.
-        n_for_sharpe: Number of portfolios output to use 
+        n_for_sharpe: Number of portfolios output to use
             for gradient calculation.
         batch_size: Number of data per epoch.
         batch_id: Data id in the batch.
@@ -137,9 +149,6 @@ def load_nyse_markets(start_date, postipo=100):
             alives.append(fname)
     assert len(alives) > 0, 'No stocks returned.'
     return [symbol.split('/')[1][:-4] for symbol in alives]
-
-
-
 
 
 def preprocess(markets, opens, closes, highs, lows, vols, dates,
@@ -374,7 +383,7 @@ def preprocess_mini(markets, opens, closes, highs, lows, dates,
     for price in prices:
         prices_copy.append(np.array(price))
 
-    # Compute the number of days after nans stop 
+    # Compute the number of days after nans stop
     # for a particular stock in close.
     daysipo = np.logical_not(cnans).cumsum(0)
 
