@@ -11,8 +11,8 @@ def _make_empty_datadict(markets, max_time=10000):
     """
     data = {}
     for key in ['OPEN', 'CLOSE', 'HIGH', 'LOW']:
-        data[key] = np.nan * np.ones((max_time, len(markets)))
-    data['DATE'] = np.nan * np.ones((max_time))
+        data[key] = -np.pi * np.ones((max_time, len(markets)))
+    data['DATE'] = -np.pi * np.ones((max_time))
     return data
 
 
@@ -30,19 +30,19 @@ def _append_new_data(past_data, OPEN, CLOSE, HIGH, LOW, DATE):
             The dictionary is also updated with the new data.
     """
     keys = ['OPEN', 'CLOSE', 'HIGH', 'LOW', 'DATE']
-    first_nan = np.where(np.isnan(past_data['OPEN']))[0][0]
+    first_empty = np.where(past_data['OPEN'] == -np.pi)[0][0]
     lookback = OPEN.shape[0]
     for key in keys:
-        if first_nan == 0:
+        if first_empty == 0:
             # This is the first iteration!
             past_data[key][:lookback] = locals()[key]
         else:
             past_data[key][
-                first_nan - lookback + 1 : first_nan + 1] = locals()[key]
-    if first_nan == 0:
+                first_empty - lookback + 1 : first_empty + 1] = locals()[key]
+    if first_empty == 0:
         return [past_data[key][:lookback] for key in keys]
     else:
-        return [past_data[key][: first_nan + 1] for key in keys]
+        return [past_data[key][: first_empty + 1] for key in keys]
 
 
 def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
@@ -50,7 +50,6 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
                     TOTALCAP, exposure, equity, settings, fundEquity):
     OPEN, CLOSE, HIGH, LOW, DATE = _append_new_data(
         settings['past_data'], OPEN, CLOSE, HIGH, LOW, DATE)
-    print(OPEN.shape)
     # Preprocess the data
     market_data, all_data, _ = preprocess_mini(
         settings['markets'], OPEN, CLOSE, HIGH, LOW, DATE,
@@ -95,21 +94,21 @@ def mySettings():
     """ Settings for the backtester"""
     settings = {}
     # Futures Contracts
-    settings['n_time'] = 30 # Use this many timesteps in one datapoint.
-    settings['n_sharpe'] = 25 # This many timesteps to compute Sharpes.
+    settings['n_time'] = 100 # Use this many timesteps in one datapoint.
+    settings['n_sharpe'] = 100 # This many timesteps to compute Sharpes.
     settings['horizon'] = settings['n_time'] - settings['n_sharpe'] + 1
     settings['lbd'] = 1 # L1 regularizer strength.
-    settings['num_epochs'] = 2 # Number of epochs each day.
+    settings['num_epochs'] = 10 # Number of epochs each day.
     settings['batch_size'] = 64
-    settings['val_period'] = 0
+    settings['val_period'] = 16
     settings['lr'] = 1e-5 # Learning rate.
     settings['iter'] = 0
-    settings['lookback'] = 100
+    settings['lookback'] = 1000
     settings['budget'] = 10**6
     settings['slippage'] = 0.05
     settings['beginInSample'] = '20010104'
     settings['endInSample'] = '20131231'
-    settings['retrain_interval'] = 100
+    settings['retrain_interval'] = 1000
     settings['allow_shorting'] = True
     settings['lr_mult_base'] = 1.
     settings['restart_variables'] = True
