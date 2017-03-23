@@ -1,3 +1,5 @@
 *pyc
 *~
 *#
+tickerData/*
+!tickerData/fake1.txt
