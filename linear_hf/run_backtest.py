@@ -50,7 +50,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
                     TOTALCAP, exposure, equity, settings, fundEquity):
     OPEN, CLOSE, HIGH, LOW, DATE = _append_new_data(
         settings['past_data'], OPEN, CLOSE, HIGH, LOW, DATE)
-
+    print(OPEN.shape)
     # Preprocess the data
     market_data, all_data, _ = preprocess_mini(
         settings['markets'], OPEN, CLOSE, HIGH, LOW, DATE,
@@ -58,7 +58,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
         data_types=settings['data_types'])
 
     # Print progress out.
-    print('Iter {} [{}], fundEquity {}, #data {}.'.format(
+    print('Iter {} [{}], fundEquity {}, lookback {}.'.format(
         settings['iter'], DATE[-1],
         fundEquity[-1].mean(), all_data.shape[0]))
 
@@ -104,10 +104,10 @@ def mySettings():
     settings['val_period'] = 0
     settings['lr'] = 1e-5 # Learning rate.
     settings['iter'] = 0
-    settings['lookback'] = 1000
+    settings['lookback'] = 100
     settings['budget'] = 10**6
     settings['slippage'] = 0.05
-    settings['beginInSample'] = '20100104'
+    settings['beginInSample'] = '20010104'
     settings['endInSample'] = '20131231'
     settings['retrain_interval'] = 100
     settings['allow_shorting'] = True
