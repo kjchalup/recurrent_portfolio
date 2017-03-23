@@ -7,7 +7,7 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(name='causehf',
-      version="0.0.1",
+      version='0.0.1',
       description='Stock portfolio generation with recurrent neural networks.',
       # url='',
       author='Krzysztof Chalupka, Alex Teng, Tristan McKinney',
@@ -21,11 +21,13 @@ setup(name='causehf',
           'sklearn==0.0',
           'tensorflow==1.0.1',
       ],
-      long_description=read('README.md'),
+      long_description=read('README.rst'),
       classifiers=[
-          "Development Status :: 3 - Alpha",
-          "Topic :: Office/Business :: Financial :: Investment",
-          "Programming Language :: Python :: 2.7",
-          "License :: OSI Approved :: MIT License",
+          'Development Status :: 3 - Alpha',
+          'Topic :: Office/Business :: Financial :: Investment',
+          'Programming Language :: Python :: 2.7',
+          'License :: OSI Approved :: MIT License',
       ],
+      keywords=['finance', 'neural networks', 'machine learning'],
+      package_data={'sample': ['tickerData/fake1.txt']}
      )
