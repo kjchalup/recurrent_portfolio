@@ -109,7 +109,7 @@ def train(settings, all_data, market_data):
 
         # Update neural net, and attendant values if NN is better than previous.
         if settings['val_period'] > 0:
-            if val_sharpe > best_best_sharpe:
+            if val_sharpe > best_val_sharpe:
                 best_val_sharpe = val_sharpe
                 settings['nn'].save()
         else:

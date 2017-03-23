@@ -43,7 +43,7 @@ def sharpe_tf(positions, prices, slippage=.05, n_ignore=0):
     n_sharpe -= n_ignore
 
     prod_rs = tf.reduce_prod(rs + 1, axis=1)
-    sharpe = tf.reduce_min(
+    sharpe = tf.reduce_mean(
         (tf.pow(prod_rs, (252. / n_sharpe))-1) /
         (tf.sqrt(252 * (tf.reduce_sum(tf.pow(rs, 2), axis=1) / n_sharpe -
                         tf.pow(tf.reduce_sum(rs, axis=1), 2) / n_sharpe**2))))

@@ -1,8 +1,19 @@
 """ Quantiacs-code based backtester. """
 import joblib
 from sklearn.preprocessing import StandardScaler
+import numpy as np
 from linear_hf.preprocessing import preprocess
+from linear_hf.preprocessing import preprocess_mini
 from linear_hf import training
+
+def _make_empty_data_dict(markets, dtypes, max_time=10000):
+    """ Make a dictionary containing placeholders for data that
+    will be filled up as training continues. 
+    """
+    data = {}
+    data[
+np.nan * np.ones(
+        (10000, len(settings['markets']) * len(settings['data_types'])))
 
 def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
                     CLOSE_ASK, CLOSE_BID, RETURN, SHARE, DIVIDEND,
@@ -10,14 +21,10 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL, CLOSE_LASTTRADE,
     n_markets = len(settings['markets'])
 
     # Preprocess the data
-    market_data, all_data, _ = preprocess(
-        settings['markets'][:n_markets], OPEN[:, :n_markets],
-        CLOSE[:, :n_markets], HIGH[:, :n_markets],
-        LOW[:, :n_markets], VOL[:, :n_markets], DATE,
-        CLOSE_LASTTRADE[:, :n_markets], CLOSE_ASK[:, :n_markets],
-        CLOSE_BID[:, :n_markets], RETURN[:, :n_markets], SHARE[:, :n_markets],
-        DIVIDEND[:, :n_markets], TOTALCAP[:, :n_markets],
-        postipo=100, filler=0.123456789, data_types=settings['data_types'])
+    market_data, all_data, _ = preprocess_mini(
+        settings['markets'], OPEN, CLOSE, HIGH, LOW, DATE,
+        postipo=100, filler=0.123456789,
+        data_types=settings['data_types'])
 
     # Print progress out.
     print('Iter {} [{}], fundEquity {}.'.format(
@@ -56,21 +63,21 @@ def mySettings():
     """ Settings for the backtester"""
     settings = {}
     # Futures Contracts
-    settings['n_time'] = 50 # Use this many timesteps in one datapoint.
-    settings['n_sharpe'] = 50 # This many timesteps to compute Sharpes.
+    settings['n_time'] = 100 # Use this many timesteps in one datapoint.
+    settings['n_sharpe'] = 100 # This many timesteps to compute Sharpes.
     settings['horizon'] = settings['n_time'] - settings['n_sharpe'] + 1
     settings['lbd'] = 1 # L1 regularizer strength.
-    settings['num_epochs'] = 100 # Number of epochs each day.
+    settings['num_epochs'] = 30 # Number of epochs each day.
     settings['batch_size'] = 64
-    settings['val_period'] = 0
-    settings['lr'] = 1e-2 # Learning rate.
+    settings['val_period'] = 16
+    settings['lr'] = 1e-5 # Learning rate.
     settings['iter'] = 0
-    settings['lookback'] = 1000
+    settings['lookback'] = 2000
     settings['budget'] = 10**6
     settings['slippage'] = 0.05
     settings['beginInSample'] = '20100104'
     settings['endInSample'] = '20131231'
-    settings['retrain_interval'] = 50
+    settings['retrain_interval'] = 100
     settings['allow_shorting'] = True
     settings['lr_mult_base'] = 1.
     settings['restart_variables'] = True
@@ -79,6 +86,10 @@ def mySettings():
     settings['data_types'] = [1]
     settings['markets'] = joblib.load(
         'linear_hf/tickerData/1000_stock_names.pkl')
+    # settings['all_data'] holds an accumulating array 
+    # with more and more data.
+    settings['past_data'] = make_empty_datadict(
+        settings['markets'], settings['data_types'])
     return settings
 
 if __name__ == '__main__':
@@ -87,5 +98,6 @@ if __name__ == '__main__':
         __file__, fname='linear_hf/tickerData/1000_nyse_stocks.pkl')
 
     print RESULTS['stats']
+    RESULTS['nn'] = None
     joblib.dump(RESULTS, 'saved_data/results_of_this_run.pkl')
 
