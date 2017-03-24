@@ -15,6 +15,7 @@ setup(name='causehf',
       license='MIT',
       packages=['linear_hf'],
       install_requires=[
+          'joblib==0.11',
           'pytest==3.0.7',
           'quantiacsToolbox==2.2.11',
           'scipy==0.19.0',

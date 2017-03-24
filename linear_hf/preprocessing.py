@@ -224,7 +224,7 @@ def preprocess(settings, opens, closes, highs, lows, dates,
     # Loop throught the days in closes.
     last_close = closes[0]
     if 'CASH' in settings['markets']:
-        cashindex = markets.index('CASH')
+        cashindex = settings['markets'].index('CASH')
 
     for day, close in enumerate(closes):
         # Replace nans with previous close in closes and closes_copy.
