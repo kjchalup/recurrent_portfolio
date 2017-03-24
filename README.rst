@@ -1,12 +1,13 @@
-=======
-rnn_portfolio
-=======
-This package is co-authored by Tristan McKinney and Alex Teng.
+.. image:: ./rubidium.svg 
+    :alt: Release  
+.. image:: https://img.shields.io/badge/License-MIT-yellow.svg
+  :target: https://opensource.org/licenses/MIT
+  :alt: License
 
----------------------------------------------------------
-Stock Portfolio Generation and Backtesting with Recurrent Neural Networks
----------------------------------------------------------
+*Stock Portfolio Generation and Backtesting with Recurrent Neural Networks*
 
+Usage
+-----
 Tools to produce stock portfolios which optimize the Sharpe 
 ratio using a recurrent neural net (rnn). While the rnn routines
 can work independently, this package relies on the `Quantiacs Toolbox`_
@@ -61,10 +62,6 @@ For backtesting purposes, lets travel back in time to 2001, by adjusting the
   settings['beginInSample'] = 20010101
   settings['lookback'] = 252
 
-
-License and versioning
-======================
-This project is licensed under the `MIT license`_. We use `SemVer`_ for versioning.
 
 .. _pip: http://www.pip-installer.org/en/latest/
 .. _SemVer: http://semver.org/
