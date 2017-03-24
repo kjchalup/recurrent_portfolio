@@ -2,7 +2,8 @@
     :target: https://opensource.org/licenses/MIT
     :alt: License
 
-*Stock Portfolio Generation and Backtesting with Recurrent Neural Networks. Maintained by Krzysztof Chalupka, Tristan McKinney, Alex Teng.*
+*Stock Portfolio Generation and Backtesting with Recurrent Neural Networks. Maintained by* `Krzysztof Chalupka`_, 
+`Tristan McKinney`_ and Alex Teng.
 
 Usage
 -----
@@ -61,6 +62,8 @@ and run `pytest`_::
 
   $ pytest
 
+.. _Krzysztof Chalupka: https://github.com/kjchalup
+.. _Tristan McKinney: https://github.com/natsirtguy
 .. _CRSP: http://www.crsp.com/
 .. _run_backtest.py: rnn_portfolio/run_backtest.py
 .. _pip: http://www.pip-installer.org/en/latest/
