@@ -41,10 +41,10 @@ def mySettings():
     """ Settings for the backtester"""
     settings = {}
     # Futures Contracts
-    settings['n_time'] = 100  # Use this many timesteps in one datapoint.
-    settings['n_sharpe'] = 100  # This many timesteps to compute Sharpes.
+    settings['n_time'] = 252  # Use this many timesteps in one datapoint.
+    settings['n_sharpe'] = 252  # This many timesteps to compute Sharpes.
     settings['horizon'] = settings['n_time'] - settings['n_sharpe'] + 1
-    settings['num_epochs'] = 50  # Number of epochs each day.
+    settings['num_epochs'] = 100  # Number of epochs each day.
     settings['batch_size'] = 32
     settings['val_period'] = 16
     settings['lr'] = 1e-2  # Learning rate.
@@ -59,7 +59,7 @@ def mySettings():
     settings['lr_mult_base'] = 1.
     settings['restart_variables'] = True
     settings['nn'] = None
-    settings['data_types'] = [0, 1, 2, 3, 4]
+    settings['data_types'] = [1, 4]
     settings['markets'] = ['AAPL', 'GOOG', 'MMM', 'CASH']
     settings['past_data'] = training.make_empty_datadict(settings['markets'])
     return settings

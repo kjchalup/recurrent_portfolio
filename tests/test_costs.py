@@ -6,7 +6,6 @@ from context import linear_hf
 from linear_hf.quantiacs_code import quantiacs_calculation
 from linear_hf.costs import compute_np_sharpe
 from linear_hf.costs import compute_tf_sharpe
-from linear_hf import neuralnet
 
 @pytest.fixture
 def create_data():
