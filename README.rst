@@ -2,7 +2,7 @@
     :target: https://opensource.org/licenses/MIT
     :alt: License
 
-*Stock Portfolio Generation and Backtesting with Recurrent Neural Networks*
+*Stock Portfolio Generation and Backtesting with Recurrent Neural Networks. Maintained by Krzysztof Chalupka, Tristan McKinney, Alex Teng.*
 
 Usage
 -----
@@ -13,21 +13,20 @@ All the setup boils down to modifying the `mySettings()` function in `run_backte
     def mySettings():
         """ Settings for the backtester"""
         settings = {}
-        settings['n_time'] = 252
-        settings['n_sharpe'] = 252
-        settings['num_epochs'] = 100
-        settings['batch_size'] = 32
-        settings['val_period'] = 16
-        settings['lr'] = 1e-2
-        settings['lookback'] = 1000
-        settings['beginInSample'] = '20010104'
-        settings['endInSample'] = '20131231'
-        settings['retrain_interval'] = 100
-        settings['allow_shorting'] = True
-        settings['lr_mult_base'] = 1.
-        settings['restart_variables'] = True
-        settings['data_types'] = [1, 4]
-        settings['markets'] = ['AAPL', 'GOOG', 'MMM', 'CASH']
+        settings['n_time'] = 252  # Sequence length for the rnn.
+        settings['n_sharpe'] = 252  # Optimize Sharpe for this many timesteps.
+        settings['num_epochs'] = 100  # Train for this many epochs.
+        settings['batch_size'] = 32  # SGD batch size.
+        settings['val_period'] = 16  # Validation period, taken off the most recent timesteps.
+        settings['lr'] = 1e-2  # Learning rate.
+        settings['lookback'] = 1000  # On first day of trading, use this many past days for training.
+        settings['beginInSample'] = '20010104'  # First day of data.
+        settings['endInSample'] = '20131231'  # Stop trading here.
+        settings['retrain_interval'] = 100  # Retrain the rnn every this many trading days.
+        settings['allow_shorting'] = True  # Whether to allow the rnn to keep short positions.
+        settings['restart_variables'] = True  # Whether to retrain the rnn from scratch each time.
+        settings['data_types'] = [1, 4]  # Input data for rnn (OPEN, CLOSE, HIGH, LOW, DATE = 0, ..., 4).
+        settings['markets'] = ['AAPL', 'GOOG', 'MMM', 'CASH']  # Which markets to trade.
         # [more settings follow, not shown in this readme]
 
 Comments in the file should explain what these settings do. Importantly, note that if
@@ -62,6 +61,7 @@ and run `pytest`_::
 
   $ pytest
 
+.. _CRSP: http://www.crsp.com/
 .. _run_backtest.py: rnn_portfolio/run_backtest.py
 .. _pip: http://www.pip-installer.org/en/latest/
 .. _SemVer: http://semver.org/
