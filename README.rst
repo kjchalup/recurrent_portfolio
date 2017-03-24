@@ -60,7 +60,7 @@ This will install all the necessary dependencies. To test that your
 installation was successful, change to the repository directory
 and run `pytest`_::
 
-  $ py.test
+  $ pytest
 
 .. _run_backtest.py: rnn_portfolio/run_backtest.py
 .. _pip: http://www.pip-installer.org/en/latest/
