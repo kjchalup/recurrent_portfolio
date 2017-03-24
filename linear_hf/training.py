@@ -1,10 +1,49 @@
-""" Routines for training. """
+""" Routines for training the rnn. """
 import sys
 import numpy as np
 from linear_hf import rnn
-from linear_hf import neuralnet
 from linear_hf.preprocessing import split_val_tr
 from linear_hf.preprocessing import get_n_batch
+
+def make_empty_datadict(markets, max_time=10000):
+    """ Make a dictionary containing placeholders for OPEN, CLOSE,
+    HIGH, LOW and DATE data that will be filled up as training continues.
+    """
+    data = {}
+    for key in ['OPEN', 'CLOSE', 'HIGH', 'LOW']:
+        data[key] = -np.pi * np.ones((max_time, len(markets)))
+    data['DATE'] = -np.pi * np.ones((max_time))
+    return data
+
+
+def append_new_data(past_data, OPEN, CLOSE, HIGH, LOW, DATE):
+    """ Append the OPEN, ..., DATE data to their respective arrays
+    in the past_data dictionary, assuming this is done on each timestep.
+
+    Args:
+        past_data (dict): Dictionary containing 'OPEN', ..., 'DATE' as
+            keys and nan-padded value arrays as values.
+        OPEN, CLOSE, HIGH, LOW, DATE: Quantiacs data arrays.
+
+    Returns:
+        OPEN, ..., DATE: Data with pre-pended past entries from the dict.
+            The dictionary is also updated with the new data.
+    """
+    keys = ['OPEN', 'CLOSE', 'HIGH', 'LOW', 'DATE']
+    first_empty = np.where(past_data['OPEN'] == -np.pi)[0][0]
+    lookback = OPEN.shape[0]
+    for key in keys:
+        if first_empty == 0:
+            # This is the first iteration!
+            past_data[key][:lookback] = locals()[key]
+        else:
+            past_data[key][
+                first_empty - lookback + 1 : first_empty + 1] = locals()[key]
+    if first_empty == 0:
+        return [past_data[key][:lookback] for key in keys]
+    else:
+        return [past_data[key][: first_empty + 1] for key in keys]
+
 
 def lr_calc(settings, epoch_id):
     """Update the learning rate with an exponential schedule."""
@@ -14,7 +53,7 @@ def lr_calc(settings, epoch_id):
 
 
 def loss_calc(settings, all_batch, market_batch):
-    """ Calculates loss from neuralnet
+    """ Calculates nn's NEGATIVE loss.
 
     Args:
         settings: contains the neural net
@@ -24,11 +63,7 @@ def loss_calc(settings, all_batch, market_batch):
         cost: loss - l1 penalty
     """
     loss = settings['nn'].loss_np(all_batch, market_batch)
-    if settings['nn_type'] == 'linear':
-        l1_loss = settings['nn'].l1_penalty_np()
-    else:
-        l1_loss = 0
-    return -(loss - l1_loss)
+    return -loss
 
 
 def init_nn(settings, n_ftrs):
@@ -37,21 +72,14 @@ def init_nn(settings, n_ftrs):
     Args:
         settings: where the neuralnet gets initialized
         n_ftrs: size of the neuralnet input layer
-        nn_type: type of neural net
     Returns:
         settings: a dict with ['nn'] which is the initialized neuralnet.
     """
-    if settings['nn_type'] == 'linear':
-        settings['nn'] = neuralnet.Linear(
-            n_ftrs=n_ftrs, n_markets=len(settings['markets']),
-            n_time=settings['n_time'], n_sharpe=settings['n_sharpe'],
-            lbd=settings['lbd'], allow_shorting=settings['allow_shorting'])
-    elif settings['nn_type'] == 'rnn':
-        settings['nn'] = rnn.RNN(n_ftrs=n_ftrs,
-                                 n_markets=len(settings['markets']),
-                                 n_time=settings['n_time'],
-                                 n_sharpe=settings['n_sharpe'],
-                                 allow_shorting=settings['allow_shorting'])
+    settings['nn'] = rnn.RNN(n_ftrs=n_ftrs,
+                             n_markets=len(settings['markets']),
+                             n_time=settings['n_time'],
+                             n_sharpe=settings['n_sharpe'],
+                             allow_shorting=settings['allow_shorting'])
     return settings
 
 def train(settings, all_data, market_data):
