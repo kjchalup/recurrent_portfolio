@@ -1,13 +1,15 @@
 =======
-CauseHF
+rnn_portfolio
 =======
 ---------------------------------------------------------
 Stock Portfolio Generation with Recurrent Neural Networks
 ---------------------------------------------------------
 
 This repository contains tools to produce stock portfolios which
-optimize various measures (such as the Sharpe ratio) using recurrent
-neural networks.
+optimize the Sharpe ratio using a recurrent neural net (rnn). 
+While the rnn routines can work independently, this package relies
+on the `Quantiacs Toolbox`_ backtester for training
+and evaluation.
 
 Getting Started
 ===============
@@ -51,16 +53,6 @@ We use `SemVer`_.
 License
 =======
 This project is licensed under the `MIT license`_.
-
-To do:
-======
-* Clean code.
-* Add fake data.
-* Add to package_data in setup.py.
-* Improve README.
-* Remove non-recurrent neural net.
-* Put on GitHub.
-* Consider speeding up tests.
 
 .. _pip: http://www.pip-installer.org/en/latest/
 .. _SemVer: http://semver.org/
