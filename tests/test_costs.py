@@ -2,10 +2,10 @@ import pytest
 from quantiacsToolbox import loadData
 import numpy as np
 
-from context import linear_hf
-from linear_hf.quantiacs_code import quantiacs_calculation
-from linear_hf.costs import compute_np_sharpe
-from linear_hf.costs import compute_tf_sharpe
+from context import rnn_portfolio
+from rnn_portfolio.quantiacs_code import quantiacs_calculation
+from rnn_portfolio.costs import compute_np_sharpe
+from rnn_portfolio.costs import compute_tf_sharpe
 
 @pytest.fixture
 def create_data():

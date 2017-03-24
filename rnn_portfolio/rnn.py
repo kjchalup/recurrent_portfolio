@@ -4,8 +4,7 @@ import tensorflow as tf
 import tensorflow.contrib.rnn as tf_rnn
 from tensorflow import nn as tf_nn
 
-from linear_hf.costs import sharpe_tf
-from linear_hf import strategies
+from rnn_portfolio.costs import sharpe_tf
 
 from . import TF_DTYPE
 from . import NP_DTYPE

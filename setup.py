@@ -13,7 +13,7 @@ setup(name='causehf',
       author='Krzysztof Chalupka, Tristan McKinney, Alex Teng',
       author_email='krzysztof@cause.ai, tristan@cause.ai, alex@cause.ai',
       license='MIT',
-      packages=['linear_hf'],
+      packages=['rnn_portfolio'],
       install_requires=[
           'joblib==0.11',
           'pytest==3.0.7',

@@ -1,9 +1,9 @@
 """ Routines for training the rnn. """
 import sys
 import numpy as np
-from linear_hf import rnn
-from linear_hf.preprocessing import split_val_tr
-from linear_hf.preprocessing import get_n_batch
+from rnn_portfolio import rnn
+from rnn_portfolio.preprocessing import split_val_tr
+from rnn_portfolio.preprocessing import get_n_batch
 
 def make_empty_datadict(markets, max_time=10000):
     """ Make a dictionary containing placeholders for OPEN, CLOSE,

@@ -1,13 +1,7 @@
-import pytest
-import quantiacsToolbox
-from quantiacsToolbox import loadData
-import sys
-import os
-import pandas as pd
 import numpy as np
 from numpy.testing import assert_array_equal
-from context import linear_hf
-from linear_hf import preprocessing
+from context import rnn_portfolio
+from rnn_portfolio import preprocessing
 
 BEGIN_DATE = '20100101'
 END_DATE = '20141231'

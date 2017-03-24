@@ -1,7 +1,7 @@
 """ Quantiacs-code based backtester. """
 import joblib
-from linear_hf.preprocessing import preprocess
-from linear_hf import training
+from rnn_portfolio.preprocessing import preprocess
+from rnn_portfolio import training
 
 
 def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE,

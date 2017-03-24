@@ -1,12 +1,11 @@
 import pytest
 import numpy as np
-from numpy.testing import assert_array_almost_equal
 from numpy.testing import assert_array_equal
-from context import linear_hf
-from linear_hf import rnn
-from linear_hf import NP_DTYPE
-from linear_hf.costs import compute_np_sharpe
-from linear_hf import training
+from context import rnn_portfolio
+from rnn_portfolio import rnn
+from rnn_portfolio import NP_DTYPE
+from rnn_portfolio.costs import compute_np_sharpe
+from rnn_portfolio import training
 from sklearn.preprocessing import StandardScaler
 
 
