@@ -7,7 +7,7 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(name='causehf',
-      version='0.0.1',
+      version='0.1.0',
       description='Stock portfolio generation with recurrent neural networks.',
       # url='',
       author='Krzysztof Chalupka, Alex Teng, Tristan McKinney',
