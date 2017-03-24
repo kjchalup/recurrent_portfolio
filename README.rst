@@ -6,12 +6,46 @@
 
 Usage
 -----
-All the setup boils down to modifying the `settings` dictionary in `run_backtest.py`_:
+All the setup boils down to modifying the `mySettings()` function in `run_backtest.py`_:
 
-.. code:: python
-  settings['markets']
-  settings['beginInSample'] = 20010101
-  settings['lookback'] = 252
+.. code:: python 
+
+    def mySettings():
+        """ Settings for the backtester"""
+        settings = {}
+        settings['n_time'] = 252
+        settings['n_sharpe'] = 252
+        settings['num_epochs'] = 100
+        settings['batch_size'] = 32
+        settings['val_period'] = 16
+        settings['lr'] = 1e-2
+        settings['lookback'] = 1000
+        settings['beginInSample'] = '20010104'
+        settings['endInSample'] = '20131231'
+        settings['retrain_interval'] = 100
+        settings['allow_shorting'] = True
+        settings['lr_mult_base'] = 1.
+        settings['restart_variables'] = True
+        settings['data_types'] = [1, 4]
+        settings['markets'] = ['AAPL', 'GOOG', 'MMM', 'CASH']
+        # [more settings follow, not shown in this readme]
+
+Comments in the file should explain what these settings do. Importantly, note that if
+`settings['markets']` contains symbols available through `Quantiacs Toolbox`_, the
+data will be automatically downloaded into the tickerData directory. You can, however,
+use your own data. We got ours from `CRSP`_ because `Quantiacs Toolbox`_ does not
+offer survivorship-bias free data. You'll need to format your ticker data into the same
+format as Quantiacs data, and put it in the tickerData directory.
+
+Once done choosing the settings, run
+
+    $ python -m rnn_portfolio.run_backtest
+    
+This will start the backtest run. Each `settings['retrain_interval']` days, the
+rnn will retrain using all the past data. The rnn optimizes Sharpe ratios over
+`settings['n_sharpe']`-day periods in the training data. Its output is the portfolio
+for the next day. At the end of the run, you should see a nice plot (made by `Quantiacs Toolbox`_)
+showing how much you earned or lost:
 
 Installation
 ------------
