@@ -25,6 +25,8 @@ setup(name='causehf',
       classifiers=[
           'Development Status :: 3 - Alpha',
           'Topic :: Office/Business :: Financial :: Investment',
+          'Intended Audience :: Financial and Insurance Industry',
+          'Intended Audience :: Science/Research',
           'Programming Language :: Python :: 2.7',
           'License :: OSI Approved :: MIT License',
       ],
