@@ -28,7 +28,7 @@ This will install all the necessary dependencies.
 Tests
 -----
 To test that your installation was successful, change to the repository
-directory and run ``pytest``::
+directory and run `pytest`_::
 
   $ pytest
 
@@ -38,7 +38,7 @@ directory and run ``pytest``::
 
 Built With
 ==========
-* The `Quantiacs Toolbox`_.
+* `Quantiacs Toolbox`_
 * `TensorFlow`_
 * `SciPy`_
 * `scikit-learn`_
@@ -56,7 +56,7 @@ To do:
 ======
 * Clean code.
 * Add fake data.
-  * Add to package_data in setup.py.
+* Add to package_data in setup.py.
 * Improve README.
 * Remove non-recurrent neural net.
 * Put on GitHub.
@@ -69,4 +69,4 @@ To do:
 .. _SciPy: https://www.scipy.org/
 .. _scikit-learn: http://scikit-learn.org/stable/
 .. _TensorFlow: https://www.tensorflow.org/
-.. _MIT license_: https://opensource.org/licenses/MIT
+.. _MIT license: https://opensource.org/licenses/MIT
